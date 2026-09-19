@@ -1,1 +1,96 @@
-<!doctype html><meta charset="utf-8"><title>Two boards, five levels</title><style>body{margin:0;background:#080b10;color:#e9edf0;font:16px system-ui;padding:48px}main{max-width:1100px;margin:auto}h1{font-size:54px;letter-spacing:-.05em}.boards{display:flex;gap:20px}.board{background:#10161e;border:1px solid #26313b;padding:16px;flex:1}.bricks{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}.brick{height:20px;background:#ef8354}.brick:nth-child(3n){background:#70c1b3}.paddle{height:10px;background:#f4f1ea;width:20%;margin:70px auto 14px}.stats{display:flex;gap:40px;margin-top:30px}.stats b{display:block;font-size:28px}.chart{height:130px;margin-top:30px;border:1px solid #26313b;padding:20px;display:flex;gap:9px;align-items:end}.bar{width:25px;background:#ef8354}.bar.bot{background:#70c1b3}</style><main><p>SIMULATION / REAL SESSION · SEED 20260919 · FIVE LEVELS</p><h1>Two boards. Five decisions.</h1><div class=boards><div class=board><h2>01 / human</h2><div class=bricks><i class=brick></i><i class=brick></i><i class=brick></i><i class=brick></i><i class=brick></i><i class=brick></i><i class=brick></i><i class=brick></i><i class=brick></i><i class=brick></i></div><div class=paddle></div><small>five level archetypes; power-up choices cut both ways</small></div><div class=board><h2>02 / deterministic bot</h2><div class=bricks><i class=brick></i><i class=brick></i><i class=brick></i><i class=brick></i><i class=brick></i><i class=brick></i><i class=brick></i><i class=brick></i><i class=brick></i><i class=brick></i></div><div class=paddle></div><small>same seed; replayable decisions and board states</small></div></div><div class=stats><div>LEVELS<b>5</b></div><div>DECISION TYPES<b>3</b></div><div>REPLAY DATA<b>FULL ASK</b></div></div><div class=chart><i class=bar style="height:90px"></i><i class=bar style="height:105px"></i><i class=bar style="height:80px"></i><i class=bar style="height:120px"></i><i class="bar bot" style="height:65px"></i><i class="bar bot" style="height:95px"></i></div><p>Session records in <code>docs/session.ndjson</code> include the seed, tick, full Ask/state, Decision, and reaction time for later ghost-mode replay.</p></main>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Two boards, one seed</title>
+    <style>
+      :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #e9edf0; background: #080b10; }
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      main { max-width: 1180px; margin: auto; padding: 48px 28px 32px; }
+      header { display: flex; justify-content: space-between; gap: 28px; align-items: flex-start; border-bottom: 1px solid #26313b; padding-bottom: 30px; }
+      .eyebrow, .label, .axis, figcaption, footer { color: #82919b; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; }
+      .eyebrow { color: #70c1b3; text-transform: uppercase; }
+      h1 { font-size: clamp(40px, 7vw, 76px); line-height: .94; letter-spacing: -.06em; margin: 14px 0; }
+      .lede { max-width: 690px; color: #aab5bc; font-size: 17px; line-height: 1.5; }
+      .source-note { max-width: 720px; color: #788791; font-size: 13px; line-height: 1.5; }
+      .capture { margin-top: 30px; border: 1px solid #26313b; background: #10161e; padding: 14px; }
+      .capture svg { display: block; width: 100%; height: auto; }
+      figcaption { padding: 12px 2px 0; line-height: 1.5; letter-spacing: 0; }
+      .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #26313b; margin-top: 26px; }
+      .metric { background: #10161e; padding: 20px; }
+      .metric strong { display: block; font-size: 25px; margin: 11px 0 4px; }
+      .metric small { color: #9ca9b2; }
+      .chart { margin-top: 26px; border: 1px solid #26313b; background: #10161e; padding: 18px 20px; }
+      .chart-head { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+      .chart svg { display: block; width: 100%; height: auto; }
+      footer { margin-top: 22px; line-height: 1.6; letter-spacing: 0; }
+      code { color: #e9edf0; }
+      @media (max-width: 760px) { main { padding: 28px 16px; } header { display: block; } .metrics { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <p class="eyebrow">Scripted session / one seed / level 1 still</p>
+          <h1>Two boards.<br>One level.</h1>
+          <p class="lede">Both boards start from seed <strong>20260919</strong>. The left board is the scripted player with the recorded human-latency model; the right board is the deterministic bot. Their choices diverge at tick 1590, and this still is taken from tick 1800.</p>
+          <p class="source-note"><strong>No person played this run.</strong> “Human” is the session’s scripted player label, not a claim of live play. The bot’s 0 ms reaction time is correct because it answers synchronously.</p>
+        </div>
+      </header>
+
+      <figure class="capture">
+        <svg viewBox="0 0 980 420" role="img" aria-labelledby="capture-title capture-desc">
+          <title id="capture-title">Two level-one boards at tick 1800</title>
+          <desc id="capture-desc">The scripted player and deterministic bot share the same seed but have different paddle and ball positions after diverging choices.</desc>
+          <rect width="980" height="420" fill="#10161e"/>
+          <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" fill="#d7e0e5">
+            <text x="24" y="25">01 / SCRIPTED PLAYER</text><text x="494" y="25">02 / DETERMINISTIC BOT</text>
+            <text x="24" y="405" fill="#82919b">tick 1800 · 10 bricks cleared · 0 lives lost · 1 power-up</text>
+            <text x="494" y="405" fill="#82919b">tick 1800 · 10 bricks cleared · 0 lives lost · 1 power-up</text>
+          </g>
+          <g transform="translate(24 40) scale(.91)">
+            <rect width="480" height="320" fill="#080b10" stroke="#34424c"/>
+            <g fill="#ef8354">
+              <rect x="18" y="28" width="40" height="18"/><rect x="62" y="28" width="40" height="18"/><rect x="106" y="28" width="40" height="18"/><rect x="150" y="28" width="40" height="18"/><rect x="194" y="28" width="40" height="18"/><rect x="282" y="28" width="40" height="18"/><rect x="326" y="28" width="40" height="18"/><rect x="370" y="28" width="40" height="18"/>
+              <rect x="18" y="51" width="40" height="18"/><rect x="106" y="51" width="40" height="18"/><rect x="326" y="51" width="40" height="18"/><rect x="18" y="74" width="40" height="18"/>
+            </g>
+            <g fill="#70c1b3"><rect x="238" y="28" width="40" height="18" opacity=".18"/><rect x="370" y="28" width="40" height="18"/><rect x="106" y="51" width="40" height="18" fill="#f4f1ea"/><rect x="238" y="51" width="40" height="18" opacity=".18"/><rect x="282" y="51" width="40" height="18" opacity=".18"/><rect x="150" y="74" width="40" height="18" fill="#f4f1ea"/><rect x="282" y="74" width="40" height="18" fill="#f4f1ea"/><rect x="150" y="97" width="40" height="18" fill="#f4f1ea"/><rect x="282" y="97" width="40" height="18" fill="#f4f1ea"/></g>
+            <rect x="175" y="294" width="130" height="10" rx="3" fill="#f4f1ea"/><circle cx="94" cy="163" r="6" fill="#f4f1ea"/>
+          </g>
+          <g transform="translate(494 40) scale(.91)">
+            <rect width="480" height="320" fill="#080b10" stroke="#34424c"/>
+            <g fill="#ef8354">
+              <rect x="18" y="28" width="40" height="18"/><rect x="62" y="28" width="40" height="18"/><rect x="106" y="28" width="40" height="18"/><rect x="150" y="28" width="40" height="18"/><rect x="194" y="28" width="40" height="18"/><rect x="282" y="28" width="40" height="18"/><rect x="326" y="28" width="40" height="18"/><rect x="370" y="28" width="40" height="18"/>
+              <rect x="18" y="51" width="40" height="18"/><rect x="106" y="51" width="40" height="18"/><rect x="326" y="51" width="40" height="18"/><rect x="18" y="74" width="40" height="18"/>
+            </g>
+            <g fill="#70c1b3"><rect x="238" y="28" width="40" height="18" opacity=".18"/><rect x="370" y="28" width="40" height="18"/><rect x="106" y="51" width="40" height="18" fill="#f4f1ea"/><rect x="238" y="51" width="40" height="18" opacity=".18"/><rect x="282" y="51" width="40" height="18" opacity=".18"/><rect x="150" y="74" width="40" height="18" fill="#f4f1ea"/><rect x="282" y="74" width="40" height="18" fill="#f4f1ea"/><rect x="150" y="97" width="40" height="18" fill="#f4f1ea"/><rect x="282" y="97" width="40" height="18" fill="#f4f1ea"/></g>
+            <rect x="237" y="294" width="130" height="10" rx="3" fill="#f4f1ea"/><circle cx="64" cy="174" r="6" fill="#f4f1ea"/>
+          </g>
+        </svg>
+        <figcaption>Data-derived still, not a photograph: board state, paddle, ball and brick positions are taken from <code>docs/session.ndjson</code> at level 1 / tick 1800. The pale bricks are unbreakable; dim bricks are cleared.</figcaption>
+      </figure>
+
+      <section class="metrics" aria-label="Session metrics">
+        <div class="metric"><span class="label">LEVEL ONE COMPLETION</span><strong>38.1s / 38.07s</strong><small>scripted player / bot · ticks 2288 / 2284</small></div>
+        <div class="metric"><span class="label">REACTION MEDIAN</span><strong>180ms / 0ms</strong><small>scripted player / bot</small></div>
+        <div class="metric"><span class="label">REACTION P95</span><strong>180ms / 0ms</strong><small>scripted player / bot · 1,681 decisions each</small></div>
+      </section>
+
+      <section class="chart" aria-labelledby="chart-title">
+        <div class="chart-head"><span class="label" id="chart-title">REACTION-TIME DISTRIBUTION · ALL LEVELS</span><span class="label">decisions</span></div>
+        <svg viewBox="0 0 900 210" role="img" aria-label="Histogram showing 1681 bot decisions at zero milliseconds and 1681 scripted-player decisions at 180 milliseconds">
+          <line x1="70" y1="170" x2="870" y2="170" stroke="#34424c"/><line x1="70" y1="30" x2="70" y2="170" stroke="#34424c"/>
+          <rect x="150" y="30" width="160" height="140" fill="#70c1b3"/><rect x="470" y="30" width="160" height="140" fill="#ef8354"/>
+          <g fill="#e9edf0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" text-anchor="middle"><text x="230" y="21">1,681</text><text x="550" y="21">1,681</text><text x="230" y="194">0 ms · bot</text><text x="550" y="194">180 ms · scripted player</text></g>
+          <g fill="#82919b" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11"><text x="15" y="174">0</text><text x="15" y="34">count</text></g>
+        </svg>
+        <p class="source-note">The distribution is intentionally discrete: the telemetry records one synchronous bot latency and one scripted human-latency value. There is no hidden live-player sample behind the word “Human.”</p>
+      </section>
+
+      <footer>Source of truth: <code>docs/session.ndjson</code> · replay data includes seed, level, tick, full Ask/state, Decision and reaction time · the engine remains unchanged.</footer>
+    </main>
+  </body>
+</html>
