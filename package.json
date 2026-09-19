@@ -1,0 +1,8 @@
+{
+  "name": "brick-arena",
+  "private": true,
+  "type": "module",
+  "scripts": {"dev":"vite","build":"tsc -b && vite build","test":"vitest run","session":"tsx packages/cli/src/session.ts","compare":"tsx packages/cli/src/compare.ts"},
+  "dependencies": {"@vitejs/plugin-react":"latest","vite":"latest","react":"latest","react-dom":"latest"},
+  "devDependencies": {"@types/react":"latest","@types/react-dom":"latest","tsx":"latest","typescript":"latest","vitest":"latest"}
+}

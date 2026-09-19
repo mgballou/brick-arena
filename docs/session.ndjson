@@ -1,0 +1,802 @@
+{"player":"Human","seed":20260919,"tick":30,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":60,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":90,"question":"target","options":[325.015384615386,240,80,400],"decision":{"kind":"target","x":325.015384615386},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":120,"question":"target","options":[314.41538461538494,240,80,400],"decision":{"kind":"target","x":314.41538461538494},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":150,"question":"target","options":[314.41538461538516,240,80,400],"decision":{"kind":"target","x":314.41538461538516},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":180,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":210,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":240,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":270,"question":"target","options":[369.78422090730464,240,80,400],"decision":{"kind":"target","x":369.78422090730464},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":300,"question":"target","options":[369.78422090730555,240,80,400],"decision":{"kind":"target","x":369.78422090730555},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":330,"question":"target","options":[369.78422090730623,240,80,400],"decision":{"kind":"target","x":369.78422090730623},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":360,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":390,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":420,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":450,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":480,"question":"target","options":[359.13636777425336,240,80,400],"decision":{"kind":"target","x":359.13636777425336},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":510,"question":"target","options":[359.1363677742527,240,80,400],"decision":{"kind":"target","x":359.1363677742527},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":540,"question":"target","options":[359.136367774252,240,80,400],"decision":{"kind":"target","x":359.136367774252},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":570,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":600,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":630,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":660,"question":"target","options":[361.55392726679815,240,80,400],"decision":{"kind":"target","x":361.55392726679815},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":690,"question":"target","options":[361.5539272667986,240,80,400],"decision":{"kind":"target","x":361.5539272667986},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":720,"question":"target","options":[361.55392726679906,240,80,400],"decision":{"kind":"target","x":361.55392726679906},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":750,"question":"target","options":[361.5539272667995,240,80,400],"decision":{"kind":"target","x":361.5539272667995},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":780,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":810,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":840,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":870,"question":"target","options":[361.1974922134116,240,80,400],"decision":{"kind":"target","x":361.1974922134116},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":900,"question":"target","options":[361.1974922134109,240,80,400],"decision":{"kind":"target","x":361.1974922134109},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":930,"question":"target","options":[361.1974922134102,240,80,400],"decision":{"kind":"target","x":361.1974922134102},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":960,"question":"target","options":[361.19749221340953,240,80,400],"decision":{"kind":"target","x":361.19749221340953},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":990,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1020,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1050,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1080,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1110,"question":"target","options":[361.2500435353736,240,80,400],"decision":{"kind":"target","x":361.2500435353736},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1140,"question":"target","options":[361.25004353537383,240,80,400],"decision":{"kind":"target","x":361.25004353537383},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1170,"question":"target","options":[361.25004353537406,240,80,400],"decision":{"kind":"target","x":361.25004353537406},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1200,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1230,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1260,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1290,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1320,"question":"target","options":[361.24229558406023,240,80,400],"decision":{"kind":"target","x":361.24229558406023},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1350,"question":"target","options":[361.2422955840607,240,80,400],"decision":{"kind":"target","x":361.2422955840607},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1380,"question":"target","options":[361.24229558406114,240,80,400],"decision":{"kind":"target","x":361.24229558406114},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1410,"question":"target","options":[361.2422955840616,240,80,400],"decision":{"kind":"target","x":361.2422955840616},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1440,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1470,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1500,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1530,"question":"target","options":[361.2434379102174,240,80,400],"decision":{"kind":"target","x":361.2434379102174},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1560,"question":"target","options":[361.2434379102169,240,80,400],"decision":{"kind":"target","x":361.2434379102169},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1590,"question":"target","options":[361.2434379102167,240,80,400],"decision":{"kind":"target","x":361.2434379102167},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1620,"question":"target","options":[361.24343791021624,240,80,400],"decision":{"kind":"target","x":361.24343791021624},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1650,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1680,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1710,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1740,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1770,"question":"target","options":[361.2432694903332,240,80,400],"decision":{"kind":"target","x":361.2432694903332},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1800,"question":"target","options":[361.2432694903339,240,80,400],"decision":{"kind":"target","x":361.2432694903339},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1830,"question":"target","options":[361.24326949033457,240,80,400],"decision":{"kind":"target","x":361.24326949033457},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1860,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1890,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1920,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1950,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":1980,"question":"target","options":[361.243294321484,240,80,400],"decision":{"kind":"target","x":361.243294321484},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2010,"question":"target","options":[361.24329432148465,240,80,400],"decision":{"kind":"target","x":361.24329432148465},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2040,"question":"target","options":[361.24329432148534,240,80,400],"decision":{"kind":"target","x":361.24329432148534},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2070,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2100,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2130,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2160,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2190,"question":"target","options":[361.2432906604988,240,80,400],"decision":{"kind":"target","x":361.2432906604988},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2220,"question":"target","options":[361.24329066049927,240,80,400],"decision":{"kind":"target","x":361.24329066049927},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2250,"question":"target","options":[361.2432906604995,240,80,400],"decision":{"kind":"target","x":361.2432906604995},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2280,"question":"target","options":[361.24329066049995,240,80,400],"decision":{"kind":"target","x":361.24329066049995},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2310,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2340,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2370,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2400,"question":"target","options":[361.24329120026323,240,80,400],"decision":{"kind":"target","x":361.24329120026323},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2430,"question":"target","options":[361.2432912002628,240,80,400],"decision":{"kind":"target","x":361.2432912002628},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2460,"question":"target","options":[361.2432912002623,240,80,400],"decision":{"kind":"target","x":361.2432912002623},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2490,"question":"target","options":[361.24329120026187,240,80,400],"decision":{"kind":"target","x":361.24329120026187},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2520,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2550,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2580,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2610,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2640,"question":"target","options":[361.2432911206756,240,80,400],"decision":{"kind":"target","x":361.2432911206756},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2670,"question":"target","options":[361.2432911206754,240,80,400],"decision":{"kind":"target","x":361.2432911206754},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2700,"question":"target","options":[361.24329112067494,240,80,400],"decision":{"kind":"target","x":361.24329112067494},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2730,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2760,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2790,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2820,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2850,"question":"target","options":[361.2432911324008,240,80,400],"decision":{"kind":"target","x":361.2432911324008},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2880,"question":"target","options":[361.2432911324006,240,80,400],"decision":{"kind":"target","x":361.2432911324006},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2910,"question":"target","options":[361.2432911324004,240,80,400],"decision":{"kind":"target","x":361.2432911324004},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2940,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":2970,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3000,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3030,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3060,"question":"target","options":[361.2432911306728,240,80,400],"decision":{"kind":"target","x":361.2432911306728},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3090,"question":"target","options":[361.24329113067324,240,80,400],"decision":{"kind":"target","x":361.24329113067324},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3120,"question":"target","options":[361.2432911306737,240,80,400],"decision":{"kind":"target","x":361.2432911306737},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3150,"question":"target","options":[361.24329113067415,240,80,400],"decision":{"kind":"target","x":361.24329113067415},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3180,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3210,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3240,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3270,"question":"target","options":[361.2432911309347,240,80,400],"decision":{"kind":"target","x":361.2432911309347},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3300,"question":"target","options":[361.24329113093563,240,80,400],"decision":{"kind":"target","x":361.24329113093563},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3330,"question":"target","options":[361.2432911309361,240,80,400],"decision":{"kind":"target","x":361.2432911309361},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3360,"question":"target","options":[361.243291130937,240,80,400],"decision":{"kind":"target","x":361.243291130937},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3390,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3420,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3450,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3480,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3510,"question":"target","options":[361.24329113090835,240,80,400],"decision":{"kind":"target","x":361.24329113090835},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3540,"question":"target","options":[361.24329113090903,240,80,400],"decision":{"kind":"target","x":361.24329113090903},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3570,"question":"target","options":[361.2432911309097,240,80,400],"decision":{"kind":"target","x":361.2432911309097},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3600,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3630,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3660,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3690,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3720,"question":"target","options":[361.24329113092426,240,80,400],"decision":{"kind":"target","x":361.24329113092426},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3750,"question":"target","options":[361.24329113092404,240,80,400],"decision":{"kind":"target","x":361.24329113092404},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3780,"question":"target","options":[361.2432911309236,240,80,400],"decision":{"kind":"target","x":361.2432911309236},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3810,"question":"target","options":[361.2432911309231,240,80,400],"decision":{"kind":"target","x":361.2432911309231},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3840,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3870,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3900,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3930,"question":"target","options":[361.24329113092153,240,80,400],"decision":{"kind":"target","x":361.24329113092153},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3960,"question":"target","options":[361.243291130922,240,80,400],"decision":{"kind":"target","x":361.243291130922},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":3990,"question":"target","options":[361.24329113092244,240,80,400],"decision":{"kind":"target","x":361.24329113092244},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4020,"question":"target","options":[361.2432911309229,240,80,400],"decision":{"kind":"target","x":361.2432911309229},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4050,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4080,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4110,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4140,"question":"target","options":[361.24329113092335,240,80,400],"decision":{"kind":"target","x":361.24329113092335},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4170,"question":"target","options":[361.24329113092335,240,80,400],"decision":{"kind":"target","x":361.24329113092335},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4200,"question":"target","options":[361.2432911309231,240,80,400],"decision":{"kind":"target","x":361.2432911309231},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4230,"question":"target","options":[361.2432911309231,240,80,400],"decision":{"kind":"target","x":361.2432911309231},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4260,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4290,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4320,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4350,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4380,"question":"target","options":[361.24329113092176,240,80,400],"decision":{"kind":"target","x":361.24329113092176},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4410,"question":"target","options":[361.2432911309222,240,80,400],"decision":{"kind":"target","x":361.2432911309222},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4440,"question":"target","options":[361.24329113092244,240,80,400],"decision":{"kind":"target","x":361.24329113092244},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4470,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4500,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4530,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4560,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4590,"question":"target","options":[361.24329113093404,240,80,400],"decision":{"kind":"target","x":361.24329113093404},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4620,"question":"target","options":[361.2432911309345,240,80,400],"decision":{"kind":"target","x":361.2432911309345},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4650,"question":"target","options":[361.24329113093495,240,80,400],"decision":{"kind":"target","x":361.24329113093495},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4680,"question":"target","options":[361.2432911309354,240,80,400],"decision":{"kind":"target","x":361.2432911309354},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4710,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4740,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4770,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4800,"question":"target","options":[361.2432911309347,240,80,400],"decision":{"kind":"target","x":361.2432911309347},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4830,"question":"target","options":[361.24329113093495,240,80,400],"decision":{"kind":"target","x":361.24329113093495},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4860,"question":"target","options":[361.2432911309352,240,80,400],"decision":{"kind":"target","x":361.2432911309352},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4890,"question":"target","options":[361.2432911309352,240,80,400],"decision":{"kind":"target","x":361.2432911309352},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4920,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4950,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":4980,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5010,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5040,"question":"target","options":[361.24329113093654,240,80,400],"decision":{"kind":"target","x":361.24329113093654},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5070,"question":"target","options":[361.2432911309361,240,80,400],"decision":{"kind":"target","x":361.2432911309361},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5100,"question":"target","options":[361.24329113093563,240,80,400],"decision":{"kind":"target","x":361.24329113093563},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5130,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5160,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5190,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5220,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5250,"question":"target","options":[361.24329113093336,240,80,400],"decision":{"kind":"target","x":361.24329113093336},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5280,"question":"target","options":[361.2432911309338,240,80,400],"decision":{"kind":"target","x":361.2432911309338},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5310,"question":"target","options":[361.2432911309347,240,80,400],"decision":{"kind":"target","x":361.2432911309347},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5340,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5370,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5400,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5430,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5460,"question":"target","options":[361.24329113094745,240,80,400],"decision":{"kind":"target","x":361.24329113094745},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5490,"question":"target","options":[361.24329113094745,240,80,400],"decision":{"kind":"target","x":361.24329113094745},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5520,"question":"target","options":[361.2432911309477,240,80,400],"decision":{"kind":"target","x":361.2432911309477},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5550,"question":"target","options":[361.2432911309479,240,80,400],"decision":{"kind":"target","x":361.2432911309479},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5580,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5610,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5640,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5670,"question":"target","options":[361.2432911309463,240,80,400],"decision":{"kind":"target","x":361.2432911309463},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5700,"question":"target","options":[361.24329113094655,240,80,400],"decision":{"kind":"target","x":361.24329113094655},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5730,"question":"target","options":[361.243291130947,240,80,400],"decision":{"kind":"target","x":361.243291130947},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5760,"question":"target","options":[361.24329113094745,240,80,400],"decision":{"kind":"target","x":361.24329113094745},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5790,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5820,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5850,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5880,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5910,"question":"target","options":[361.24329113094973,240,80,400],"decision":{"kind":"target","x":361.24329113094973},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5940,"question":"target","options":[361.24329113094905,240,80,400],"decision":{"kind":"target","x":361.24329113094905},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":5970,"question":"target","options":[361.24329113094836,240,80,400],"decision":{"kind":"target","x":361.24329113094836},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6000,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6030,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6060,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6090,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6120,"question":"target","options":[361.24329113093563,240,80,400],"decision":{"kind":"target","x":361.24329113093563},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6150,"question":"target","options":[361.24329113093563,240,80,400],"decision":{"kind":"target","x":361.24329113093563},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6180,"question":"target","options":[361.2432911309354,240,80,400],"decision":{"kind":"target","x":361.2432911309354},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6210,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6240,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6270,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6300,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6330,"question":"target","options":[361.24329113093495,240,80,400],"decision":{"kind":"target","x":361.24329113093495},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6360,"question":"target","options":[361.24329113093495,240,80,400],"decision":{"kind":"target","x":361.24329113093495},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6390,"question":"target","options":[361.2432911309352,240,80,400],"decision":{"kind":"target","x":361.2432911309352},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6420,"question":"target","options":[361.2432911309352,240,80,400],"decision":{"kind":"target","x":361.2432911309352},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6450,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6480,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6510,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6540,"question":"target","options":[361.243291130937,240,80,400],"decision":{"kind":"target","x":361.243291130937},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6570,"question":"target","options":[361.24329113093654,240,80,400],"decision":{"kind":"target","x":361.24329113093654},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6600,"question":"target","options":[361.2432911309361,240,80,400],"decision":{"kind":"target","x":361.2432911309361},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6630,"question":"target","options":[361.24329113093563,240,80,400],"decision":{"kind":"target","x":361.24329113093563},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6660,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6690,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6720,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6750,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6780,"question":"target","options":[361.24329113093336,240,80,400],"decision":{"kind":"target","x":361.24329113093336},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6810,"question":"target","options":[361.24329113093404,240,80,400],"decision":{"kind":"target","x":361.24329113093404},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6840,"question":"target","options":[361.2432911309347,240,80,400],"decision":{"kind":"target","x":361.2432911309347},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6870,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6900,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6930,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6960,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":6990,"question":"target","options":[361.24329113094745,240,80,400],"decision":{"kind":"target","x":361.24329113094745},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7020,"question":"target","options":[361.24329113094745,240,80,400],"decision":{"kind":"target","x":361.24329113094745},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7050,"question":"target","options":[361.2432911309477,240,80,400],"decision":{"kind":"target","x":361.2432911309477},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7080,"question":"target","options":[361.2432911309479,240,80,400],"decision":{"kind":"target","x":361.2432911309479},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7110,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7140,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7170,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7200,"question":"target","options":[361.2432911309463,240,80,400],"decision":{"kind":"target","x":361.2432911309463},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7230,"question":"target","options":[361.2432911309468,240,80,400],"decision":{"kind":"target","x":361.2432911309468},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7260,"question":"target","options":[361.2432911309472,240,80,400],"decision":{"kind":"target","x":361.2432911309472},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7290,"question":"target","options":[361.24329113094745,240,80,400],"decision":{"kind":"target","x":361.24329113094745},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7320,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7350,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7380,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7410,"question":"target","options":[361.2432911309504,240,80,400],"decision":{"kind":"target","x":361.2432911309504},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7440,"question":"target","options":[361.24329113094973,240,80,400],"decision":{"kind":"target","x":361.24329113094973},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7470,"question":"target","options":[361.2432911309488,240,80,400],"decision":{"kind":"target","x":361.2432911309488},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7500,"question":"target","options":[361.24329113094814,240,80,400],"decision":{"kind":"target","x":361.24329113094814},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7530,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7560,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7590,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7620,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7650,"question":"target","options":[361.24329113093745,240,80,400],"decision":{"kind":"target","x":361.24329113093745},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7680,"question":"target","options":[361.24329113093654,240,80,400],"decision":{"kind":"target","x":361.24329113093654},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7710,"question":"target","options":[361.24329113093586,240,80,400],"decision":{"kind":"target","x":361.24329113093586},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7740,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7770,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7800,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7830,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7860,"question":"target","options":[361.24329113092426,240,80,400],"decision":{"kind":"target","x":361.24329113092426},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7890,"question":"target","options":[361.2432911309238,240,80,400],"decision":{"kind":"target","x":361.2432911309238},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7920,"question":"target","options":[361.24329113092335,240,80,400],"decision":{"kind":"target","x":361.24329113092335},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7950,"question":"target","options":[361.2432911309229,240,80,400],"decision":{"kind":"target","x":361.2432911309229},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":7980,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8010,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8040,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8070,"question":"target","options":[361.24329113092335,240,80,400],"decision":{"kind":"target","x":361.24329113092335},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8100,"question":"target","options":[361.24329113092335,240,80,400],"decision":{"kind":"target","x":361.24329113092335},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8130,"question":"target","options":[361.2432911309231,240,80,400],"decision":{"kind":"target","x":361.2432911309231},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8160,"question":"target","options":[361.2432911309229,240,80,400],"decision":{"kind":"target","x":361.2432911309229},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8190,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8220,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8250,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8280,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8310,"question":"target","options":[361.24329113092335,240,80,400],"decision":{"kind":"target","x":361.24329113092335},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8340,"question":"target","options":[361.2432911309231,240,80,400],"decision":{"kind":"target","x":361.2432911309231},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8370,"question":"target","options":[361.2432911309231,240,80,400],"decision":{"kind":"target","x":361.2432911309231},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8400,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8430,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8460,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8490,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8520,"question":"target","options":[361.24329113092176,240,80,400],"decision":{"kind":"target","x":361.24329113092176},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8550,"question":"target","options":[361.243291130922,240,80,400],"decision":{"kind":"target","x":361.243291130922},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8580,"question":"target","options":[361.24329113092244,240,80,400],"decision":{"kind":"target","x":361.24329113092244},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8610,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8640,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8670,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8700,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8730,"question":"target","options":[361.24329113093404,240,80,400],"decision":{"kind":"target","x":361.24329113093404},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8760,"question":"target","options":[361.2432911309345,240,80,400],"decision":{"kind":"target","x":361.2432911309345},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8790,"question":"target","options":[361.24329113093495,240,80,400],"decision":{"kind":"target","x":361.24329113093495},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8820,"question":"target","options":[361.2432911309354,240,80,400],"decision":{"kind":"target","x":361.2432911309354},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8850,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8880,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8910,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8940,"question":"target","options":[361.2432911309347,240,80,400],"decision":{"kind":"target","x":361.2432911309347},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":8970,"question":"target","options":[361.24329113093495,240,80,400],"decision":{"kind":"target","x":361.24329113093495},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9000,"question":"target","options":[361.2432911309352,240,80,400],"decision":{"kind":"target","x":361.2432911309352},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9030,"question":"target","options":[361.2432911309352,240,80,400],"decision":{"kind":"target","x":361.2432911309352},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9060,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9090,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9120,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9150,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9180,"question":"target","options":[361.24329113093654,240,80,400],"decision":{"kind":"target","x":361.24329113093654},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9210,"question":"target","options":[361.2432911309361,240,80,400],"decision":{"kind":"target","x":361.2432911309361},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9240,"question":"target","options":[361.24329113093563,240,80,400],"decision":{"kind":"target","x":361.24329113093563},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9270,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9300,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9330,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9360,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9390,"question":"target","options":[361.24329113093313,240,80,400],"decision":{"kind":"target","x":361.24329113093313},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9420,"question":"target","options":[361.2432911309338,240,80,400],"decision":{"kind":"target","x":361.2432911309338},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9450,"question":"target","options":[361.2432911309347,240,80,400],"decision":{"kind":"target","x":361.2432911309347},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9480,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9510,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9540,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9570,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9600,"question":"target","options":[361.24329113094745,240,80,400],"decision":{"kind":"target","x":361.24329113094745},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9630,"question":"target","options":[361.24329113094745,240,80,400],"decision":{"kind":"target","x":361.24329113094745},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9660,"question":"target","options":[361.2432911309477,240,80,400],"decision":{"kind":"target","x":361.2432911309477},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9690,"question":"target","options":[361.2432911309479,240,80,400],"decision":{"kind":"target","x":361.2432911309479},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9720,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9750,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9780,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9810,"question":"target","options":[361.2432911309461,240,80,400],"decision":{"kind":"target","x":361.2432911309461},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9840,"question":"target","options":[361.24329113094655,240,80,400],"decision":{"kind":"target","x":361.24329113094655},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9870,"question":"target","options":[361.243291130947,240,80,400],"decision":{"kind":"target","x":361.243291130947},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9900,"question":"target","options":[361.24329113094745,240,80,400],"decision":{"kind":"target","x":361.24329113094745},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9930,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9960,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":9990,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10020,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10050,"question":"target","options":[361.24329113094973,240,80,400],"decision":{"kind":"target","x":361.24329113094973},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10080,"question":"target","options":[361.24329113094905,240,80,400],"decision":{"kind":"target","x":361.24329113094905},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10110,"question":"target","options":[361.24329113094836,240,80,400],"decision":{"kind":"target","x":361.24329113094836},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10140,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10170,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10200,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10230,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10260,"question":"target","options":[361.24329113093563,240,80,400],"decision":{"kind":"target","x":361.24329113093563},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10290,"question":"target","options":[361.24329113093563,240,80,400],"decision":{"kind":"target","x":361.24329113093563},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10320,"question":"target","options":[361.2432911309354,240,80,400],"decision":{"kind":"target","x":361.2432911309354},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10350,"question":"target","options":[361.2432911309352,240,80,400],"decision":{"kind":"target","x":361.2432911309352},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10380,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10410,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10440,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10470,"question":"target","options":[361.24329113093677,240,80,400],"decision":{"kind":"target","x":361.24329113093677},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10500,"question":"target","options":[361.2432911309363,240,80,400],"decision":{"kind":"target","x":361.2432911309363},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10530,"question":"target","options":[361.24329113093586,240,80,400],"decision":{"kind":"target","x":361.24329113093586},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10560,"question":"target","options":[361.24329113093563,240,80,400],"decision":{"kind":"target","x":361.24329113093563},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10590,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10620,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10650,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10680,"question":"target","options":[361.2432911309327,240,80,400],"decision":{"kind":"target","x":361.2432911309327},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10710,"question":"target","options":[361.24329113093336,240,80,400],"decision":{"kind":"target","x":361.24329113093336},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10740,"question":"target","options":[361.24329113093427,240,80,400],"decision":{"kind":"target","x":361.24329113093427},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10770,"question":"target","options":[361.24329113093495,240,80,400],"decision":{"kind":"target","x":361.24329113093495},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10800,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10830,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10860,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10890,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10920,"question":"target","options":[361.24329113094564,240,80,400],"decision":{"kind":"target","x":361.24329113094564},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10950,"question":"target","options":[361.24329113094655,240,80,400],"decision":{"kind":"target","x":361.24329113094655},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":10980,"question":"target","options":[361.2432911309472,240,80,400],"decision":{"kind":"target","x":361.2432911309472},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11010,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11040,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11070,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11100,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11130,"question":"target","options":[361.2432911309588,240,80,400],"decision":{"kind":"target","x":361.2432911309588},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11160,"question":"target","options":[361.2432911309593,240,80,400],"decision":{"kind":"target","x":361.2432911309593},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11190,"question":"target","options":[361.24329113095973,240,80,400],"decision":{"kind":"target","x":361.24329113095973},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11220,"question":"target","options":[361.2432911309602,240,80,400],"decision":{"kind":"target","x":361.2432911309602},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11250,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11280,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11310,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11340,"question":"target","options":[361.24329113095973,240,80,400],"decision":{"kind":"target","x":361.24329113095973},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11370,"question":"target","options":[361.24329113095973,240,80,400],"decision":{"kind":"target","x":361.24329113095973},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11400,"question":"target","options":[361.24329113095996,240,80,400],"decision":{"kind":"target","x":361.24329113095996},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11430,"question":"target","options":[361.2432911309602,240,80,400],"decision":{"kind":"target","x":361.2432911309602},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11460,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11490,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11520,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11550,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11580,"question":"target","options":[361.24329113095973,240,80,400],"decision":{"kind":"target","x":361.24329113095973},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11610,"question":"target","options":[361.24329113095996,240,80,400],"decision":{"kind":"target","x":361.24329113095996},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11640,"question":"target","options":[361.24329113095996,240,80,400],"decision":{"kind":"target","x":361.24329113095996},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11670,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11700,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11730,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11760,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11790,"question":"target","options":[361.2432911309613,240,80,400],"decision":{"kind":"target","x":361.2432911309613},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11820,"question":"target","options":[361.2432911309611,240,80,400],"decision":{"kind":"target","x":361.2432911309611},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11850,"question":"target","options":[361.24329113096064,240,80,400],"decision":{"kind":"target","x":361.24329113096064},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11880,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11910,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11940,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":11970,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":12000,"question":"target","options":[361.24329113094905,240,80,400],"decision":{"kind":"target","x":361.24329113094905},"ms":180,"outcome":"in-flight"}
+{"player":"Human","seed":20260919,"tick":12000,"question":"target","options":[],"decision":{"kind":"target","x":361.24329113094905},"ms":180,"outcome":"time-limit"}
+{"player":"Deterministic bot","seed":20260919,"tick":30,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":60,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":90,"question":"target","options":[325.015384615386,240,80,400],"decision":{"kind":"target","x":325.015384615386},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":120,"question":"target","options":[314.41538461538494,240,80,400],"decision":{"kind":"target","x":314.41538461538494},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":150,"question":"target","options":[314.41538461538516,240,80,400],"decision":{"kind":"target","x":314.41538461538516},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":180,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":210,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":240,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":270,"question":"target","options":[369.78422090730464,240,80,400],"decision":{"kind":"target","x":369.78422090730464},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":300,"question":"target","options":[369.78422090730555,240,80,400],"decision":{"kind":"target","x":369.78422090730555},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":330,"question":"target","options":[369.78422090730623,240,80,400],"decision":{"kind":"target","x":369.78422090730623},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":360,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":390,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":420,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":450,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":480,"question":"target","options":[359.13636777425336,240,80,400],"decision":{"kind":"target","x":359.13636777425336},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":510,"question":"target","options":[359.1363677742527,240,80,400],"decision":{"kind":"target","x":359.1363677742527},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":540,"question":"target","options":[359.136367774252,240,80,400],"decision":{"kind":"target","x":359.136367774252},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":570,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":600,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":630,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":660,"question":"target","options":[361.55392726679815,240,80,400],"decision":{"kind":"target","x":361.55392726679815},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":690,"question":"target","options":[361.5539272667986,240,80,400],"decision":{"kind":"target","x":361.5539272667986},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":720,"question":"target","options":[361.55392726679906,240,80,400],"decision":{"kind":"target","x":361.55392726679906},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":750,"question":"target","options":[361.5539272667995,240,80,400],"decision":{"kind":"target","x":361.5539272667995},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":780,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":810,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":840,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":870,"question":"target","options":[361.1974922134116,240,80,400],"decision":{"kind":"target","x":361.1974922134116},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":900,"question":"target","options":[361.1974922134109,240,80,400],"decision":{"kind":"target","x":361.1974922134109},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":930,"question":"target","options":[361.1974922134102,240,80,400],"decision":{"kind":"target","x":361.1974922134102},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":960,"question":"target","options":[361.19749221340953,240,80,400],"decision":{"kind":"target","x":361.19749221340953},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":990,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1020,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1050,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1080,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1110,"question":"target","options":[361.2500435353736,240,80,400],"decision":{"kind":"target","x":361.2500435353736},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1140,"question":"target","options":[361.25004353537383,240,80,400],"decision":{"kind":"target","x":361.25004353537383},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1170,"question":"target","options":[361.25004353537406,240,80,400],"decision":{"kind":"target","x":361.25004353537406},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1200,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1230,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1260,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1290,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1320,"question":"target","options":[361.24229558406023,240,80,400],"decision":{"kind":"target","x":361.24229558406023},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1350,"question":"target","options":[361.2422955840607,240,80,400],"decision":{"kind":"target","x":361.2422955840607},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1380,"question":"target","options":[361.24229558406114,240,80,400],"decision":{"kind":"target","x":361.24229558406114},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1410,"question":"target","options":[361.2422955840616,240,80,400],"decision":{"kind":"target","x":361.2422955840616},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1440,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1470,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1500,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1530,"question":"target","options":[361.2434379102174,240,80,400],"decision":{"kind":"target","x":361.2434379102174},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1560,"question":"target","options":[361.2434379102169,240,80,400],"decision":{"kind":"target","x":361.2434379102169},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1590,"question":"target","options":[361.2434379102167,240,80,400],"decision":{"kind":"target","x":361.2434379102167},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1620,"question":"target","options":[361.24343791021624,240,80,400],"decision":{"kind":"target","x":361.24343791021624},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1650,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1680,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1710,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1740,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1770,"question":"target","options":[361.2432694903332,240,80,400],"decision":{"kind":"target","x":361.2432694903332},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1800,"question":"target","options":[361.2432694903339,240,80,400],"decision":{"kind":"target","x":361.2432694903339},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1830,"question":"target","options":[361.24326949033457,240,80,400],"decision":{"kind":"target","x":361.24326949033457},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1860,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1890,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1920,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1950,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":1980,"question":"target","options":[361.243294321484,240,80,400],"decision":{"kind":"target","x":361.243294321484},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2010,"question":"target","options":[361.24329432148465,240,80,400],"decision":{"kind":"target","x":361.24329432148465},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2040,"question":"target","options":[361.24329432148534,240,80,400],"decision":{"kind":"target","x":361.24329432148534},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2070,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2100,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2130,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2160,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2190,"question":"target","options":[361.2432906604988,240,80,400],"decision":{"kind":"target","x":361.2432906604988},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2220,"question":"target","options":[361.24329066049927,240,80,400],"decision":{"kind":"target","x":361.24329066049927},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2250,"question":"target","options":[361.2432906604995,240,80,400],"decision":{"kind":"target","x":361.2432906604995},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2280,"question":"target","options":[361.24329066049995,240,80,400],"decision":{"kind":"target","x":361.24329066049995},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2310,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2340,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2370,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2400,"question":"target","options":[361.24329120026323,240,80,400],"decision":{"kind":"target","x":361.24329120026323},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2430,"question":"target","options":[361.2432912002628,240,80,400],"decision":{"kind":"target","x":361.2432912002628},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2460,"question":"target","options":[361.2432912002623,240,80,400],"decision":{"kind":"target","x":361.2432912002623},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2490,"question":"target","options":[361.24329120026187,240,80,400],"decision":{"kind":"target","x":361.24329120026187},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2520,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2550,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2580,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2610,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2640,"question":"target","options":[361.2432911206756,240,80,400],"decision":{"kind":"target","x":361.2432911206756},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2670,"question":"target","options":[361.2432911206754,240,80,400],"decision":{"kind":"target","x":361.2432911206754},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2700,"question":"target","options":[361.24329112067494,240,80,400],"decision":{"kind":"target","x":361.24329112067494},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2730,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2760,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2790,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2820,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2850,"question":"target","options":[361.2432911324008,240,80,400],"decision":{"kind":"target","x":361.2432911324008},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2880,"question":"target","options":[361.2432911324006,240,80,400],"decision":{"kind":"target","x":361.2432911324006},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2910,"question":"target","options":[361.2432911324004,240,80,400],"decision":{"kind":"target","x":361.2432911324004},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2940,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":2970,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3000,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3030,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3060,"question":"target","options":[361.2432911306728,240,80,400],"decision":{"kind":"target","x":361.2432911306728},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3090,"question":"target","options":[361.24329113067324,240,80,400],"decision":{"kind":"target","x":361.24329113067324},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3120,"question":"target","options":[361.2432911306737,240,80,400],"decision":{"kind":"target","x":361.2432911306737},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3150,"question":"target","options":[361.24329113067415,240,80,400],"decision":{"kind":"target","x":361.24329113067415},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3180,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3210,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3240,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3270,"question":"target","options":[361.2432911309347,240,80,400],"decision":{"kind":"target","x":361.2432911309347},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3300,"question":"target","options":[361.24329113093563,240,80,400],"decision":{"kind":"target","x":361.24329113093563},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3330,"question":"target","options":[361.2432911309361,240,80,400],"decision":{"kind":"target","x":361.2432911309361},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3360,"question":"target","options":[361.243291130937,240,80,400],"decision":{"kind":"target","x":361.243291130937},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3390,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3420,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3450,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3480,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3510,"question":"target","options":[361.24329113090835,240,80,400],"decision":{"kind":"target","x":361.24329113090835},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3540,"question":"target","options":[361.24329113090903,240,80,400],"decision":{"kind":"target","x":361.24329113090903},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3570,"question":"target","options":[361.2432911309097,240,80,400],"decision":{"kind":"target","x":361.2432911309097},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3600,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3630,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3660,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3690,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3720,"question":"target","options":[361.24329113092426,240,80,400],"decision":{"kind":"target","x":361.24329113092426},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3750,"question":"target","options":[361.24329113092404,240,80,400],"decision":{"kind":"target","x":361.24329113092404},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3780,"question":"target","options":[361.2432911309236,240,80,400],"decision":{"kind":"target","x":361.2432911309236},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3810,"question":"target","options":[361.2432911309231,240,80,400],"decision":{"kind":"target","x":361.2432911309231},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3840,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3870,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3900,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3930,"question":"target","options":[361.24329113092153,240,80,400],"decision":{"kind":"target","x":361.24329113092153},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3960,"question":"target","options":[361.243291130922,240,80,400],"decision":{"kind":"target","x":361.243291130922},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":3990,"question":"target","options":[361.24329113092244,240,80,400],"decision":{"kind":"target","x":361.24329113092244},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4020,"question":"target","options":[361.2432911309229,240,80,400],"decision":{"kind":"target","x":361.2432911309229},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4050,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4080,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4110,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4140,"question":"target","options":[361.24329113092335,240,80,400],"decision":{"kind":"target","x":361.24329113092335},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4170,"question":"target","options":[361.24329113092335,240,80,400],"decision":{"kind":"target","x":361.24329113092335},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4200,"question":"target","options":[361.2432911309231,240,80,400],"decision":{"kind":"target","x":361.2432911309231},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4230,"question":"target","options":[361.2432911309231,240,80,400],"decision":{"kind":"target","x":361.2432911309231},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4260,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4290,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4320,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4350,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4380,"question":"target","options":[361.24329113092176,240,80,400],"decision":{"kind":"target","x":361.24329113092176},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4410,"question":"target","options":[361.2432911309222,240,80,400],"decision":{"kind":"target","x":361.2432911309222},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4440,"question":"target","options":[361.24329113092244,240,80,400],"decision":{"kind":"target","x":361.24329113092244},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4470,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4500,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4530,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4560,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4590,"question":"target","options":[361.24329113093404,240,80,400],"decision":{"kind":"target","x":361.24329113093404},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4620,"question":"target","options":[361.2432911309345,240,80,400],"decision":{"kind":"target","x":361.2432911309345},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4650,"question":"target","options":[361.24329113093495,240,80,400],"decision":{"kind":"target","x":361.24329113093495},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4680,"question":"target","options":[361.2432911309354,240,80,400],"decision":{"kind":"target","x":361.2432911309354},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4710,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4740,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4770,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4800,"question":"target","options":[361.2432911309347,240,80,400],"decision":{"kind":"target","x":361.2432911309347},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4830,"question":"target","options":[361.24329113093495,240,80,400],"decision":{"kind":"target","x":361.24329113093495},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4860,"question":"target","options":[361.2432911309352,240,80,400],"decision":{"kind":"target","x":361.2432911309352},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4890,"question":"target","options":[361.2432911309352,240,80,400],"decision":{"kind":"target","x":361.2432911309352},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4920,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4950,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":4980,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5010,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5040,"question":"target","options":[361.24329113093654,240,80,400],"decision":{"kind":"target","x":361.24329113093654},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5070,"question":"target","options":[361.2432911309361,240,80,400],"decision":{"kind":"target","x":361.2432911309361},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5100,"question":"target","options":[361.24329113093563,240,80,400],"decision":{"kind":"target","x":361.24329113093563},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5130,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5160,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5190,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5220,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5250,"question":"target","options":[361.24329113093336,240,80,400],"decision":{"kind":"target","x":361.24329113093336},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5280,"question":"target","options":[361.2432911309338,240,80,400],"decision":{"kind":"target","x":361.2432911309338},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5310,"question":"target","options":[361.2432911309347,240,80,400],"decision":{"kind":"target","x":361.2432911309347},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5340,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5370,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5400,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5430,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5460,"question":"target","options":[361.24329113094745,240,80,400],"decision":{"kind":"target","x":361.24329113094745},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5490,"question":"target","options":[361.24329113094745,240,80,400],"decision":{"kind":"target","x":361.24329113094745},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5520,"question":"target","options":[361.2432911309477,240,80,400],"decision":{"kind":"target","x":361.2432911309477},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5550,"question":"target","options":[361.2432911309479,240,80,400],"decision":{"kind":"target","x":361.2432911309479},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5580,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5610,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5640,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5670,"question":"target","options":[361.2432911309463,240,80,400],"decision":{"kind":"target","x":361.2432911309463},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5700,"question":"target","options":[361.24329113094655,240,80,400],"decision":{"kind":"target","x":361.24329113094655},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5730,"question":"target","options":[361.243291130947,240,80,400],"decision":{"kind":"target","x":361.243291130947},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5760,"question":"target","options":[361.24329113094745,240,80,400],"decision":{"kind":"target","x":361.24329113094745},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5790,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5820,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5850,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5880,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5910,"question":"target","options":[361.24329113094973,240,80,400],"decision":{"kind":"target","x":361.24329113094973},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5940,"question":"target","options":[361.24329113094905,240,80,400],"decision":{"kind":"target","x":361.24329113094905},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":5970,"question":"target","options":[361.24329113094836,240,80,400],"decision":{"kind":"target","x":361.24329113094836},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6000,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6030,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6060,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6090,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6120,"question":"target","options":[361.24329113093563,240,80,400],"decision":{"kind":"target","x":361.24329113093563},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6150,"question":"target","options":[361.24329113093563,240,80,400],"decision":{"kind":"target","x":361.24329113093563},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6180,"question":"target","options":[361.2432911309354,240,80,400],"decision":{"kind":"target","x":361.2432911309354},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6210,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6240,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6270,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6300,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6330,"question":"target","options":[361.24329113093495,240,80,400],"decision":{"kind":"target","x":361.24329113093495},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6360,"question":"target","options":[361.24329113093495,240,80,400],"decision":{"kind":"target","x":361.24329113093495},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6390,"question":"target","options":[361.2432911309352,240,80,400],"decision":{"kind":"target","x":361.2432911309352},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6420,"question":"target","options":[361.2432911309352,240,80,400],"decision":{"kind":"target","x":361.2432911309352},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6450,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6480,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6510,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6540,"question":"target","options":[361.243291130937,240,80,400],"decision":{"kind":"target","x":361.243291130937},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6570,"question":"target","options":[361.24329113093654,240,80,400],"decision":{"kind":"target","x":361.24329113093654},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6600,"question":"target","options":[361.2432911309361,240,80,400],"decision":{"kind":"target","x":361.2432911309361},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6630,"question":"target","options":[361.24329113093563,240,80,400],"decision":{"kind":"target","x":361.24329113093563},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6660,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6690,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6720,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6750,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6780,"question":"target","options":[361.24329113093336,240,80,400],"decision":{"kind":"target","x":361.24329113093336},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6810,"question":"target","options":[361.24329113093404,240,80,400],"decision":{"kind":"target","x":361.24329113093404},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6840,"question":"target","options":[361.2432911309347,240,80,400],"decision":{"kind":"target","x":361.2432911309347},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6870,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6900,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6930,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6960,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":6990,"question":"target","options":[361.24329113094745,240,80,400],"decision":{"kind":"target","x":361.24329113094745},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7020,"question":"target","options":[361.24329113094745,240,80,400],"decision":{"kind":"target","x":361.24329113094745},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7050,"question":"target","options":[361.2432911309477,240,80,400],"decision":{"kind":"target","x":361.2432911309477},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7080,"question":"target","options":[361.2432911309479,240,80,400],"decision":{"kind":"target","x":361.2432911309479},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7110,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7140,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7170,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7200,"question":"target","options":[361.2432911309463,240,80,400],"decision":{"kind":"target","x":361.2432911309463},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7230,"question":"target","options":[361.2432911309468,240,80,400],"decision":{"kind":"target","x":361.2432911309468},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7260,"question":"target","options":[361.2432911309472,240,80,400],"decision":{"kind":"target","x":361.2432911309472},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7290,"question":"target","options":[361.24329113094745,240,80,400],"decision":{"kind":"target","x":361.24329113094745},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7320,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7350,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7380,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7410,"question":"target","options":[361.2432911309504,240,80,400],"decision":{"kind":"target","x":361.2432911309504},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7440,"question":"target","options":[361.24329113094973,240,80,400],"decision":{"kind":"target","x":361.24329113094973},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7470,"question":"target","options":[361.2432911309488,240,80,400],"decision":{"kind":"target","x":361.2432911309488},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7500,"question":"target","options":[361.24329113094814,240,80,400],"decision":{"kind":"target","x":361.24329113094814},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7530,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7560,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7590,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7620,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7650,"question":"target","options":[361.24329113093745,240,80,400],"decision":{"kind":"target","x":361.24329113093745},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7680,"question":"target","options":[361.24329113093654,240,80,400],"decision":{"kind":"target","x":361.24329113093654},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7710,"question":"target","options":[361.24329113093586,240,80,400],"decision":{"kind":"target","x":361.24329113093586},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7740,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7770,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7800,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7830,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7860,"question":"target","options":[361.24329113092426,240,80,400],"decision":{"kind":"target","x":361.24329113092426},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7890,"question":"target","options":[361.2432911309238,240,80,400],"decision":{"kind":"target","x":361.2432911309238},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7920,"question":"target","options":[361.24329113092335,240,80,400],"decision":{"kind":"target","x":361.24329113092335},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7950,"question":"target","options":[361.2432911309229,240,80,400],"decision":{"kind":"target","x":361.2432911309229},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":7980,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8010,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8040,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8070,"question":"target","options":[361.24329113092335,240,80,400],"decision":{"kind":"target","x":361.24329113092335},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8100,"question":"target","options":[361.24329113092335,240,80,400],"decision":{"kind":"target","x":361.24329113092335},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8130,"question":"target","options":[361.2432911309231,240,80,400],"decision":{"kind":"target","x":361.2432911309231},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8160,"question":"target","options":[361.2432911309229,240,80,400],"decision":{"kind":"target","x":361.2432911309229},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8190,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8220,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8250,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8280,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8310,"question":"target","options":[361.24329113092335,240,80,400],"decision":{"kind":"target","x":361.24329113092335},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8340,"question":"target","options":[361.2432911309231,240,80,400],"decision":{"kind":"target","x":361.2432911309231},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8370,"question":"target","options":[361.2432911309231,240,80,400],"decision":{"kind":"target","x":361.2432911309231},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8400,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8430,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8460,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8490,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8520,"question":"target","options":[361.24329113092176,240,80,400],"decision":{"kind":"target","x":361.24329113092176},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8550,"question":"target","options":[361.243291130922,240,80,400],"decision":{"kind":"target","x":361.243291130922},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8580,"question":"target","options":[361.24329113092244,240,80,400],"decision":{"kind":"target","x":361.24329113092244},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8610,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8640,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8670,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8700,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8730,"question":"target","options":[361.24329113093404,240,80,400],"decision":{"kind":"target","x":361.24329113093404},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8760,"question":"target","options":[361.2432911309345,240,80,400],"decision":{"kind":"target","x":361.2432911309345},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8790,"question":"target","options":[361.24329113093495,240,80,400],"decision":{"kind":"target","x":361.24329113093495},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8820,"question":"target","options":[361.2432911309354,240,80,400],"decision":{"kind":"target","x":361.2432911309354},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8850,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8880,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8910,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8940,"question":"target","options":[361.2432911309347,240,80,400],"decision":{"kind":"target","x":361.2432911309347},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":8970,"question":"target","options":[361.24329113093495,240,80,400],"decision":{"kind":"target","x":361.24329113093495},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9000,"question":"target","options":[361.2432911309352,240,80,400],"decision":{"kind":"target","x":361.2432911309352},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9030,"question":"target","options":[361.2432911309352,240,80,400],"decision":{"kind":"target","x":361.2432911309352},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9060,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9090,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9120,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9150,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9180,"question":"target","options":[361.24329113093654,240,80,400],"decision":{"kind":"target","x":361.24329113093654},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9210,"question":"target","options":[361.2432911309361,240,80,400],"decision":{"kind":"target","x":361.2432911309361},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9240,"question":"target","options":[361.24329113093563,240,80,400],"decision":{"kind":"target","x":361.24329113093563},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9270,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9300,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9330,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9360,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9390,"question":"target","options":[361.24329113093313,240,80,400],"decision":{"kind":"target","x":361.24329113093313},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9420,"question":"target","options":[361.2432911309338,240,80,400],"decision":{"kind":"target","x":361.2432911309338},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9450,"question":"target","options":[361.2432911309347,240,80,400],"decision":{"kind":"target","x":361.2432911309347},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9480,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9510,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9540,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9570,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9600,"question":"target","options":[361.24329113094745,240,80,400],"decision":{"kind":"target","x":361.24329113094745},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9630,"question":"target","options":[361.24329113094745,240,80,400],"decision":{"kind":"target","x":361.24329113094745},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9660,"question":"target","options":[361.2432911309477,240,80,400],"decision":{"kind":"target","x":361.2432911309477},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9690,"question":"target","options":[361.2432911309479,240,80,400],"decision":{"kind":"target","x":361.2432911309479},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9720,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9750,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9780,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9810,"question":"target","options":[361.2432911309461,240,80,400],"decision":{"kind":"target","x":361.2432911309461},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9840,"question":"target","options":[361.24329113094655,240,80,400],"decision":{"kind":"target","x":361.24329113094655},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9870,"question":"target","options":[361.243291130947,240,80,400],"decision":{"kind":"target","x":361.243291130947},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9900,"question":"target","options":[361.24329113094745,240,80,400],"decision":{"kind":"target","x":361.24329113094745},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9930,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9960,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":9990,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10020,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10050,"question":"target","options":[361.24329113094973,240,80,400],"decision":{"kind":"target","x":361.24329113094973},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10080,"question":"target","options":[361.24329113094905,240,80,400],"decision":{"kind":"target","x":361.24329113094905},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10110,"question":"target","options":[361.24329113094836,240,80,400],"decision":{"kind":"target","x":361.24329113094836},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10140,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10170,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10200,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10230,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10260,"question":"target","options":[361.24329113093563,240,80,400],"decision":{"kind":"target","x":361.24329113093563},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10290,"question":"target","options":[361.24329113093563,240,80,400],"decision":{"kind":"target","x":361.24329113093563},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10320,"question":"target","options":[361.2432911309354,240,80,400],"decision":{"kind":"target","x":361.2432911309354},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10350,"question":"target","options":[361.2432911309352,240,80,400],"decision":{"kind":"target","x":361.2432911309352},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10380,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10410,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10440,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10470,"question":"target","options":[361.24329113093677,240,80,400],"decision":{"kind":"target","x":361.24329113093677},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10500,"question":"target","options":[361.2432911309363,240,80,400],"decision":{"kind":"target","x":361.2432911309363},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10530,"question":"target","options":[361.24329113093586,240,80,400],"decision":{"kind":"target","x":361.24329113093586},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10560,"question":"target","options":[361.24329113093563,240,80,400],"decision":{"kind":"target","x":361.24329113093563},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10590,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10620,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10650,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10680,"question":"target","options":[361.2432911309327,240,80,400],"decision":{"kind":"target","x":361.2432911309327},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10710,"question":"target","options":[361.24329113093336,240,80,400],"decision":{"kind":"target","x":361.24329113093336},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10740,"question":"target","options":[361.24329113093427,240,80,400],"decision":{"kind":"target","x":361.24329113093427},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10770,"question":"target","options":[361.24329113093495,240,80,400],"decision":{"kind":"target","x":361.24329113093495},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10800,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10830,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10860,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10890,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10920,"question":"target","options":[361.24329113094564,240,80,400],"decision":{"kind":"target","x":361.24329113094564},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10950,"question":"target","options":[361.24329113094655,240,80,400],"decision":{"kind":"target","x":361.24329113094655},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":10980,"question":"target","options":[361.2432911309472,240,80,400],"decision":{"kind":"target","x":361.2432911309472},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11010,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11040,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11070,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11100,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11130,"question":"target","options":[361.2432911309588,240,80,400],"decision":{"kind":"target","x":361.2432911309588},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11160,"question":"target","options":[361.2432911309593,240,80,400],"decision":{"kind":"target","x":361.2432911309593},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11190,"question":"target","options":[361.24329113095973,240,80,400],"decision":{"kind":"target","x":361.24329113095973},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11220,"question":"target","options":[361.2432911309602,240,80,400],"decision":{"kind":"target","x":361.2432911309602},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11250,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11280,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11310,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11340,"question":"target","options":[361.24329113095973,240,80,400],"decision":{"kind":"target","x":361.24329113095973},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11370,"question":"target","options":[361.24329113095973,240,80,400],"decision":{"kind":"target","x":361.24329113095973},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11400,"question":"target","options":[361.24329113095996,240,80,400],"decision":{"kind":"target","x":361.24329113095996},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11430,"question":"target","options":[361.2432911309602,240,80,400],"decision":{"kind":"target","x":361.2432911309602},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11460,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11490,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11520,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11550,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11580,"question":"target","options":[361.24329113095973,240,80,400],"decision":{"kind":"target","x":361.24329113095973},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11610,"question":"target","options":[361.24329113095996,240,80,400],"decision":{"kind":"target","x":361.24329113095996},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11640,"question":"target","options":[361.24329113095996,240,80,400],"decision":{"kind":"target","x":361.24329113095996},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11670,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11700,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11730,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11760,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11790,"question":"target","options":[361.2432911309613,240,80,400],"decision":{"kind":"target","x":361.2432911309613},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11820,"question":"target","options":[361.2432911309611,240,80,400],"decision":{"kind":"target","x":361.2432911309611},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11850,"question":"target","options":[361.24329113096064,240,80,400],"decision":{"kind":"target","x":361.24329113096064},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11880,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11910,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11940,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":11970,"question":"target","options":[240,240,80,400],"decision":{"kind":"target","x":240},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":12000,"question":"target","options":[361.24329113094905,240,80,400],"decision":{"kind":"target","x":361.24329113094905},"ms":0,"outcome":"in-flight"}
+{"player":"Deterministic bot","seed":20260919,"tick":12000,"question":"target","options":[],"decision":{"kind":"target","x":361.24329113094905},"ms":0,"outcome":"time-limit"}
