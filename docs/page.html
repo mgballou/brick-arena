@@ -42,6 +42,12 @@
       .chart { margin-top: 26px; border: 1px solid #26313b; background: #10161e; padding: 18px 20px; }
       .chart-head { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
       .chart svg { display: block; width: 100%; height: auto; }
+      .jev-seat { border: 1px solid #ef8354; background: #1a1514; padding: 22px; }
+      .jev-seat h2 { margin: 8px 0 14px; font-size: 30px; letter-spacing: -.04em; }
+      .jev-seat p { max-width: 860px; }
+      .jev-command { margin: 18px 0; padding: 16px; overflow-x: auto; border: 1px solid #34424c; background: #080b10; color: #f4f1ea; font: 13px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
+      .jev-seat code { color: #f4f1ea; }
+      .jev-seat .source-note { max-width: 900px; }
       footer { margin-top: 22px; line-height: 1.6; letter-spacing: 0; }
       code { color: #e9edf0; }
       @media (max-width: 760px) { main { padding: 28px 16px; } header { display: block; } .metrics { grid-template-columns: 1fr; } }
@@ -66,6 +72,29 @@
           <p class="source-note"><strong>No person played this run.</strong> “Human” is the session’s scripted player label, not a claim of live play. The bot’s 0 ms reaction time is correct because it answers synchronously.</p>
         </div>
       </header>
+
+      <section class="section jev-seat" aria-labelledby="jev-seat-title">
+        <span class="race-kicker">The seat / one typed choice</span>
+        <h2 id="jev-seat-title">Put a real Jev in the race</h2>
+        <p>Three questions, each a closed list, each answered with one typed <code>choice</code>.</p>
+        <p><strong>target</strong> offers <code>landing</code>, <code>center</code>, <code>left</code>, and <code>right</code>; those names map to the four x values from <code>askForDecision</code>.</p>
+        <p><strong>chase</strong> offers every falling power-up id plus <code>none</code>; <strong>track</strong> offers every ball id.</p>
+        <p>An answer outside the offered keys, or an answer that is not a choice, fails the call; the board does not accept paddle arithmetic.</p>
+
+        <h3>One command</h3>
+        <pre class="jev-command"># Before this: replace the pnpm-workspace.yaml placeholder with true or false:
+# allowBuilds:
+#   esbuild: true
+JEV_BASE_URL=https://api.typesafe.ai JEV_MODEL=jev-latest JEV_API_KEY=&lt;your TypeSafe API key&gt; pnpm jev</pre>
+        <p>That is the direct TypeSafe route: <code>JEV_BASE_URL</code> is the configurable API root and the adapter appends <code>/v1/systemone</code>. The Vercel Gateway route (<code>https://ai-gateway.vercel.sh/typesafe</code>) and the OpenRouter route are not used by this command, so set neither of their keys or roots. The direct TypeSafe root and <code>jev-latest</code> come from TypeSafe’s API quick start; the adapter’s three variable names and path come from the raw repo.</p>
+
+        <h3>What the credit covers</h3>
+        <p>Recorded level 0 has <strong>154 decision points</strong>: 104 target, 41 chase, and 9 track. TypeSafe publishes <strong>$0.042 per million input tokens</strong> and says output is too cheap to meter, not a fixed price per call. So $5 buys about 119.0 million input tokens, but the number of complete races it covers is <strong>not published and cannot be calculated honestly without each request’s token count</strong>. There is no spend guard in this adapter: no per-session call cap. Adding one would take a session counter and a configured maximum that refuses or degrades calls before dispatch; it is not built here.</p>
+
+        <h3>When Jev is slow or fails</h3>
+        <p><code>raceWithLatency</code> never waits with the board stopped. A successful answer lands after its measured wall-clock time, while the board keeps stepping on the last target; a slow answer therefore misses asks. The default deadline is 1000 ms. A timeout applies nothing and is recorded as <code>timeout</code>; a failed request applies nothing and is recorded as <code>error</code>. The race continues either way. These mechanics are from the raw adapter and its tests; the price is from the raw TypeSafe research note.</p>
+        <p class="source-note"><strong>Source layers:</strong> the wiki was read first for project status and scope; raw sources then settled the adapter behavior, the 154-point count, TypeSafe’s direct root, and the published pricing. Recall was attempted but returned no passages because its embedding model download failed on DNS.</p>
+      </section>
 
       <figure class="capture">
         <svg viewBox="0 0 980 420" role="img" aria-labelledby="capture-title capture-desc">
