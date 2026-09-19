@@ -15,6 +15,23 @@
       h1 { font-size: clamp(40px, 7vw, 76px); line-height: .94; letter-spacing: -.06em; margin: 14px 0; }
       .lede { max-width: 690px; color: #aab5bc; font-size: 17px; line-height: 1.5; }
       .source-note { max-width: 720px; color: #788791; font-size: 13px; line-height: 1.5; }
+      .race { margin: 30px 0 0; padding: 22px; border: 1px solid #70c1b3; background: linear-gradient(135deg, #12231f, #10161e 60%); }
+      .race-kicker { color: #70c1b3; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; }
+      .race h2 { margin: 10px 0 18px; font-size: clamp(25px, 4vw, 42px); letter-spacing: -.04em; }
+      .race-times { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+      .race-time strong { display: block; font-size: 31px; }
+      .race-time span { color: #aab5bc; font-size: 13px; }
+      .race-note { margin: 18px 0 0; color: #d7e0e5; line-height: 1.5; }
+      .section { margin-top: 42px; }
+      .section h2 { margin: 0 0 10px; font-size: 30px; letter-spacing: -.04em; }
+      .section p { max-width: 780px; color: #aab5bc; line-height: 1.6; }
+      .ghost-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #26313b; margin-top: 22px; }
+      .ghost-card { background: #10161e; padding: 16px; }
+      .ghost-card strong { display: block; font-size: 22px; margin: 8px 0 4px; }
+      .ghost-card small { color: #9ca9b2; line-height: 1.5; }
+      .ghost-stills { margin-top: 22px; border: 1px solid #26313b; background: #10161e; padding: 18px 20px; }
+      .ghost-stills svg { display: block; width: 100%; height: auto; }
+      .ghost-list { color: #aab5bc; line-height: 1.7; }
       .capture { margin-top: 30px; border: 1px solid #26313b; background: #10161e; padding: 14px; }
       .capture svg { display: block; width: 100%; height: auto; }
       figcaption { padding: 12px 2px 0; line-height: 1.5; letter-spacing: 0; }
@@ -36,6 +53,15 @@
         <div>
           <p class="eyebrow">Scripted session / one seed / level 1 still</p>
           <h1>Two boards.<br>One level.</h1>
+          <section class="race" aria-labelledby="race-title">
+            <span class="race-kicker">The race</span>
+            <h2 id="race-title">Can you clear the level faster than Jev</h2>
+            <div class="race-times">
+              <div class="race-time"><strong>38.10s</strong><span>scripted player · 2,288 ticks</span></div>
+              <div class="race-time"><strong>38.07s</strong><span>Jev / deterministic bot · 2,284 ticks · wins</span></div>
+            </div>
+            <p class="race-note">The other player's latency is a handicap it has to out-think: it decides more slowly than a person and may still choose better.</p>
+          </section>
           <p class="lede">Both boards start from seed <strong>20260919</strong>. The left board is the scripted player with the recorded human-latency model; the right board is the deterministic bot. Their choices diverge at tick 1590, and this still is taken from tick 1800.</p>
           <p class="source-note"><strong>No person played this run.</strong> “Human” is the session’s scripted player label, not a claim of live play. The bot’s 0 ms reaction time is correct because it answers synchronously.</p>
         </div>
@@ -72,6 +98,32 @@
         </svg>
         <figcaption>Data-derived still, not a photograph: board state, paddle, ball and brick positions are taken from <code>docs/session.ndjson</code> at level 1 / tick 1800. The pale bricks are unbreakable; dim bricks are cleared.</figcaption>
       </figure>
+
+      <section class="section" aria-labelledby="ghost-title">
+        <p class="eyebrow">Ghost mode / recorded Human session / deterministic bot</p>
+        <h2 id="ghost-title">The race tells who finished first. The ghost shows why.</h2>
+        <p>Ghost mode replays the recorded session's exact states and asks Jev what it would choose at each decision point, without applying that answer to the world. Human and Jev won't have all the same bounce events because they will make different decisions and the balls will bounce at different points.</p>
+        <div class="ghost-grid" aria-label="Ghost comparison by level">
+          <div class="ghost-card"><span class="label">LEVEL 1</span><strong>72.37%</strong><small>55 agreements / 76 opportunities · diverged at ticks 1590–2190</small></div>
+          <div class="ghost-card"><span class="label">LEVELS 2–3</span><strong>100%</strong><small>400 / 400 agreements on each level · no divergence</small></div>
+          <div class="ghost-card"><span class="label">LEVELS 4–5</span><strong>98.25% / 98.75%</strong><small>393 / 400 and 395 / 400 · divergence ranges 1410–1590 and 330–450</small></div>
+        </div>
+        <p class="ghost-list"><strong>Where they diverged:</strong> level 1 at 1590, 1620, 1650, 1680, 1710, 1740, 1770, 1800, 1830, 1860, 1890, 1920, 1950, 1980, 2010, 2040, 2070, 2100, 2130, 2160, 2190; level 4 at 1410, 1440, 1470, 1500, 1530, 1560, 1590; level 5 at 330, 360, 390, 420, 450. A missing ghost answer is excluded from agreements and counted separately as missing; this run had 0 missing answers.</p>
+        <figure class="ghost-stills">
+          <svg viewBox="0 0 900 270" role="img" aria-labelledby="ghost-still-title ghost-still-desc">
+            <title id="ghost-still-title">Boards at the first ghost divergence in three levels</title>
+            <desc id="ghost-still-desc">Data-derived board stills at level 1 tick 1590, level 4 tick 1410, and level 5 tick 330, each showing the recorded ball, paddle, and visible power-up.</desc>
+            <rect width="900" height="270" fill="#10161e"/>
+            <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#d7e0e5">
+              <text x="18" y="20">LEVEL 1 · TICK 1590</text><text x="318" y="20">LEVEL 4 · TICK 1410</text><text x="618" y="20">LEVEL 5 · TICK 330</text>
+            </g>
+            <g transform="translate(18 34)"><rect width="264" height="190" fill="#080b10" stroke="#34424c"/><g fill="#ef8354"><rect x="10" y="16" width="22" height="10"/><rect x="36" y="16" width="22" height="10"/><rect x="62" y="16" width="22" height="10"/><rect x="88" y="16" width="22" height="10"/><rect x="114" y="16" width="22" height="10"/><rect x="166" y="16" width="22" height="10"/><rect x="192" y="16" width="22" height="10"/><rect x="218" y="16" width="22" height="10"/></g><rect x="96" y="175" width="72" height="7" rx="2" fill="#f4f1ea"/><circle cx="189" cy="66" r="5" fill="#f4f1ea"/><circle cx="166" cy="41" r="4" fill="#70c1b3"/></g>
+            <g transform="translate(318 34)"><rect width="264" height="190" fill="#080b10" stroke="#34424c"/><g fill="#ef8354"><rect x="10" y="16" width="22" height="10"/><rect x="36" y="16" width="22" height="10"/><rect x="62" y="16" width="22" height="10"/><rect x="88" y="16" width="22" height="10"/><rect x="114" y="16" width="22" height="10"/><rect x="140" y="16" width="22" height="10"/><rect x="166" y="16" width="22" height="10"/><rect x="192" y="16" width="22" height="10"/></g><rect x="96" y="175" width="72" height="7" rx="2" fill="#f4f1ea"/><circle cx="176" cy="45" r="5" fill="#f4f1ea"/><circle cx="166" cy="28" r="4" fill="#70c1b3"/></g>
+            <g transform="translate(618 34)"><rect width="264" height="190" fill="#080b10" stroke="#34424c"/><g fill="#ef8354"><rect x="10" y="16" width="22" height="10"/><rect x="36" y="16" width="22" height="10"/><rect x="62" y="16" width="22" height="10"/><rect x="88" y="16" width="22" height="10"/><rect x="114" y="16" width="22" height="10"/><rect x="140" y="16" width="22" height="10"/><rect x="166" y="16" width="22" height="10"/><rect x="192" y="16" width="22" height="10"/></g><rect x="96" y="175" width="72" height="7" rx="2" fill="#f4f1ea"/><circle cx="161" cy="90" r="5" fill="#f4f1ea"/><circle cx="142" cy="80" r="4" fill="#70c1b3"/></g>
+          </svg>
+          <figcaption>Representative first-divergence states, drawn from <code>docs/session.ndjson</code>: level 1 tick 1590, level 4 tick 1410, level 5 tick 330. The pale dot is the recorded ball; the teal dot is the visible power-up.</figcaption>
+        </figure>
+      </section>
 
       <section class="metrics" aria-label="Session metrics">
         <div class="metric"><span class="label">LEVEL ONE COMPLETION</span><strong>38.1s / 38.07s</strong><small>scripted player / bot · ticks 2288 / 2284</small></div>
