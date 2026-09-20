@@ -1,0 +1,7 @@
+# Single-package repository: packages/* are source directories with no
+# package.json of their own, so there are no workspace members to declare.
+# This file exists to hold pnpm's settings, and to answer the build-script
+# approval pnpm asked for: esbuild's postinstall prepares the binary vite
+# needs, so allow it.
+allowBuilds:
+  esbuild: true
