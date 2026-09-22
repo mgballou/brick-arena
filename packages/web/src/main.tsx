@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { createRoot } from 'react-dom/client';
 import {
   applyDecision,
   askForDecision,
@@ -345,3 +346,6 @@ function App() {
 }
 
 export default App;
+
+const host = document.getElementById('root');
+if (host) createRoot(host).render(<App />);
