@@ -73,6 +73,18 @@
         </div>
       </header>
 
+      <section class="section" style="border:1px solid #70c1b3;background:linear-gradient(135deg,#0f1a1e,#10161e 60%);padding:22px;margin-top:30px;" aria-labelledby="live-title">
+        <span class="race-kicker" style="color:#70c1b3;">Live / split screen</span>
+        <h2 id="live-title" style="margin:10px 0 14px;font-size:30px;letter-spacing:-.04em;">Play Jev yourself</h2>
+        <p style="max-width:860px;color:#aab5bc;line-height:1.6;">Two boards side by side, same seed, same level, running at the same time. Your paddle follows the mouse; Jev plays through the API with visible latency. The lag is the handicap.</p>
+        <h3>One command</h3>
+        <pre class="jev-command">pnpm dev</pre>
+        <p style="max-width:860px;color:#aab5bc;line-height:1.6;">Opens <code>http://localhost:5173</code>. Choose <strong>Bot</strong> to practice against the deterministic bot (free, instant) or <strong>Live Jev</strong> to play against the real API. Live mode asks for your TypeSafe API key in the browser — it stays in memory and is never written to disk or sent anywhere except the TypeSafe endpoint.</p>
+        <h3>Smoke test</h3>
+        <pre class="jev-command">pnpm smoke</pre>
+        <p class="source-note" style="max-width:900px;">Makes one call to the live endpoint. Reports the HTTP status, latency, the choice Jev returned, and the <code>usage</code> block (input and output tokens). Reads the key from <code>~/.jev-key</code> — bare key or <code>NAME=value</code> lines, both handled.</p>
+      </section>
+
       <section class="section jev-seat" aria-labelledby="jev-seat-title">
         <span class="race-kicker">The seat / one typed choice</span>
         <h2 id="jev-seat-title">Put a real Jev in the race</h2>

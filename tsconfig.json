@@ -1,1 +1,1 @@
-{"compilerOptions":{"target":"ES2022","lib":["ES2022","DOM"],"skipLibCheck":true,"strict":true,"module":"ESNext","moduleResolution":"Bundler","resolveJsonModule":true,"noEmit":true,"jsx":"react-jsx"},"include":["packages"]}
+{"compilerOptions":{"target":"ES2022","lib":["ES2022","DOM"],"skipLibCheck":true,"strict":true,"module":"ESNext","moduleResolution":"Bundler","resolveJsonModule":true,"noEmit":true,"allowImportingTsExtensions":true,"types":["node"],"jsx":"react-jsx"},"include":["packages"]}
