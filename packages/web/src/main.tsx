@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client';
 import { applyDecision, askForDecision, levelNames, type BoardState } from '../../engine/src/index';
 import {
-  ARENA, arenaBoard, arenaStep, clearBonus, holdServe, launch, levelOver, levelWinner, livesLeft, sideStatus,
+  ARENA, arenaBoard, arenaStep, boardAhead, bounced, clearBonus, holdServe, launch, levelOver, levelWinner, livesLeft, sideStatus,
   type ArenaEvents, type LevelSide, type SideStatus,
 } from '../../engine/src/arena';
 import { burst, reducedMotion, Sound, stepParticles } from './feedback';
@@ -77,6 +77,7 @@ function App() {
 
   const [phase, setPhaseState] = useState<Phase>('title');
   const [probe, setProbe] = useState<Probe | 'checking'>('checking');
+  const probeMs = useRef(0);
   const [hud, setHud] = useState<Hud>(() => snapshot(game.current));
   const [muted, setMuted] = useState(false);
 
@@ -88,6 +89,7 @@ function App() {
   const checkJev = useCallback(async () => {
     setProbe('checking');
     const result = await probeJev();
+    if (result.ok) probeMs.current = result.ms;
     setProbe(result);
     return result;
   }, []);
@@ -169,7 +171,12 @@ function App() {
     const stats = match.stats;
     stats.pending = true;
     stats.calls++;
-    void askJev(askForDecision(match.jev.state)).then(answer => {
+    // Ask about the board as it will stand when the answer lands, going by
+    // this match's median answer so far, or the title screen's probe before
+    // the first. Asking about the board on screen cost the stand-in, at live
+    // Jev's 728 ms, every ball on every level (`pnpm fair`).
+    const leadTicks = Math.ceil((median(stats.ms) ?? probeMs.current) / TICK_MS);
+    void askJev(askForDecision(boardAhead(match.jev.state, leadTicks))).then(answer => {
       if (game.current !== match || match.gen !== gen) return;
       stats.pending = false;
       if (answer.ok) {
@@ -224,8 +231,7 @@ function App() {
     }
     // Jev is asked on a steady cadence and again after any bounce, when the
     // landing point it last chose has just moved.
-    const bounced = state.balls.some(ball => { const was = before.balls.find(item => item.id === ball.id); return was !== undefined && Math.sign(was.vy) !== Math.sign(ball.vy); });
-    if (side.who === 'jev' && !side.serving && !state.completed && (bounced || state.tick % ARENA.askEvery === 0) && !match.stats.pending) askJevFor(match);
+    if (side.who === 'jev' && !side.serving && !state.completed && (bounced(before, state) || state.tick % ARENA.askEvery === 0) && !match.stats.pending) askJevFor(match);
   }, [askJevFor, feel]);
 
   const tickGame = useCallback(() => {

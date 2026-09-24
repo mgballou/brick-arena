@@ -122,7 +122,30 @@ export function arenaStep(state: BoardState): { state: BoardState; events: Arena
   return { state: next, events };
 }
 
-export type LevelSide = { status: SideStatus; clearedAt: number | null; levelScore: number };
+// A ball that turned between two boards: the landing point last chosen for it
+// has just moved, so a seated player is asked again.
+export function bounced(before: BoardState, after: BoardState): boolean {
+  return after.balls.some(ball => {
+    const was = before.balls.find(item => item.id === ball.id);
+    return was !== undefined && Math.sign(was.vy) !== Math.sign(ball.vy);
+  });
+}
+
+// The board as it will stand `leadTicks` from now if nobody moves the paddle.
+// Asking about it rather than the board on screen means an answer that takes
+// that long lands on the moment it was chosen for. It stops short of a lost
+// life, a clear or a lost level, since past those there is nothing to answer.
+export function boardAhead(state: BoardState, leadTicks: number): BoardState {
+  let ahead = state;
+  for (let i = 0; i < leadTicks; i++) {
+    const { state: next, events } = arenaStep(ahead);
+    if (events.lifeLost || sideStatus(next) !== 'playing') break;
+    ahead = next;
+  }
+  return ahead;
+}
+
+export type LevelSide ={ status: SideStatus; clearedAt: number | null; levelScore: number };
 
 // A level ends when either side clears it, when neither side can play on, or
 // when the clock runs out.

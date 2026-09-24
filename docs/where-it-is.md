@@ -55,8 +55,31 @@ times are wall-clock, so a second run scores differently: an earlier one went
 
 ## What to watch
 
-- Jev loses balls that a player on the keys keeps. Its answer lands a few
-  hundred ms after the ask while the board moves on, and the wide-paddle
-  power-up drops paddle speed to 3.
+- The wide-paddle power-up drops paddle speed to 3.
 - A player that always picks `landing` catches the ball dead center. The
   engine sends that straight up, so the arena sets a minimum return angle.
+
+## A fair match at live Jev's latency
+
+Jev used to lose balls that a player on the keys kept: it was asked about the
+board on screen, and its answer landed a few hundred ms later. It is now asked
+about the board as it will stand when the answer lands. Measured 24 September
+with `pnpm fair`: seed 20260919, five levels of 90 s, the stand-in answering in
+728 ms (the one live Jev call, 22 September), a keys player reacting in 200 ms.
+
+| Jev board | Balls lost | Bricks | Held still |
+|---|---|---|---|
+| Player on the keys | 0 | 48 | |
+| Before: asks about the board on screen | 15 | 24 | |
+| Asks about the board ahead (kept) | 4 | 39 | |
+| Holds its board until the answer lands | 2 | 30 | 300.7 of 450 s |
+
+Answering at once, the stand-in still loses 3: those come from its own choices
+(it chases every power-up), not from latency. Holding the board comes closer on
+the count only because Jev's board stands still two thirds of the time. It
+loses balls faster per second played than asking ahead does, and it breaks
+fewer bricks. So asking ahead stays.
+
+In the browser, level 1 against `pnpm jev:stub --ms 728` (median 733 ms), Jev
+lost all three balls with about 40 s left before the change and two of three
+after it.

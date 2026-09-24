@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ARENA, arenaBoard, arenaStep, clearBonus, holdServe, launch, levelOver, levelWinner, livesLeft, POINTS, sideStatus } from './arena';
+import { ARENA, arenaBoard, arenaStep, boardAhead, bounced, clearBonus, holdServe, launch, levelOver, levelWinner, livesLeft, POINTS, sideStatus } from './arena';
 import { applyDecision, createBoard, PADDLE_Y } from './index';
 
 describe('arena board', () => {
@@ -98,5 +98,33 @@ describe('level outcome', () => {
   it('pays for time left on a clear', () => {
     expect(clearBonus(12.7)).toBe(POINTS.clear + 12 * POINTS.secondLeft);
     expect(sideStatus({ ...arenaBoard(1, 0), livesLost: ARENA.lives })).toBe('out');
+  });
+});
+
+describe('asking ahead', () => {
+  it('is the board a run of arena steps from now, and leaves the board on screen alone', () => {
+    const board = launch(arenaBoard(7, 0));
+    let stepped = board;
+    for (let i = 0; i < 44; i++) stepped = arenaStep(stepped).state;
+    const copy = structuredClone(board);
+    expect(boardAhead(board, 44)).toEqual(stepped);
+    expect(board).toEqual(copy);
+    expect(boardAhead(board, 0)).toBe(board);
+  });
+
+  it('stops short of a lost life', () => {
+    const board = arenaBoard(7, 0);
+    board.balls[0] = { ...board.balls[0], x: 20, y: PADDLE_Y + 20, vx: 0, vy: 3 };
+    const ahead = boardAhead(board, 60);
+    expect(ahead.livesLost).toBe(0);
+    expect(arenaStep(ahead).events.lifeLost).toBe(true);
+  });
+
+  it('names a turned ball as a bounce', () => {
+    const board = launch(arenaBoard(7, 0));
+    const falling = structuredClone(board);
+    falling.balls[0].vy = 2.6;
+    expect(bounced(board, falling)).toBe(true);
+    expect(bounced(board, arenaStep(board).state)).toBe(false);
   });
 });
