@@ -1,6 +1,6 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin, type ViteDevServer } from 'vite';
-import { JEV_DEFAULTS, readJevLink, type JevLink } from './packages/jev/src/key';
+import { JEV_DEFAULTS, readJevLink, type JevLink } from './packages/jev/src/key.ts';
 
 // The route the browser calls. Everything the key touches stays on this side.
 export const JEV_PATH = '/api/jev';

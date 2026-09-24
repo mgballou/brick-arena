@@ -11,7 +11,8 @@ export type Ask = { state: BoardState; at: number; question: 'target' | 'chase' 
 export type Player = { readonly name: string; readonly decide: (ask: Ask) => Promise<{ decision: Decision; ms: number }> };
 export type DecisionRecord = { seed: number; tick: number; ask: Ask; question: Ask['question']; options: Ask['options']; decision: Decision; ms: number; outcome: string };
 
-const W = 480, H = 320, PADDLE_Y = 294, BALL_R = 6;
+const W = 480, H = 320, BALL_R = 6;
+export const PADDLE_Y = 294, PADDLE_H = 10;
 const levelPatterns = [
   ['1111111111', '1222222221', '1000000001'],
   ['11#11#11#1', '11#11#11#1', '111#11#111', '000#00#000'],
