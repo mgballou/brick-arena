@@ -11,6 +11,9 @@ export const ARENA = {
   ticksPerSecond: 60,
   paddleWidth: 120,
   paddleSpeed: 7,
+  // A return never goes steeper than this: a dead-center catch would
+  // otherwise send the ball straight up and down the same column forever.
+  minReturnVx: 1.1,
 } as const;
 
 export const POINTS = { hit: 10, breakPerHitPoint: 40, powerUp: 25, clear: 500, secondLeft: 5 } as const;
@@ -111,7 +114,9 @@ export function arenaStep(state: BoardState): { state: BoardState; events: Arena
 
   for (const ball of next.balls) {
     const before = state.balls.find(item => item.id === ball.id);
-    if (before && before.vy > 0 && ball.vy < 0 && ball.y >= PADDLE_Y - ball.radius - 0.001) events.paddleBounces.push(ball.x);
+    if (!before || before.vy <= 0 || ball.vy >= 0 || ball.y < PADDLE_Y - ball.radius - 0.001) continue;
+    events.paddleBounces.push(ball.x);
+    if (Math.abs(ball.vx) < ARENA.minReturnVx) ball.vx = (ball.vx === 0 ? (before.vx >= 0 ? 1 : -1) : Math.sign(ball.vx)) * ARENA.minReturnVx;
   }
 
   return { state: next, events };

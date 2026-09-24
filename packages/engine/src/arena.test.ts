@@ -67,6 +67,7 @@ describe('arena step', () => {
     board.powerUps.push({ id: 'p', kind: 'magnet-paddle', x: 240, y: PADDLE_Y - 2, vy: 1.2 });
     const { events, state } = arenaStep(board);
     expect(events.paddleBounces).toEqual([240]);
+    expect(Math.abs(state.balls[0].vx)).toBe(ARENA.minReturnVx);
     expect(events.caught).toEqual(['magnet-paddle']);
     expect(state.magnetPaddle).toBe(true);
   });

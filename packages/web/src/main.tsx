@@ -1,351 +1,482 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { applyDecision, askForDecision, levelNames, type BoardState } from '../../engine/src/index';
 import {
-  applyDecision,
-  askForDecision,
-  botPlayer,
-  createBoard,
-  step,
-  type Ask,
-  type BoardState,
-  type Decision,
-} from '../../engine/src/index';
-import {
-  toRequest,
-  fromResponse,
-  type SystemOneResponse,
-} from '../../jev/src/wire';
+  ARENA, arenaBoard, arenaStep, clearBonus, holdServe, launch, levelOver, levelWinner, livesLeft, sideStatus,
+  type ArenaEvents, type LevelSide, type SideStatus,
+} from '../../engine/src/arena';
+import { burst, reducedMotion, Sound, stepParticles } from './feedback';
+import { askJev, probeJev, type Probe } from './jev';
+import { brickColor, drawBoard, PALETTE, POWER_UPS, type View } from './render';
 import './style.css';
 
 const SEED = 20260919;
-const LEVEL = 0;
-const ASK_EVERY = 30;
-const DEADLINE_MS = 1000;
-const MAX_TICKS = 12000;
-const W = 480;
-const H = 320;
+const TICK_MS = 1000 / ARENA.ticksPerSecond;
+const JEV_SERVE_TICKS = 45;
+const OFFLINE_AFTER = 2;
 
-type DecideResult = {
-  decision: Decision;
-  ms: number;
-  usage?: { input_tokens?: number; output_tokens?: number };
+type Phase = 'title' | 'banner' | 'playing' | 'paused' | 'offline' | 'levelEnd' | 'final';
+type Who = 'human' | 'jev';
+
+type Side = {
+  who: Who;
+  state: BoardState;
+  serving: boolean;
+  serveWait: number;
+  score: number;
+  levelScore: number;
+  clearedAt: number | null;
+  view: View;
 };
 
-type Decider = (ask: Ask) => Promise<DecideResult>;
+type JevStats = { calls: number; answered: number; timeouts: number; errors: number; offlineStreak: number; lastChoice: string; lastMs: number | null; ms: number[]; pending: boolean };
+type LevelResult = { level: number; winner: 'human' | 'jev' | 'tie'; human: number; jev: number; humanCleared: boolean; jevCleared: boolean };
 
-function botDecider(): Decider {
-  const bot = botPlayer();
-  return (ask) => bot.decide(ask);
-}
+type Match = { level: number; frame: number; gen: number; human: Side; jev: Side; stats: JevStats; results: LevelResult[]; offlineReason: string };
 
-function liveDecider(apiKey: string): Decider {
-  const url = 'https://api.typesafe.ai/v1/systemone';
-  return async (ask) => {
-    const request = toRequest(ask, 'jev-latest');
-    const t0 = performance.now();
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
-      body: JSON.stringify(request),
-    });
-    const body: SystemOneResponse & { message?: string } = await res.json();
-    if (!res.ok) throw new Error(`${res.status}: ${body.message ?? ''}`);
-    return { decision: fromResponse(ask, body), ms: Math.round(performance.now() - t0), usage: body.usage };
+const blankStats = (): JevStats => ({ calls: 0, answered: 0, timeouts: 0, errors: 0, offlineStreak: 0, lastChoice: '', lastMs: null, ms: [], pending: false });
+
+function newSide(who: Who, level: number, score = 0): Side {
+  return {
+    who,
+    state: arenaBoard(SEED, level),
+    serving: true,
+    serveWait: 0,
+    score,
+    levelScore: 0,
+    clearedAt: null,
+    view: { accent: who === 'human' ? PALETTE.human : PALETTE.jev, particles: [], trail: [], squash: 0, shake: 0, flash: 0, motion: true, banner: null, sub: null, dim: false },
   };
 }
 
-function renderBoard(c: HTMLCanvasElement, s: BoardState, accent: string) {
-  const ctx = c.getContext('2d')!;
-  const k = c.width / s.width;
-  ctx.setTransform(k, 0, 0, k, 0, 0);
-  ctx.fillStyle = '#0b1017';
-  ctx.fillRect(0, 0, s.width, s.height);
-  ctx.fillStyle = accent;
-  for (const b of s.bricks) {
-    if (b.durability <= 0 && !b.unbreakable) continue;
-    ctx.globalAlpha = b.unbreakable ? 0.55 : 0.3 + 0.2 * b.durability;
-    ctx.fillRect(b.x, b.y, b.width, b.height);
-  }
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = '#f4f1ea';
-  ctx.fillRect(s.paddleX, 294, s.paddleWidth, 10);
-  for (const b of s.balls) {
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.fillStyle = '#70c1b3';
-  for (const p of s.powerUps) {
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
-    ctx.fill();
-  }
+function newMatch(): Match {
+  return { level: 0, frame: 0, gen: 0, human: newSide('human', 0), jev: newSide('jev', 0), stats: blankStats(), results: [], offlineReason: '' };
 }
 
-function describe(d: Decision): string {
-  if (d.kind === 'target') return `target x=${d.x.toFixed(0)}`;
-  if (d.kind === 'chase') return `chase ${d.powerUpId}`;
-  return `track ${d.ballId}`;
+const levelSide = (side: Side): LevelSide => ({ status: sideStatus(side.state), clearedAt: side.clearedAt, levelScore: side.levelScore });
+const secondsLeft = (match: Match) => ARENA.levelSeconds - match.frame / ARENA.ticksPerSecond;
+const median = (values: number[]) => values.length ? [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)] : null;
+const clock = (seconds: number) => { const s = Math.max(0, Math.ceil(seconds)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+const title = (name: string) => name[0].toUpperCase() + name.slice(1);
+
+type SideHud = { score: number; levelScore: number; lives: number; status: SideStatus; serving: boolean };
+type Hud = { level: number; seconds: number; human: SideHud; jev: SideHud; stats: JevStats };
+
+function snapshot(match: Match): Hud {
+  const side = (s: Side): SideHud => ({ score: s.score, levelScore: s.levelScore, lives: livesLeft(s.state), status: sideStatus(s.state), serving: s.serving });
+  return { level: match.level, seconds: secondsLeft(match), human: side(match.human), jev: side(match.jev), stats: { ...match.stats, ms: match.stats.ms } };
 }
-
-type Stats = {
-  answered: number;
-  timeouts: number;
-  errors: number;
-  lastDecision: string;
-  lastMs: number;
-  lastUsage: { input_tokens?: number; output_tokens?: number } | null;
-};
-
-const blank: Stats = { answered: 0, timeouts: 0, errors: 0, lastDecision: '—', lastMs: 0, lastUsage: null };
 
 function App() {
-  const hCanvas = useRef<HTMLCanvasElement>(null);
-  const jCanvas = useRef<HTMLCanvasElement>(null);
-  const hState = useRef(createBoard(SEED, LEVEL));
-  const jState = useRef(createBoard(SEED, LEVEL));
-  const mx = useRef(W / 2);
-  const pend = useRef(false);
-  const dec = useRef<Decider>(botDecider());
-  const alive = useRef(false);
-  const hDoneTick = useRef<number | null>(null);
-  const jDoneTick = useRef<number | null>(null);
+  const game = useRef<Match>(newMatch());
+  const phaseRef = useRef<Phase>('title');
+  const keys = useRef({ left: false, right: false, launch: false });
+  const sound = useRef(new Sound());
+  const humanCanvas = useRef<HTMLCanvasElement>(null);
+  const jevCanvas = useRef<HTMLCanvasElement>(null);
 
-  const [phase, setPhase] = useState<'idle' | 'playing' | 'done'>('idle');
-  const [mode, setMode] = useState<'bot' | 'live'>('bot');
-  const [key, setKey] = useState('');
-  const [stats, setStats] = useState(blank);
-  const [hTick, setHTick] = useState(0);
-  const [jTick, setJTick] = useState(0);
-  const [hBricks, setHBricks] = useState(0);
-  const [jBricks, setJBricks] = useState(0);
-  const [hLives, setHLives] = useState(0);
-  const [jLives, setJLives] = useState(0);
-  const [hDone, setHDone] = useState(false);
-  const [jDone, setJDone] = useState(false);
-  const [result, setResult] = useState('');
+  const [phase, setPhaseState] = useState<Phase>('title');
+  const [probe, setProbe] = useState<Probe | 'checking'>('checking');
+  const [hud, setHud] = useState<Hud>(() => snapshot(game.current));
+  const [muted, setMuted] = useState(false);
 
-  useEffect(() => {
-    if (hCanvas.current) renderBoard(hCanvas.current, hState.current, '#ef8354');
-    if (jCanvas.current) renderBoard(jCanvas.current, jState.current, '#70c1b3');
+  const setPhase = useCallback((next: Phase) => {
+    phaseRef.current = next;
+    setPhaseState(next);
   }, []);
 
-  useEffect(() => {
-    const el = hCanvas.current;
-    if (!el) return;
-    const fn = (e: MouseEvent) => {
-      const r = el.getBoundingClientRect();
-      mx.current = Math.max(0, Math.min(W, (e.clientX - r.left) * (W / r.width)));
-    };
-    el.addEventListener('mousemove', fn);
-    return () => el.removeEventListener('mousemove', fn);
+  const checkJev = useCallback(async () => {
+    setProbe('checking');
+    const result = await probeJev();
+    setProbe(result);
+    return result;
   }, []);
 
-  const go = useCallback(() => {
-    hState.current = createBoard(SEED, LEVEL);
-    jState.current = createBoard(SEED, LEVEL);
-    pend.current = false;
-    hDoneTick.current = null;
-    jDoneTick.current = null;
-    setStats(blank);
-    setResult('');
-    dec.current = mode === 'live' && key ? liveDecider(key) : botDecider();
-    alive.current = true;
-    setPhase('playing');
-    setHDone(false);
-    setJDone(false);
-    setHBricks(0);
-    setJBricks(0);
-    setHLives(0);
-    setJLives(0);
-    setHTick(0);
-    setJTick(0);
-  }, [mode, key]);
+  useEffect(() => { void checkJev(); }, [checkJev]);
 
+  const startLevel = useCallback((level: number) => {
+    const match = game.current;
+    match.level = level;
+    match.frame = 0;
+    match.gen++;
+    match.stats.pending = false;
+    match.human = newSide('human', level, match.human.score);
+    match.jev = newSide('jev', level, match.jev.score);
+    keys.current.launch = false;
+    setHud(snapshot(match));
+    setPhase('banner');
+    sound.current.banner();
+  }, [setPhase]);
+
+  const startGame = useCallback(() => {
+    sound.current.wake();
+    game.current = newMatch();
+    startLevel(0);
+  }, [startLevel]);
+
+  const endLevel = useCallback(() => {
+    const match = game.current;
+    const human = levelSide(match.human), jev = levelSide(match.jev);
+    const winner = levelWinner(human, jev);
+    match.results.push({ level: match.level, winner, human: match.human.levelScore, jev: match.jev.levelScore, humanCleared: human.clearedAt !== null, jevCleared: jev.clearedAt !== null });
+    match.gen++;
+    setHud(snapshot(match));
+    setPhase('levelEnd');
+    sound.current.fanfare(winner !== 'jev');
+  }, [setPhase]);
+
+  const advance = useCallback(() => {
+    const match = game.current;
+    if (match.level + 1 < ARENA.levels) startLevel(match.level + 1);
+    else {
+      setPhase('final');
+      sound.current.fanfare(match.human.score >= match.jev.score);
+    }
+  }, [setPhase, startLevel]);
+
+  const retryJev = useCallback(async () => {
+    const result = await checkJev();
+    if (result.ok) {
+      game.current.stats.offlineStreak = 0;
+      setPhase('playing');
+    }
+  }, [checkJev, setPhase]);
+
+  // What a scored step means on screen and in the speakers.
+  const feel = useCallback((side: Side, before: BoardState, events: ArenaEvents) => {
+    const pan = side.who === 'human' ? -0.6 : 0.6;
+    const motion = side.view.motion;
+    side.score += events.points;
+    side.levelScore += events.points;
+    for (const hit of events.hits) {
+      const brick = before.bricks.find(item => item.x + item.width / 2 === hit.x && item.y + item.height / 2 === hit.y);
+      const color = brick ? brickColor(brick) : PALETTE.ink;
+      if (hit.broke) {
+        sound.current.break(pan, hit.maxDurability);
+        if (motion) burst(side.view.particles, hit.x, hit.y, color, 12 + hit.maxDurability * 4, before.tick + hit.x);
+      } else {
+        sound.current.hit(pan, (brick?.durability ?? 1) - 1);
+        if (motion) burst(side.view.particles, hit.x, hit.y, color, 4, before.tick + hit.x);
+      }
+    }
+    if (events.paddleBounces.length) { sound.current.paddle(pan); side.view.squash = 1; }
+    for (const kind of events.caught) { sound.current.powerUp(pan, POWER_UPS[kind].good); side.view.flash = 10; }
+    if (events.lifeLost) { sound.current.lose(pan); side.view.shake = 14; }
+  }, []);
+
+  const askJevFor = useCallback((match: Match) => {
+    const gen = match.gen;
+    const stats = match.stats;
+    stats.pending = true;
+    stats.calls++;
+    void askJev(askForDecision(match.jev.state)).then(answer => {
+      if (game.current !== match || match.gen !== gen) return;
+      stats.pending = false;
+      if (answer.ok) {
+        match.jev.state = applyDecision(match.jev.state, answer.decision);
+        stats.answered++;
+        stats.offlineStreak = 0;
+        stats.lastChoice = answer.choice;
+        stats.lastMs = answer.ms;
+        stats.ms.push(answer.ms);
+        return;
+      }
+      if (answer.kind === 'timeout') stats.timeouts++;
+      else stats.errors++;
+      if (answer.kind === 'offline') {
+        stats.offlineStreak++;
+        match.offlineReason = answer.reason;
+        if (stats.offlineStreak >= OFFLINE_AFTER && phaseRef.current === 'playing') setPhase('offline');
+      }
+    });
+  }, [setPhase]);
+
+  const tickSide = useCallback((match: Match, side: Side) => {
+    if (sideStatus(side.state) !== 'playing') return;
+    if (side.who === 'human') {
+      const center = side.state.paddleX + side.state.paddleWidth / 2;
+      const { left, right } = keys.current;
+      const x = left === right ? center : center + (right ? 80 : -80);
+      side.state = applyDecision(side.state, { kind: 'target', x });
+    }
+    if (side.serving) {
+      side.state = holdServe(side.state);
+      const go = side.who === 'human' ? keys.current.launch : ++side.serveWait >= JEV_SERVE_TICKS;
+      if (go) {
+        side.state = launch(side.state);
+        side.serving = false;
+        side.serveWait = 0;
+        sound.current.serve(side.who === 'human' ? -0.6 : 0.6);
+      }
+      if (side.who === 'human') keys.current.launch = false;
+      return;
+    }
+    const before = side.state;
+    const { state, events } = arenaStep(before);
+    side.state = state;
+    feel(side, before, events);
+    if (events.lifeLost) side.serving = true;
+    if (state.completed && side.clearedAt === null) {
+      side.clearedAt = match.frame;
+      const bonus = clearBonus(secondsLeft(match));
+      side.score += bonus;
+      side.levelScore += bonus;
+    }
+    // Jev is asked on a steady cadence and again after any bounce, when the
+    // landing point it last chose has just moved.
+    const bounced = state.balls.some(ball => { const was = before.balls.find(item => item.id === ball.id); return was !== undefined && Math.sign(was.vy) !== Math.sign(ball.vy); });
+    if (side.who === 'jev' && !side.serving && !state.completed && (bounced || state.tick % ARENA.askEvery === 0) && !match.stats.pending) askJevFor(match);
+  }, [askJevFor, feel]);
+
+  const tickGame = useCallback(() => {
+    const match = game.current;
+    match.frame++;
+    tickSide(match, match.human);
+    tickSide(match, match.jev);
+    if (levelOver(levelSide(match.human), levelSide(match.jev), secondsLeft(match))) endLevel();
+  }, [endLevel, tickSide]);
+
+  // One fixed 60 Hz clock, whatever the display's refresh rate.
   useEffect(() => {
-    if (phase !== 'playing') return;
-    let frame = 0;
-    let lastInfo = 0;
-
-    const tick = () => {
-      const h = hState.current;
-      if (!h.completed && h.tick < MAX_TICKS) {
-        const pw = h.paddleWidth;
-        h.paddleTargetX = Math.max(pw / 2, Math.min(W - pw / 2, mx.current));
-        hState.current = step(h);
-        if (hState.current.completed && hDoneTick.current === null) hDoneTick.current = hState.current.tick;
-      }
-
-      const j = jState.current;
-      if (!j.completed && j.tick < MAX_TICKS) {
-        jState.current = step(j);
-        const s = jState.current;
-        if (s.completed && jDoneTick.current === null) jDoneTick.current = s.tick;
-
-        if (s.tick % ASK_EVERY === 0 && !pend.current && !s.completed) {
-          const ask = askForDecision(s);
-          pend.current = true;
-          const timer = setTimeout(() => {
-            if (pend.current) {
-              pend.current = false;
-              setStats(p => ({ ...p, timeouts: p.timeouts + 1 }));
-            }
-          }, DEADLINE_MS);
-          dec.current(ask)
-            .then(({ decision, ms, usage }) => {
-              clearTimeout(timer);
-              if (!pend.current) return;
-              jState.current = applyDecision(jState.current, decision);
-              pend.current = false;
-              setStats(p => ({
-                ...p,
-                answered: p.answered + 1,
-                lastDecision: describe(decision),
-                lastMs: ms,
-                lastUsage: usage ?? p.lastUsage,
-              }));
-            })
-            .catch(() => {
-              clearTimeout(timer);
-              if (!pend.current) return;
-              pend.current = false;
-              setStats(p => ({ ...p, errors: p.errors + 1 }));
-            });
+    let frame = 0, last = performance.now(), carry = 0, sinceHud = 0;
+    const loop = (now: number) => {
+      carry = Math.min(carry + now - last, 250);
+      last = now;
+      const match = game.current;
+      const motion = !reducedMotion();
+      while (carry >= TICK_MS) {
+        carry -= TICK_MS;
+        if (phaseRef.current === 'playing') tickGame();
+        for (const side of [match.human, match.jev]) {
+          const v = side.view;
+          v.motion = motion;
+          stepParticles(v.particles);
+          v.squash = Math.max(0, v.squash - 0.12);
+          v.shake = Math.max(0, v.shake - 1);
+          v.flash = Math.max(0, v.flash - 1);
+          const ball = side.state.balls[0];
+          if (ball && phaseRef.current === 'playing' && !side.serving) { v.trail.push({ x: ball.x, y: ball.y }); if (v.trail.length > 7) v.trail.shift(); }
+          if (side.serving) v.trail.length = 0;
         }
       }
-
-      if (hCanvas.current) renderBoard(hCanvas.current, hState.current, '#ef8354');
-      if (jCanvas.current) renderBoard(jCanvas.current, jState.current, '#70c1b3');
-
-      const now = performance.now();
-      if (now - lastInfo > 200) {
-        lastInfo = now;
-        const hs = hState.current;
-        const js = jState.current;
-        setHTick(hs.tick);
-        setJTick(js.tick);
-        setHBricks(hs.bricksCleared);
-        setJBricks(js.bricksCleared);
-        setHLives(hs.livesLost);
-        setJLives(js.livesLost);
-        setHDone(hs.completed);
-        setJDone(js.completed);
-
-        const hFinished = hs.completed || hs.tick >= MAX_TICKS;
-        const jFinished = js.completed || js.tick >= MAX_TICKS;
-        if (hFinished && jFinished && !pend.current) {
-          alive.current = false;
-          const ht = hDoneTick.current;
-          const jt = jDoneTick.current;
-          if (ht && jt) setResult(ht < jt ? 'You cleared first.' : jt < ht ? 'Jev cleared first.' : 'Tie.');
-          else if (ht) setResult('You cleared; Jev did not.');
-          else if (jt) setResult('Jev cleared; you did not.');
-          else setResult('Neither cleared the level.');
-          setPhase('done');
-          return;
-        }
+      for (const side of [match.human, match.jev]) {
+        const status = sideStatus(side.state);
+        const v = side.view;
+        const live = phaseRef.current === 'playing';
+        v.dim = status !== 'playing';
+        v.banner = status === 'cleared' ? 'CLEARED' : status === 'out' ? 'OUT OF BALLS' : live && side.serving ? (side.who === 'human' ? 'SPACE TO LAUNCH' : 'JEV SERVES') : null;
+        v.sub = status === 'out' ? 'waiting for the other board' : live && side.serving && side.who === 'human' ? '← → to aim · Space or ↑ to launch' : null;
       }
-      frame = requestAnimationFrame(tick);
+      if (humanCanvas.current) drawBoard(humanCanvas.current, match.human.state, match.human.view);
+      if (jevCanvas.current) drawBoard(jevCanvas.current, match.jev.state, match.jev.view);
+      if (++sinceHud >= 6) { sinceHud = 0; setHud(snapshot(match)); }
+      frame = requestAnimationFrame(loop);
     };
-    frame = requestAnimationFrame(tick);
+    frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);
-  }, [phase]);
+  }, [tickGame]);
+
+  // Arrow keys are the whole control surface; Space or Enter confirms a screen.
+  useEffect(() => {
+    const onDown = (event: KeyboardEvent) => {
+      const key = event.key;
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(key)) event.preventDefault();
+      sound.current.wake();
+      if (key === 'ArrowLeft') keys.current.left = true;
+      if (key === 'ArrowRight') keys.current.right = true;
+      if (key === 'm' || key === 'M') { sound.current.muted = !sound.current.muted; setMuted(sound.current.muted); }
+      if (event.repeat) return;
+      const confirm = key === ' ' || key === 'Enter';
+      const current = phaseRef.current;
+      if (current === 'playing') {
+        if (key === ' ' || key === 'ArrowUp') keys.current.launch = true;
+        if (key === 'p' || key === 'P' || key === 'Escape') setPhase('paused');
+      } else if (current === 'paused') {
+        if (confirm || key === 'p' || key === 'P' || key === 'Escape') setPhase('playing');
+      } else if (current === 'banner') {
+        if (confirm || key === 'ArrowUp') setPhase('playing');
+      } else if (current === 'levelEnd') {
+        if (confirm) advance();
+      } else if (current === 'final') {
+        if (confirm) setPhase('title');
+      } else if (current === 'title') {
+        if (confirm && probe !== 'checking' && probe.ok) startGame();
+      }
+    };
+    const onUp = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft') keys.current.left = false;
+      if (event.key === 'ArrowRight') keys.current.right = false;
+    };
+    window.addEventListener('keydown', onDown);
+    window.addEventListener('keyup', onUp);
+    return () => { window.removeEventListener('keydown', onDown); window.removeEventListener('keyup', onUp); };
+  }, [advance, probe, setPhase, startGame]);
+
+  // The level banner steps aside on its own.
+  useEffect(() => {
+    if (phase !== 'banner') return;
+    const timer = setTimeout(() => { if (phaseRef.current === 'banner') setPhase('playing'); }, 2200);
+    return () => clearTimeout(timer);
+  }, [phase, setPhase]);
+
+  // A read-only hook for scripted play-throughs; it steers nothing.
+  useEffect(() => {
+    (window as unknown as { __arena: unknown }).__arena = {
+      read: () => {
+        const match = game.current;
+        const side = (s: Side) => ({ ...snapshot(match)[s.who], paddle: s.state.paddleX + s.state.paddleWidth / 2, paddleWidth: s.state.paddleWidth, balls: s.state.balls.map(b => ({ x: b.x, y: b.y, vx: b.vx, vy: b.vy })), powerUps: s.state.powerUps.map(p => ({ x: p.x, y: p.y, kind: p.kind })), bricksLeft: s.state.bricks.filter(b => !b.unbreakable && b.durability > 0).length });
+        return { phase: phaseRef.current, level: match.level, seconds: secondsLeft(match), human: side(match.human), jev: side(match.jev), stats: match.stats, results: match.results };
+      },
+    };
+  }, []);
+
+  const match = game.current;
+  const { stats } = hud;
+  const jevMedian = median(stats.ms);
+  const levelName = title(levelNames[hud.level]);
+  const last = match.results.at(-1);
+  const wins = (who: 'human' | 'jev') => match.results.filter(r => r.winner === who).length;
 
   return (
-    <main>
-      <header>
-        <div>
-          <p className="eyebrow">LIVE / SPLIT SCREEN</p>
-          <h1>You vs Jev</h1>
-          <p className="lede">
-            Move your mouse over the left board to steer the paddle.
-            {mode === 'live' ? " Jev's lag is the handicap it has to out-think." : ''}
-          </p>
+    <div className="app">
+      <header className="hud">
+        <SideScore who="human" label="You" side={hud.human} />
+        <div className="hud-center">
+          <span className="hud-level">Level {hud.level + 1}<small>/{ARENA.levels}</small></span>
+          <span className="hud-name">{levelName}</span>
+          <span className={`hud-clock${hud.seconds < 15 && phase === 'playing' ? ' low' : ''}`}>{clock(hud.seconds)}</span>
         </div>
+        <SideScore who="jev" label="Jev" side={hud.jev} />
       </header>
 
-      {phase === 'idle' && (
-        <section className="setup">
-          <div className="mode-row">
-            <label className={mode === 'bot' ? 'active' : ''}>
-              <input type="radio" name="m" checked={mode === 'bot'} onChange={() => setMode('bot')} /> Bot (free)
-            </label>
-            <label className={mode === 'live' ? 'active' : ''}>
-              <input type="radio" name="m" checked={mode === 'live'} onChange={() => setMode('live')} /> Live Jev
-            </label>
+      <main className="arena">
+        <figure className="board human">
+          <figcaption><span className="tag human">You</span><span className="hint">← → move · Space launch</span></figcaption>
+          <canvas ref={humanCanvas} width={960} height={640} aria-label="Your board" />
+        </figure>
+        <figure className="board jev">
+          <figcaption>
+            <span className="tag jev">Jev</span>
+            <span className="hint">
+              {stats.pending ? <span className="thinking">thinking</span> : stats.lastChoice ? <>chose <b>{stats.lastChoice}</b></> : 'waiting to serve'}
+              {stats.lastMs !== null && <> · {stats.lastMs} ms</>}
+            </span>
+          </figcaption>
+          <canvas ref={jevCanvas} width={960} height={640} aria-label="Jev's board" />
+          <div className="jev-meter">
+            <span>{stats.answered}/{stats.calls} answered</span>
+            <span>median {jevMedian ?? '—'} ms</span>
+            <span className={stats.timeouts ? 'warn' : ''}>{stats.timeouts} late</span>
+            <span className={stats.errors ? 'warn' : ''}>{stats.errors} failed</span>
           </div>
-          {mode === 'live' && (
-            <input
-              type="password"
-              className="key-input"
-              placeholder="TypeSafe API key"
-              value={key}
-              onChange={e => setKey(e.target.value)}
-            />
-          )}
-          <button onClick={go} disabled={mode === 'live' && !key}>Start</button>
-        </section>
-      )}
+        </figure>
 
-      <div className="boards">
-        <section className="board">
-          <div className="board-head">
-            <span>01 / YOU (mouse)</span>
-            <span>tick {hTick}</span>
-          </div>
-          <canvas width={W} height={H} ref={hCanvas} />
-          <div className="board-foot">
-            bricks {hBricks} · lives lost {hLives}
-            {hDone && <strong> · CLEAR</strong>}
-          </div>
-        </section>
-        <section className="board">
-          <div className="board-head">
-            <span>02 / {mode === 'live' ? 'JEV' : 'BOT'}</span>
-            <span>tick {jTick}</span>
-          </div>
-          <canvas width={W} height={H} ref={jCanvas} />
-          <div className="board-foot">
-            bricks {jBricks} · lives lost {jLives}
-            {jDone && <strong> · CLEAR</strong>}
-          </div>
-        </section>
-      </div>
+        {phase === 'title' && (
+          <Overlay>
+            <p className="eyebrow">A TypeSafe Jev tech demo</p>
+            <h1 className="logo">Brick<span>Arena</span></h1>
+            <p className="lede">Five levels. One seed. You on the arrow keys, Jev on the other board. First to clear a level takes it; the higher total after five wins.</p>
+            <ul className="legend">
+              {Object.entries(POWER_UPS).map(([kind, look]) => (
+                <li key={kind}><i style={{ background: look.color }} className={look.good ? '' : 'bad'}>{look.glyph}</i>{look.label}</li>
+              ))}
+            </ul>
+            <JevLink probe={probe} onRetry={() => void checkJev()} />
+            <button className="primary" disabled={probe === 'checking' || !probe.ok} onClick={startGame}>Start</button>
+            <p className="keys">Enter to start · ← → move · Space or ↑ launch · P pause · M {muted ? 'unmute' : 'mute'}</p>
+          </Overlay>
+        )}
 
-      {phase !== 'idle' && (
-        <section className="jev-panel">
-          <span className="label">JEV STATUS</span>
-          <div className="jev-grid">
-            <div><strong>{stats.answered}</strong><small>answered</small></div>
-            <div><strong>{stats.timeouts}</strong><small>timeouts</small></div>
-            <div><strong>{stats.errors}</strong><small>errors</small></div>
-            <div><strong>{stats.lastMs}ms</strong><small>latency</small></div>
-          </div>
-          <p className="jev-last">Last: {stats.lastDecision}</p>
-          {stats.lastUsage && (
-            <p className="jev-last">
-              Tokens: {stats.lastUsage.input_tokens ?? '—'} in / {stats.lastUsage.output_tokens ?? '—'} out
-            </p>
-          )}
-        </section>
-      )}
+        {phase === 'banner' && (
+          <Overlay compact>
+            <p className="eyebrow">Level {hud.level + 1} of {ARENA.levels}</p>
+            <h2 className="banner">{levelName}</h2>
+            <p className="keys">Space to begin</p>
+          </Overlay>
+        )}
 
-      {phase === 'done' && (
-        <section className="result">
-          <strong>{result}</strong>
-          <span> You: tick {hTick} · Jev: tick {jTick}</span>
-          <button className="restart" onClick={() => setPhase('idle')}>New game</button>
-        </section>
-      )}
+        {phase === 'paused' && (
+          <Overlay compact>
+            <h2 className="banner">Paused</h2>
+            <p className="keys">P or Space to resume</p>
+          </Overlay>
+        )}
 
-      <footer>
-        Seed {SEED} · level {LEVEL} · cadence {ASK_EVERY} ticks · deadline {DEADLINE_MS}ms
-      </footer>
-    </main>
+        {phase === 'offline' && (
+          <Overlay compact>
+            <p className="eyebrow warn">The game is paused</p>
+            <h2 className="banner">Jev is offline</h2>
+            <p className="lede">{match.offlineReason}</p>
+            <div className="row">
+              <button className="primary" onClick={() => void retryJev()}>{probe === 'checking' ? 'Checking…' : 'Retry'}</button>
+              <button onClick={() => setPhase('title')}>Quit</button>
+            </div>
+          </Overlay>
+        )}
+
+        {phase === 'levelEnd' && last && (
+          <Overlay compact>
+            <p className="eyebrow">Level {last.level + 1} · {title(levelNames[last.level])}</p>
+            <h2 className={`banner ${last.winner}`}>{last.winner === 'human' ? 'You take it' : last.winner === 'jev' ? 'Jev takes it' : 'Dead even'}</h2>
+            <div className="tally">
+              <div className="human"><b>{last.human}</b><small>{last.humanCleared ? 'cleared' : 'this level'}</small></div>
+              <div className="jev"><b>{last.jev}</b><small>{last.jevCleared ? 'cleared' : 'this level'}</small></div>
+            </div>
+            <p className="keys">{last.level + 1 < ARENA.levels ? `Space for level ${last.level + 2}` : 'Space for the final score'}</p>
+          </Overlay>
+        )}
+
+        {phase === 'final' && (
+          <Overlay>
+            <p className="eyebrow">Final</p>
+            <h2 className={`banner big ${match.human.score > match.jev.score ? 'human' : match.jev.score > match.human.score ? 'jev' : ''}`}>
+              {match.human.score > match.jev.score ? 'You win' : match.jev.score > match.human.score ? 'Jev wins' : 'A draw'}
+            </h2>
+            <div className="tally">
+              <div className="human"><b>{match.human.score}</b><small>you · {wins('human')} levels</small></div>
+              <div className="jev"><b>{match.jev.score}</b><small>Jev · {wins('jev')} levels</small></div>
+            </div>
+            <ol className="levels">
+              {match.results.map(r => (
+                <li key={r.level}><span>{r.level + 1}. {title(levelNames[r.level])}</span><span className={r.winner}>{r.human} – {r.jev}</span></li>
+              ))}
+            </ol>
+            <p className="lede small">Jev answered {stats.answered} of {stats.calls} calls, median {jevMedian ?? '—'} ms; {stats.timeouts} late, {stats.errors} failed.</p>
+            <button className="primary" onClick={() => setPhase('title')}>Play again</button>
+          </Overlay>
+        )}
+      </main>
+
+      <footer className="keys-bar">← → move · Space or ↑ launch · P pause · M {muted ? 'unmute' : 'mute'}</footer>
+    </div>
   );
 }
 
-export default App;
+function SideScore({ who, label, side }: { who: Who; label: string; side: SideHud }) {
+  return (
+    <div className={`hud-side ${who}`}>
+      <span className="hud-label">{label}</span>
+      <span className="hud-score">{side.score.toLocaleString()}</span>
+      <span className="hud-lives" aria-label={`${side.lives} balls left`}>
+        {Array.from({ length: ARENA.lives }, (_, i) => <i key={i} className={i < side.lives ? 'on' : ''} />)}
+      </span>
+    </div>
+  );
+}
+
+function Overlay({ children, compact }: { children: ReactNode; compact?: boolean }) {
+  return <div className={`overlay${compact ? ' compact' : ''}`}><div className="card">{children}</div></div>;
+}
+
+function JevLink({ probe, onRetry }: { probe: Probe | 'checking'; onRetry: () => void }) {
+  if (probe === 'checking') return <p className="link checking">Reaching Jev…</p>;
+  if (probe.ok) return <p className="link ok">Jev is online · {probe.ms} ms to answer</p>;
+  return (
+    <p className="link offline">
+      Jev is offline: {probe.reason} <button className="text" onClick={onRetry}>Retry</button>
+    </p>
+  );
+}
 
 const host = document.getElementById('root');
 if (host) createRoot(host).render(<App />);
