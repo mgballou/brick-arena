@@ -1,39 +1,12 @@
-import { readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 import { createBoard, askForDecision, step } from '../../engine/src/index.ts';
 import { toRequest, fromResponse } from '../../jev/src/wire.ts';
+import { JEV_DEFAULTS, readJevLink } from '../../jev/src/key.ts';
 
+// One live call, to confirm the key in ~/.jev-key reaches Jev: pnpm smoke
 const GAME_DEADLINE = 1000;
-const keyPath = join(homedir(), '.jev-key');
-
-let baseUrl = 'https://api.typesafe.ai';
-let model = 'jev-latest';
-let apiKey = '';
-
-try {
-  const raw = readFileSync(keyPath, 'utf8').trim();
-  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-  const vars: Record<string, string> = {};
-  let isKV = true;
-  for (const line of lines) {
-    const m = line.match(/^([A-Z_]+)=(.+)$/);
-    if (m) vars[m[1]] = m[2];
-    else { isKV = false; break; }
-  }
-  if (isKV && vars['JEV_API_KEY']) {
-    apiKey = vars['JEV_API_KEY'];
-    if (vars['JEV_BASE_URL']) baseUrl = vars['JEV_BASE_URL'];
-    if (vars['JEV_MODEL']) model = vars['JEV_MODEL'];
-  } else {
-    apiKey = raw;
-  }
-} catch {
-  console.error(`Cannot read ${keyPath}. The live smoke test requires ~/.jev-key.`);
-  process.exit(1);
-}
+const { baseUrl, model, key: apiKey } = readJevLink();
 if (!apiKey) {
-  console.error(`~/.jev-key is empty or unparseable.`);
+  console.error(`No TypeSafe key in ${JEV_DEFAULTS.keyFile}. The live smoke test needs one.`);
   process.exit(1);
 }
 

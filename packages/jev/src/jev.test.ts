@@ -1,15 +1,21 @@
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { askForDecision, botPlayer, createBoard, type Ask, type Decision, type Player } from '../../engine/src/index';
-import { jevPlayer, jevPlayerFromEnv } from './player';
+import { JEV_DEFAULTS, parseKeyFile } from './key';
+import { jevPlayer, jevPlayerFromKeyFile } from './player';
 import { raceWithLatency, summarize, TICK_MS } from './race';
 import { SYNTHETIC, syntheticRecording } from './synthetic';
 import { httpTransport, readRecording, recordingTransport, replayTransport } from './transport';
 import { fromResponse, toRequest } from './wire';
 
-const env = { JEV_BASE_URL: 'https://gateway.example/typesafe', JEV_MODEL: 'typesafe-ai/jev', JEV_API_KEY: 'test-key-not-real' };
+function keyFile(text: string) {
+  const path = join(mkdtempSync(join(tmpdir(), 'jev-key-')), 'key');
+  writeFileSync(path, text);
+  return path;
+}
+const link = { keyFile: keyFile('test-key-not-real\n'), baseUrl: 'https://jev.example', model: 'jev-test' };
 const choose = (choice: string) => ({ answers: { decision: { type: 'choice', choice } } });
 
 function askWith(question: Ask['question']): Ask {
@@ -23,16 +29,29 @@ function askWith(question: Ask['question']): Ask {
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe('construction from the environment', () => {
-  it('names every missing variable', () => {
-    expect(() => jevPlayerFromEnv({})).toThrow('JEV_BASE_URL, JEV_MODEL, JEV_API_KEY');
-    expect(() => jevPlayerFromEnv({ ...env, JEV_API_KEY: '' })).toThrow(/needs JEV_API_KEY in the environment/);
+describe('the key file', () => {
+  it('reads a bare token and falls back to TypeSafe defaults', () => {
+    expect(parseKeyFile('  tok-123  \n')).toEqual({ baseUrl: JEV_DEFAULTS.baseUrl, model: JEV_DEFAULTS.model, key: 'tok-123' });
+    expect(JEV_DEFAULTS).toMatchObject({ baseUrl: 'https://api.typesafe.ai', model: 'jev-latest' });
+  });
+
+  it('reads NAME=value lines, quotes and overrides included', () => {
+    expect(parseKeyFile('# mine\nJEV_BASE_URL=https://x.example/\nJEV_API_KEY="tok-1"\nJEV_MODEL=jev-2\n')).toEqual({ baseUrl: 'https://x.example', model: 'jev-2', key: 'tok-1' });
+    expect(parseKeyFile("export TYPESAFE_API_KEY='tok-2'\n").key).toBe('tok-2');
+    expect(parseKeyFile('').key).toBe('');
+  });
+});
+
+describe('construction from the key file', () => {
+  it('refuses to build without a key', () => {
+    expect(() => jevPlayerFromKeyFile({ keyFile: keyFile('') })).toThrow(/needs a TypeSafe key/);
+    expect(() => jevPlayerFromKeyFile({ keyFile: join(tmpdir(), 'no-such-jev-key') })).toThrow(/needs a TypeSafe key/);
   });
 
   it('constructs without calling anything', () => {
     const fetch = vi.fn();
     vi.stubGlobal('fetch', fetch);
-    expect(jevPlayerFromEnv(env).name).toBe('Jev (typesafe-ai/jev)');
+    expect(jevPlayerFromKeyFile(link).name).toBe('Jev (jev-test)');
     expect(fetch).not.toHaveBeenCalled();
   });
 });
@@ -72,16 +91,16 @@ describe('transport', () => {
     const fetch = vi.fn(async () => new Response(JSON.stringify(choose('center')), { status: 200 }));
     vi.stubGlobal('fetch', fetch);
     const path = join(mkdtempSync(join(tmpdir(), 'jev-')), 'calls.ndjson');
-    const player = jevPlayerFromEnv(env, { recordTo: path });
+    const player = jevPlayerFromKeyFile({ ...link, recordTo: path });
 
     const ask = askWith('target');
     expect((await player.decide(ask)).decision).toEqual({ kind: 'target', x: ask.options[1] });
     const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toBe('https://gateway.example/typesafe/v1/systemone');
+    expect(url).toBe('https://jev.example/v1/systemone');
     expect((init.headers as Record<string, string>).authorization).toBe('Bearer test-key-not-real');
 
     const [record] = readRecording(path);
-    expect(record).toMatchObject({ synthetic: false, request: toRequest(ask, 'typesafe-ai/jev'), response: choose('center') });
+    expect(record).toMatchObject({ synthetic: false, request: toRequest(ask, 'jev-test'), response: choose('center') });
     expect(typeof record.ms).toBe('number');
     expect(readFileSync(path, 'utf8')).not.toContain('test-key-not-real');
   });

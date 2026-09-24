@@ -1,8 +1,7 @@
 import type { Player } from '../../engine/src/index';
+import { JEV_DEFAULTS, readJevLink } from './key';
 import { httpTransport, recordingTransport, type Transport } from './transport';
 import { fromResponse, toRequest } from './wire';
-
-export const jevEnv = ['JEV_BASE_URL', 'JEV_MODEL', 'JEV_API_KEY'] as const;
 
 export function jevPlayer(options: { model: string; transport: Transport; name?: string }): Player {
   return {
@@ -15,12 +14,14 @@ export function jevPlayer(options: { model: string; transport: Transport; name?:
   };
 }
 
-// Reads endpoint, model and key once, at construction. The key stays in this
-// closure: it is sent as a header and never written to a recording.
-export function jevPlayerFromEnv(env: Record<string, string | undefined> = process.env, options: { recordTo?: string; timeoutMs?: number } = {}): Player {
-  const missing = jevEnv.filter(name => !env[name]);
-  if (missing.length) throw new Error(`Jev player needs ${missing.join(', ')} in the environment (see README, "Seat a real Jev")`);
-  let transport = httpTransport({ baseUrl: env.JEV_BASE_URL!, apiKey: env.JEV_API_KEY!, timeoutMs: options.timeoutMs });
+// Reads the key file once, at construction (see key.ts for the shapes it
+// accepts). The key stays in this closure: it is sent as a header and never
+// written to a recording. `baseUrl` and `model` override the file and defaults.
+export function jevPlayerFromKeyFile(options: { keyFile?: string; baseUrl?: string; model?: string; recordTo?: string; timeoutMs?: number } = {}): Player {
+  const keyFile = options.keyFile ?? JEV_DEFAULTS.keyFile;
+  const link = readJevLink(keyFile);
+  if (!link.key) throw new Error(`Jev player needs a TypeSafe key in ${keyFile} (see README, "Seat a real Jev")`);
+  let transport = httpTransport({ baseUrl: options.baseUrl ?? link.baseUrl, apiKey: link.key, timeoutMs: options.timeoutMs });
   if (options.recordTo) transport = recordingTransport(transport, options.recordTo);
-  return jevPlayer({ model: env.JEV_MODEL!, transport });
+  return jevPlayer({ model: options.model ?? link.model, transport });
 }

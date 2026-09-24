@@ -26,15 +26,16 @@ Implement `Player` in `packages/engine/src/index.ts` (or an adapter file): provi
 
 ## Seat a real Jev
 
-`packages/jev` holds a `Player` backed by TypeSafe's Jev, called over plain `fetch` at `POST {JEV_BASE_URL}/v1/systemone`. With your own key:
+`packages/jev` holds a `Player` backed by TypeSafe's Jev, called over plain `fetch` at `POST {base}/v1/systemone`. It reads the TypeSafe key from `~/.jev-key` once, at construction, and sends it as `Authorization: Bearer`. The key never enters the environment or a recording.
 
 ```sh
-JEV_BASE_URL=https://ai-gateway.vercel.sh/typesafe JEV_MODEL=typesafe-ai/jev JEV_API_KEY=<key> pnpm jev
+pnpm smoke   # one live call: status, latency, the choice Jev made
+pnpm jev     # race Jev against the deterministic bot
 ```
 
-- `JEV_BASE_URL`: the API root, without `/v1/systemone`. The value above is Vercel AI Gateway; a direct TypeSafe or OpenRouter root works if it serves the same route.
-- `JEV_MODEL`: the model id for that route (`typesafe-ai/jev` on the Gateway).
-- `JEV_API_KEY`: sent as `Authorization: Bearer`. The player reads all three once, at construction, and refuses to build if any is missing. The key never reaches a recording.
+- Endpoint: `https://api.typesafe.ai`, model `jev-latest`. A `JEV_BASE_URL=` or `JEV_MODEL=` line in the key file overrides either; so do `--base-url` and `--model`.
+- Key file: a bare token, or a `JEV_API_KEY=` line. `--key-file` reads another.
+- The Vercel AI Gateway route (`https://ai-gateway.vercel.sh/typesafe`, `typesafe-ai/jev`) wants a Gateway key, not a TypeSafe one, and answers 401 to it.
 
 That races Jev against the deterministic bot on level 0 (`--level`, `--seed`, `--max-ticks`, `--deadline` to change), writes every call and response to `docs/jev-calls.ndjson`, and every decision to `docs/jev-race.ndjson`.
 

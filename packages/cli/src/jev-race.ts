@@ -1,12 +1,12 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { botPlayer, type Player } from '../../engine/src/index.ts';
-import { jevPlayer, jevPlayerFromEnv } from '../../jev/src/player.ts';
+import { jevPlayer, jevPlayerFromKeyFile } from '../../jev/src/player.ts';
 import { raceWithLatency, summarize } from '../../jev/src/race.ts';
 import { readRecording, replayTransport } from '../../jev/src/transport.ts';
 import { syntheticRecording } from '../../jev/src/synthetic.ts';
 
-// Live:   JEV_BASE_URL=… JEV_MODEL=… JEV_API_KEY=… pnpm jev
+// Live:   pnpm jev   (reads the TypeSafe key from ~/.jev-key; --key-file, --base-url, --model override)
 // Replay: pnpm jev --replay docs/jev-calls.synthetic.ndjson
 // Write the synthetic recording again: pnpm jev --write-synthetic
 const { values } = parseArgs({
@@ -19,6 +19,9 @@ const { values } = parseArgs({
     replay: { type: 'string' },
     out: { type: 'string', default: 'docs/jev-race.ndjson' },
     'write-synthetic': { type: 'boolean', default: false },
+    'key-file': { type: 'string' },
+    'base-url': { type: 'string' },
+    model: { type: 'string' },
   },
 });
 
@@ -41,7 +44,7 @@ if (values.replay) {
   now = () => clock;
   jev = jevPlayer({ model: records[0].request.model, name: `Jev replay (${records[0].synthetic ? 'synthetic' : 'captured'})`, transport: replayTransport(records, { wait: ms => { clock += ms; } }) });
 } else {
-  jev = jevPlayerFromEnv(process.env, { recordTo: values.record, timeoutMs: deadlineMs * 2 });
+  jev = jevPlayerFromKeyFile({ keyFile: values['key-file'], baseUrl: values['base-url'], model: values.model, recordTo: values.record, timeoutMs: deadlineMs * 2 });
   writeFileSync(values.record, '');
 }
 
