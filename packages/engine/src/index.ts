@@ -11,7 +11,8 @@ export type Ask = { state: BoardState; at: number; question: 'target' | 'chase' 
 export type Player = { readonly name: string; readonly decide: (ask: Ask) => Promise<{ decision: Decision; ms: number }> };
 export type DecisionRecord = { seed: number; tick: number; ask: Ask; question: Ask['question']; options: Ask['options']; decision: Decision; ms: number; outcome: string };
 
-const W = 480, H = 320, PADDLE_Y = 294, BALL_R = 6;
+const W = 480, H = 320, BALL_R = 6;
+export const PADDLE_Y = 294, PADDLE_H = 10;
 const levelPatterns = [
   ['1111111111', '1222222221', '1000000001'],
   ['11#11#11#1', '11#11#11#1', '111#11#111', '000#00#000'],
@@ -26,7 +27,7 @@ const rng = (seed: number) => { let n = seed >>> 0; return () => ((n = Math.imul
 export function createBoard(seed: number, level = 0): BoardState {
   const bricks: Brick[] = [], pattern = levelPatterns[level % levelPatterns.length];
   pattern.forEach((row, y) => [...row].forEach((cell, x) => { if (cell === '0') return; const unbreakable = cell === '#', regenerates = cell === 'r', durability = unbreakable ? 1 : regenerates ? 2 : Number(cell); bricks.push({ id: `brick-${x}-${y}`, x: 18 + x * 44, y: 28 + y * 23, width: 40, height: 18, durability, maxDurability: durability, unbreakable, regenerates, lastDamagedTick: 0 }); }));
-  return { seed, level, tick: 0, width: W, height: H, paddleX: W / 2 - 90, paddleWidth: 180, paddleTargetX: W / 2, paddleSpeed: 5, magnetPaddle: false, bricks, balls: [{ id: 'ball-0', x: W / 2, y: PADDLE_Y - 30, vx: 2.2, vy: -2.6, radius: BALL_R, tracked: true, piercing: false }], powerUps: [], completed: false, livesLost: 0, bricksCleared: 0, powerUpsTaken: 0 };
+  return { seed, level, tick: 0, width: W, height: H, paddleX: W / 2 - 60, paddleWidth: 120, paddleTargetX: W / 2, paddleSpeed: 7, magnetPaddle: false, bricks, balls: [{ id: 'ball-0', x: W / 2, y: PADDLE_Y - 30, vx: 2.2, vy: -2.6, radius: BALL_R, tracked: true, piercing: false }], powerUps: [], completed: false, livesLost: 0, bricksCleared: 0, powerUpsTaken: 0 };
 }
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 export function predictPaddleX(ball: Ball, width = W, paddleY = PADDLE_Y) { if (ball.vy <= 0) return width / 2; const t = (paddleY - ball.y) / ball.vy, raw = ball.x + ball.vx * t, period = 2 * width, folded = ((raw % period) + period) % period; return folded <= width ? folded : period - folded; }
