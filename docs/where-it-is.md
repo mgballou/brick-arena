@@ -36,19 +36,22 @@ restart `pnpm dev`.
 
 The full five levels ran through Playwright on 24 September against
 `pnpm jev:stub`, a local stand-in that always picks `landing` after 250 to
-550 ms. They did not run against live Jev. A scripted human won 7,835 to 4,475:
+550 ms. They did not run against live Jev. The stand-in took three levels and
+a scripted human took two, but the human won on total, 7,110 to 5,885. Nobody
+cleared a level inside the clock:
 
 | Level | You | Stand-in | Taken by |
 |---|---|---|---|
-| 1 Multi-hit rows | 1,450 | 600 | you, on score |
-| 2 Split walls | 1,075 | 500 | you, on score |
-| 3 Narrow gap | 150 | 1,405 | stand-in, cleared with 61 s left |
-| 4 Regenerating perimeter | 1,735 | 330 | you, on score |
-| 5 Power-up hazards | 3,425 | 1,640 | you, on score |
+| 1 Multi-hit rows | 1,350 | 670 | you |
+| 2 Split walls | 950 | 1,050 | stand-in |
+| 3 Narrow gap | 110 | 200 | stand-in |
+| 4 Regenerating perimeter | 1,275 | 2,860 | stand-in |
+| 5 Power-up hazards | 3,425 | 1,105 | you |
 
-It answered 339 of 340 calls (the last was still out when the level ended),
-with a median of 423 ms and a maximum of 753 ms, no timeouts and no failures.
-Screens are in `docs/screens/2026-09-24/`.
+It answered 602 of 604 calls (two were still out when a level ended), with a
+median of 421 ms and a maximum of 674 ms, no timeouts and no failures. Answer
+times are wall-clock, so a second run scores differently: an earlier one went
+7,835 to 4,475. Screens are in `docs/screens/2026-09-24/`.
 
 ## What to watch
 
