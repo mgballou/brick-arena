@@ -27,6 +27,13 @@ The web game's rules live in `packages/engine/src/arena.ts`, over `step`.
 Change `createBoard` or `step` and the recorded fixtures in `docs/` must be
 regenerated.
 
+`createBoard` keeps the 180-wide paddle on purpose. Measured 24 September over
+`step` with the deterministic bot, seed 20260919, 12000 ticks a level: at 180
+and speed 5 it clears level 0 only; at the arena's 120 and speed 7 it clears no
+level and loses almost no lives, so the ball settles into a loop rather than
+getting past it. Narrowing `createBoard` would leave `pnpm session` recording
+five stalled levels.
+
 <!-- block:begin -->
 ## Agents
 
