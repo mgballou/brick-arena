@@ -264,8 +264,9 @@ function App() {
         const v = side.view;
         const live = phaseRef.current === 'playing';
         v.dim = status !== 'playing';
-        v.banner = status === 'cleared' ? 'CLEARED' : status === 'out' ? 'OUT OF BALLS' : live && side.serving ? (side.who === 'human' ? 'SPACE TO LAUNCH' : 'JEV SERVES') : null;
-        v.sub = status === 'out' ? 'waiting for the other board' : live && side.serving && side.who === 'human' ? '← → to aim · Space or ↑ to launch' : null;
+        // Board captions speak only during play; the screens say the rest.
+        v.banner = !live ? null : status === 'cleared' ? 'CLEARED' : status === 'out' ? 'OUT OF BALLS' : side.serving ? (side.who === 'human' ? 'SPACE TO LAUNCH' : 'JEV SERVES') : null;
+        v.sub = !live ? null : status === 'out' ? 'waiting for the other board' : side.serving && side.who === 'human' ? '← → to aim · Space or ↑ to launch' : null;
       }
       if (humanCanvas.current) drawBoard(humanCanvas.current, match.human.state, match.human.view);
       if (jevCanvas.current) drawBoard(jevCanvas.current, match.jev.state, match.jev.view);
@@ -335,7 +336,7 @@ function App() {
   const jevMedian = median(stats.ms);
   const levelName = title(levelNames[hud.level]);
   const last = match.results.at(-1);
-  const wins = (who: 'human' | 'jev') => match.results.filter(r => r.winner === who).length;
+  const wins = (who: 'human' | 'jev') => { const n = match.results.filter(r => r.winner === who).length; return `${n} ${n === 1 ? 'level' : 'levels'}`; };
 
   return (
     <div className="app">
@@ -433,8 +434,8 @@ function App() {
               {match.human.score > match.jev.score ? 'You win' : match.jev.score > match.human.score ? 'Jev wins' : 'A draw'}
             </h2>
             <div className="tally">
-              <div className="human"><b>{match.human.score}</b><small>you · {wins('human')} levels</small></div>
-              <div className="jev"><b>{match.jev.score}</b><small>Jev · {wins('jev')} levels</small></div>
+              <div className="human"><b>{match.human.score}</b><small>you · {wins('human')}</small></div>
+              <div className="jev"><b>{match.jev.score}</b><small>Jev · {wins('jev')}</small></div>
             </div>
             <ol className="levels">
               {match.results.map(r => (

@@ -1,53 +1,59 @@
 # Where brick arena is
 
-The split-screen game runs. Two boards sit side by side on one seed and one
-level: you steer the left paddle, and the right board belongs to an opponent
-that answers a single multiple-choice question every 30 ticks and never touches
-the paddle itself. Both boards step on the same clock, so they stay in lockstep
-until the first answer differs, and then they drift.
+The game is one match against Jev: a title screen, levels 1 to 5 with a
+banner between them, a 90-second clock and three balls a side, a result after
+each level and a final score. You play on the arrow keys. There is no bot mode
+and no key field.
 
-Two opponents can hold that right board. **Bot** runs in the browser and needs
-nothing — no key, no network, no server beyond the one serving the page. **Live
-Jev** posts each question to `https://api.typesafe.ai/v1/systemone` with a key
-you paste into the page. Without that key, or without a connection, it answers
-nothing: the board keeps playing its last target and the timeout count climbs.
-The page does not fall back from live to recorded, so pick Bot unless you have
-the key in hand.
-
-Not finished: the page never mounted its own React app until today, so `pnpm
-dev` served a blank screen — four lines, now in. And the only Jev recording in
-the repo is synthetic, written to the documented response shape rather than
-captured from a real call.
-
-## Spin it up
+## Play it
 
 ```sh
-pnpm --dir ~/projects/brick-arena install
 pnpm --dir ~/projects/brick-arena dev
 ```
 
-Open http://localhost:5173/, leave the mode on **Bot (free)**, press Start.
+Open http://localhost:5173/ and press Enter. The title screen checks the link
+to Jev before Start lights up.
 
-To watch a Jev answer with no key and no network, race the synthetic recording
-on the command line instead:
+## The key
+
+The dev server reads the TypeSafe key from `~/.jev-key` once, when it starts,
+and adds it to each call it forwards to `https://api.typesafe.ai/v1/systemone`
+with model `jev-latest`. The browser only ever calls `/api/jev`.
+
+**Not yet confirmed against live Jev.** The permission guard refused the one
+real call made on 24 September, and a web search of TypeSafe's docs, so the
+endpoint and model come from the earlier web client. One command settles it:
 
 ```sh
-pnpm --dir ~/projects/brick-arena jev --replay docs/jev-calls.synthetic.ndjson
+pnpm --dir ~/projects/brick-arena smoke
 ```
 
-It finishes at tick 2284 with 76 calls, 75 applied and the one built-in
-failure. For a live key and endpoint, see "Seat a real Jev" in the README.
+It prints the status, the latency and Jev's choice. If TypeSafe wants another
+root or model, put `JEV_BASE_URL=` or `JEV_MODEL=` lines in `~/.jev-key` and
+restart `pnpm dev`.
 
-## Controls and goal
+## Played against a stand-in
 
-No keys. Move the mouse across the left board and your paddle follows it; the
-right paddle is not yours.
+The full five levels ran through Playwright on 24 September against
+`pnpm jev:stub`, a local stand-in that always picks `landing` after 250 to
+550 ms. They did not run against live Jev. A scripted human won 7,835 to 4,475:
 
-Clear the bricks before the right board does — the page scores it on which
-board cleared at the earlier tick.
+| Level | You | Stand-in | Taken by |
+|---|---|---|---|
+| 1 Multi-hit rows | 1,450 | 600 | you, on score |
+| 2 Split walls | 1,075 | 500 | you, on score |
+| 3 Narrow gap | 150 | 1,405 | stand-in, cleared with 61 s left |
+| 4 Regenerating perimeter | 1,735 | 330 | you, on score |
+| 5 Power-up hazards | 3,425 | 1,640 | you, on score |
 
-## Look at this first
+It answered 339 of 340 calls (the last was still out when the level ended),
+with a median of 423 ms and a maximum of 753 ms, no timeouts and no failures.
+Screens are in `docs/screens/2026-09-24/`.
 
-Watch the `Last:` line under JEV STATUS change every 30 ticks. The opponent only
-ever picks one of four named targets, and that constraint is the whole
-experiment.
+## What to watch
+
+- Jev loses balls that a player on the keys keeps. Its answer lands a few
+  hundred ms after the ask while the board moves on, and the wide-paddle
+  power-up drops paddle speed to 3.
+- A player that always picks `landing` catches the ball dead center. The
+  engine sends that straight up, so the arena sets a minimum return angle.

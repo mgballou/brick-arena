@@ -15,6 +15,18 @@ Do not add model SDKs, network calls, physics engines, or flavor naming. Level
 content belongs in the engine's data tables and must preserve seeded,
 repeatable stepping.
 
+## The Jev key never reaches the browser
+
+`~/.jev-key` holds a TypeSafe key. Only `packages/jev/src/key.ts` reads it: the
+Vite plugin in `vite.config.ts` when the dev server starts, and the `jev` and
+`smoke` CLIs. Never move it into an environment variable, a log, a recording or
+the web bundle. To test without it, run `pnpm jev:stub` and start `pnpm dev`
+with `JEV_KEY_FILE` pointing at a dummy file (see the README).
+
+The web game's rules live in `packages/engine/src/arena.ts`, over `step`.
+Change `createBoard` or `step` and the recorded fixtures in `docs/` must be
+regenerated.
+
 <!-- block:begin -->
 ## Agents
 

@@ -1,10 +1,19 @@
-# Two boards, one seed
+# Brick Arena
 
-A deterministic breakout simulation: a human and a plain deterministic bot play the same level side by side. The board is pure TypeScript; React only renders it. Both players answer one categorical `Ask` at bounce cadence, and every answer carries `ms` without pausing simulation.
+A contained tech demo: you against TypeSafe's Jev at breakout, five levels on one seed.
+
+**Play it: `pnpm dev`, open http://localhost:5173**
+
+- Left and Right move your paddle; Space or Up serves; P pauses; M mutes.
+- Each level runs 90 seconds with three balls a side. The first to clear it takes it; otherwise the higher score on the level does. The higher total after level 5 wins.
+- Jev plays the right-hand board. The dev server reads the TypeSafe key from `~/.jev-key` when it starts and forwards Jev's calls itself, so the browser never sees the key. With no key, or no answer, the game says Jev is offline instead of stalling.
+- No key at hand? `pnpm jev:stub` runs a local stand-in that always picks `landing`; start the game against it with `JEV_KEY_FILE=<a file holding any token> JEV_BASE_URL=http://127.0.0.1:18787 pnpm dev`. The endpoint overrides apply only with `JEV_KEY_FILE`, so the real key goes only to TypeSafe.
+
+## The engine
+
+The board is pure TypeScript; React only renders it. Players answer one categorical `Ask` at bounce cadence, and every answer carries `ms` without pausing simulation. `packages/engine/src/arena.ts` layers the game's rules over it (a narrower paddle, serves, lives, scoring, level results) without changing `step`, so recorded sessions still replay. The deterministic bot stays for the tooling below; players never see it.
 
 ```sh
-pnpm install
-pnpm dev
 pnpm test
 pnpm session && pnpm compare
 ```
