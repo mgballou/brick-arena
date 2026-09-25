@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ARENA, arenaBoard, arenaStep, boardAhead, bounced, clearBonus, holdServe, launch, levelOver, levelScore, levelWinner, livesLeft, percentCleared, POINTS, sideStatus } from './arena';
+import { ARENA, arenaBoard, arenaStep, boardAhead, bounced, clearBonus, holdServe, isTuningName, launch, levelOver, levelScore, levelWinner, livesLeft, percentCleared, POINTS, sideStatus, TUNINGS, type Tuning } from './arena';
 import { aimShot, applyDecision, askForDecision, createBoard, openHitPoints, PADDLE_Y, type BoardState } from './index';
 
 describe('arena board', () => {
@@ -9,6 +9,52 @@ describe('arena board', () => {
     expect(board.paddleX + board.paddleWidth / 2).toBe(board.width / 2);
     expect(createBoard(5, 0).paddleWidth).toBe(180);
     expect(arenaBoard(5, 2)).toEqual(arenaBoard(5, 2));
+  });
+});
+
+describe('tunings', () => {
+  // A dead-center catch that picks up a long paddle power-up on the same tick.
+  const catchLongPaddle = (tuning: Tuning = TUNINGS.standard) => {
+    const board = arenaBoard(1, 0, tuning);
+    board.balls[0] = { ...board.balls[0], x: 240, y: PADDLE_Y - 8, vx: 0, vy: 3 };
+    board.powerUps.push({ id: 'p', kind: 'long-slow-paddle', x: 240, y: PADDLE_Y - 2, vy: 1.2 });
+    return arenaStep(board, tuning).state;
+  };
+
+  it('plays the standard game when none is named', () => {
+    for (let level = 0; level < ARENA.levels; level++) expect(arenaBoard(5, level, TUNINGS.standard)).toEqual(arenaBoard(5, level));
+    const board = arenaBoard(5, 3);
+    expect(board.bricks.map(brick => brick.maxDurability)).toEqual(createBoard(5, 3).bricks.map(brick => brick.maxDurability));
+    expect(board.minReturnVx).toBe(ARENA.minReturnVx);
+    expect(catchLongPaddle().paddleSpeed).toBe(3);
+  });
+
+  it('keeps the paddle at full speed under the long paddle in both tunings', () => {
+    expect(catchLongPaddle(TUNINGS.angled).paddleSpeed).toBe(ARENA.paddleSpeed);
+    expect(catchLongPaddle(TUNINGS['one-hit']).paddleSpeed).toBe(ARENA.paddleSpeed);
+  });
+
+  it('angled widens the paddle and sends a dead-center catch off at 1.6', () => {
+    const state = catchLongPaddle(TUNINGS.angled);
+    expect(arenaBoard(1, 0, TUNINGS.angled).paddleWidth).toBe(130);
+    expect(Math.abs(state.balls[0].vx)).toBe(1.6);
+    expect(state.minReturnVx).toBe(1.6);
+  });
+
+  it('one-hit leaves every breakable brick one hit point, and unbreakable bricks as they were', () => {
+    for (let level = 0; level < ARENA.levels; level++) {
+      const board = arenaBoard(5, level, TUNINGS['one-hit']);
+      const standard = arenaBoard(5, level);
+      for (const [index, brick] of board.bricks.entries()) {
+        expect(brick.unbreakable).toBe(standard.bricks[index].unbreakable);
+        if (!brick.unbreakable) expect([brick.durability, brick.maxDurability]).toEqual([1, 1]);
+      }
+    }
+  });
+
+  it('names only the tunings it has', () => {
+    expect(['standard', 'angled', 'one-hit'].every(isTuningName)).toBe(true);
+    expect([null, '', 'toString', 'fast'].some(isTuningName)).toBe(false);
   });
 });
 

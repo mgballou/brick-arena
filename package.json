@@ -2,7 +2,7 @@
   "name": "brick-arena",
   "private": true,
   "type": "module",
-  "scripts": {"dev":"vite","build":"tsc -b && vite build","test":"vitest run","session":"tsx packages/cli/src/session.ts","compare":"tsx packages/cli/src/compare.ts","jev":"tsx packages/cli/src/jev-race.ts","smoke":"tsx packages/cli/src/smoke.ts","jev:stub":"tsx packages/cli/src/jev-stub.ts","fair":"tsx packages/cli/src/fair.ts","objective":"tsx packages/cli/src/objective.ts"},
+  "scripts": {"dev":"vite","build":"tsc -b && vite build","test":"vitest run","session":"tsx packages/cli/src/session.ts","compare":"tsx packages/cli/src/compare.ts","jev":"tsx packages/cli/src/jev-race.ts","smoke":"tsx packages/cli/src/smoke.ts","jev:stub":"tsx packages/cli/src/jev-stub.ts","fair":"tsx packages/cli/src/fair.ts","objective":"tsx packages/cli/src/objective.ts","tunings":"tsx packages/cli/src/tunings.ts"},
   "dependencies": {"@vitejs/plugin-react":"latest","vite":"latest","react":"latest","react-dom":"latest"},
   "devDependencies": {"@types/node":"latest","@types/react":"latest","@types/react-dom":"latest","tsx":"latest","typescript":"latest","vitest":"latest"}
 }

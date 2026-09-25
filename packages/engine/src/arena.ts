@@ -18,6 +18,30 @@ export const ARENA = {
   minReturnVx: 1.1,
 } as const;
 
+// A tuning changes how fast a level can be cleared without touching `step`, so
+// recorded sessions still replay. The web game picks one with `?tuning=`, and
+// `pnpm tunings` measures each (docs/tunings.md). `standard` is the game as it
+// was before tunings existed, and stays the default.
+export type Tuning = {
+  paddleWidth: number;
+  // The paddle never drops below this speed; the long paddle power-up sets 3.
+  minPaddleSpeed: number;
+  // A return from the paddle never goes steeper than this sideways speed.
+  minReturnVx: number;
+  // No breakable brick starts with more hit points than this.
+  maxHitPoints: number;
+};
+
+export const TUNINGS = {
+  standard: { paddleWidth: ARENA.paddleWidth, minPaddleSpeed: 0, minReturnVx: ARENA.minReturnVx, maxHitPoints: Infinity },
+  // Every catch leaves at an angle, so the ball stops looping up one column.
+  angled: { paddleWidth: 130, minPaddleSpeed: ARENA.paddleSpeed, minReturnVx: 1.6, maxHitPoints: Infinity },
+  // Every breakable brick breaks on its first hit, and so none regenerates.
+  'one-hit': { paddleWidth: ARENA.paddleWidth, minPaddleSpeed: ARENA.paddleSpeed, minReturnVx: ARENA.minReturnVx, maxHitPoints: 1 },
+} as const satisfies Record<string, Tuning>;
+export type TuningName = keyof typeof TUNINGS;
+export const isTuningName = (name: string | null | undefined): name is TuningName => !!name && Object.hasOwn(TUNINGS, name);
+
 // Performance is clearing fast (docs/scoring.md). A level scores the share of
 // its brick hit points broken, plus the seconds left when it is cleared. Only a
 // clear reaches 100 percent, so whoever clears first always leads; a lost ball
@@ -33,13 +57,17 @@ export type ArenaEvents = {
 
 // createBoard's 180-wide paddle covers most of a 480 board and never misses;
 // the arena narrows it and speeds it up to suit held arrow keys.
-export function arenaBoard(seed: number, level: number): BoardState {
+export function arenaBoard(seed: number, level: number, tuning: Tuning = TUNINGS.standard): BoardState {
   const board = createBoard(seed, level);
-  board.paddleWidth = ARENA.paddleWidth;
+  for (const brick of board.bricks) {
+    if (brick.unbreakable) continue;
+    brick.durability = brick.maxDurability = Math.min(brick.maxDurability, tuning.maxHitPoints);
+  }
+  board.paddleWidth = tuning.paddleWidth;
   board.paddleSpeed = ARENA.paddleSpeed;
   board.paddleX = board.width / 2 - board.paddleWidth / 2;
   board.paddleTargetX = board.width / 2;
-  board.minReturnVx = ARENA.minReturnVx;
+  board.minReturnVx = tuning.minReturnVx;
   return board;
 }
 
@@ -80,8 +108,9 @@ export function sideStatus(state: BoardState): SideStatus {
 // One step of `step`, read back as the events a game scores and shows. A ball
 // that falls while another is in play is just gone; only the last ball costs
 // a life, and `lifeLost` tells the caller to hold for a serve.
-export function arenaStep(state: BoardState): { state: BoardState; events: ArenaEvents } {
+export function arenaStep(state: BoardState, tuning: Tuning = TUNINGS.standard): { state: BoardState; events: ArenaEvents } {
   const next = step(state);
+  next.paddleSpeed = Math.max(next.paddleSpeed, tuning.minPaddleSpeed);
   const events: ArenaEvents = { hits: [], paddleBounces: [], caught: [], lifeLost: false };
 
   next.bricks.forEach((brick, index) => {
@@ -120,7 +149,7 @@ export function arenaStep(state: BoardState): { state: BoardState; events: Arena
     const before = state.balls.find(item => item.id === ball.id);
     if (!before || before.vy <= 0 || ball.vy >= 0 || ball.y < PADDLE_Y - ball.radius - 0.001) continue;
     events.paddleBounces.push(ball.x);
-    if (Math.abs(ball.vx) < ARENA.minReturnVx) ball.vx = (ball.vx === 0 ? (before.vx >= 0 ? 1 : -1) : Math.sign(ball.vx)) * ARENA.minReturnVx;
+    if (Math.abs(ball.vx) < tuning.minReturnVx) ball.vx = (ball.vx === 0 ? (before.vx >= 0 ? 1 : -1) : Math.sign(ball.vx)) * tuning.minReturnVx;
   }
 
   return { state: next, events };
@@ -139,10 +168,10 @@ export function bounced(before: BoardState, after: BoardState): boolean {
 // Asking about it rather than the board on screen means an answer that takes
 // that long lands on the moment it was chosen for. It stops short of a lost
 // life, a clear or a lost level, since past those there is nothing to answer.
-export function boardAhead(state: BoardState, leadTicks: number): BoardState {
+export function boardAhead(state: BoardState, leadTicks: number, tuning: Tuning = TUNINGS.standard): BoardState {
   let ahead = state;
   for (let i = 0; i < leadTicks; i++) {
-    const { state: next, events } = arenaStep(ahead);
+    const { state: next, events } = arenaStep(ahead, tuning);
     if (events.lifeLost || sideStatus(next) !== 'playing') break;
     ahead = next;
   }
