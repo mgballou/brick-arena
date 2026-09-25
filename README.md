@@ -1,15 +1,67 @@
-# Brick Arena
+<div align="center">
 
-A contained tech demo: you against TypeSafe's Jev at breakout, five levels on one seed.
+<img src="docs/assets/mark.svg" width="64" alt="" />
 
-**Play it: `pnpm dev`, open http://localhost:5173**
+<h1>Brick Arena</h1>
+
+<p><strong>Breakout against TypeSafe's Jev, on one seed, where the faster clear wins.</strong></p>
+
+<p>You and Jev each play a board of the same five levels, side by side. Jev picks where<br />
+each catch sends the ball, asked about the board as it will stand when its answer lands.</p>
+
+<p>
+<a href="https://github.com/mgballou/brick-arena/actions/workflows/ci.yml"><img src="https://github.com/mgballou/brick-arena/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+<img src="https://img.shields.io/badge/license-MIT-5b8def" alt="MIT" />
+</p>
+
+</div>
+
+<br />
+
+<img src="docs/screens/2026-09-24/scoring-02-playing.png" alt="Level 1 in progress: your board on the left, the opponent's on the right, the score and clock above them." />
+
+Level 1, *Multi-hit rows*, in debug mode: the right-hand board is the local stand-in, not Jev,
+and the yellow banner says so. Live Jev draws the same screen with its name on that board.
+
+**Play it: `<hosted URL — filled in after the deploy>`**
+
+The game is live Jev or nothing. Live Jev needs a TypeSafe key; with no key, or when Jev can't
+answer, the page says the game is down and shows no board. The hosted page holds the key as a
+server secret, so you need none there. [docs/deploy.md](docs/deploy.md) sets it up.
+
+## How a match works
 
 - Left and Right move your paddle; Space or Up serves; P pauses; H shows how scoring works; M mutes.
 - Each level runs 90 seconds with three balls a side. The first to clear it takes it; otherwise the larger share cleared does. A level scores 10 per percent cleared plus 10 per second left at a clear, so the score leader is the one winning. A lost ball costs only the serve. The higher total after level 5 wins. [docs/scoring.md](docs/scoring.md) defines it, and Jev's prompt states it.
-- Jev plays the right-hand board. The dev server reads the TypeSafe key from `~/.jev-key` when it starts and forwards Jev's calls itself, so the browser never sees the key. The hosted page runs the same forwarder with the key as a host secret: [docs/deploy.md](docs/deploy.md).
-- No live Jev, no game. The page checks Jev before it shows a board. When the forwarder says Jev can't answer (no key; an auth, credit or rate refusal; a TypeSafe error or timeout; a stand-in outside debug mode; or the day's cap spent), the page says the game is down and shows no board, then or mid-match. The reason goes to the server log only. Three timeouts in a row, or losing the game server, pause the match with a Retry, and it never goes on without Jev.
-- Debug mode is the one way to play without Jev. `pnpm jev:stub` runs a local stand-in that aims every catch at the densest bricks (`clearFast` in `packages/jev/src/stand-in.ts`) and marks every reply `"answered_by": "stand-in"`; start the game against it with `VITE_DEBUG=1 JEV_KEY_FILE=<a file holding any token> JEV_BASE_URL=http://127.0.0.1:18787 pnpm dev`. The screen then shows a `DEBUG · stand-in` banner and names the right-hand board Stand-in, and the match record (`window.__arena.read()`) carries `debug` and `opponent`. Automated runs and Playwright use this mode. The endpoint overrides apply only with `JEV_KEY_FILE`, so the real key goes only to TypeSafe.
+- The page checks Jev before it shows a board. When the forwarder says Jev can't answer (no key; an auth, credit or rate refusal; a TypeSafe error or timeout; a stand-in outside debug mode; or the day's cap spent), the page says the game is down and shows no board, then or mid-match. The reason goes to the server log only. Three timeouts in a row, or losing the game server, pause the match with a Retry, and it never goes on without Jev.
 - Who answered comes from the reply, never the URL: a reply marked `answered_by: "stand-in"` is the stand-in, and one without the mark is live Jev. The proxy and the browser both refuse the stand-in outside debug mode.
+
+## Run it locally
+
+For developers. You need your own TypeSafe key. The repo pins no Node or pnpm version in `package.json` or `.nvmrc`; CI runs Node 24 and pnpm 11, so use those.
+
+```sh
+git clone https://github.com/mgballou/brick-arena.git
+cd brick-arena
+pnpm install
+printf '%s\n' '<your TypeSafe key>' > ~/.jev-key
+chmod 600 ~/.jev-key
+pnpm dev
+```
+
+Then open <http://localhost:5173>. The dev server reads `~/.jev-key` once, when it starts, and forwards Jev's calls itself, so the browser never sees the key. The title screen says *Jev is online* when the key works.
+
+## Debug mode
+
+**Not a real game.** Debug mode is the one way to run the page without Jev: a local stand-in answers in Jev's place. `pnpm jev:stub` runs it; it aims every catch at the densest bricks (`clearFast` in `packages/jev/src/stand-in.ts`) and marks every reply `"answered_by": "stand-in"`. Start the page against it:
+
+```sh
+pnpm jev:stub &
+printf 'dummy\n' > /tmp/dummy-key
+VITE_DEBUG=1 JEV_KEY_FILE=/tmp/dummy-key JEV_BASE_URL=http://127.0.0.1:18787 pnpm dev
+```
+
+The screen then shows a `DEBUG · stand-in` banner and names the right-hand board Stand-in, and the match record (`window.__arena.read()`) carries `debug` and `opponent`. Automated runs and Playwright use this mode. The endpoint overrides apply only with `JEV_KEY_FILE`, so the real key goes only to TypeSafe.
 
 ## The engine
 
