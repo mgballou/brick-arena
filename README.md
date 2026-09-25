@@ -58,10 +58,10 @@ A call never holds the board. Its wall-clock time becomes game time at 60 ticks 
 
 In the web game Jev is asked about the board as it will stand when its answer lands (`boardAhead` in `arena.ts`, led by the match's median answer time), so a slow answer still fits the ball. `pnpm fair` measures what that buys: both boards on one seed, the stand-in's rule answering after `--ms` (default 728, the one live Jev call), against a player on the keys who reacts in `--react` ms.
 
-`docs/jev-calls.synthetic.ndjson` is **synthetic**: hand-written from the documented response shape by `pnpm jev --write-synthetic`, not captured from a call. Its answers follow the bot's rule, it holds one made-up failure, and it carries no times. The tests replay it, and so can you:
+`docs/jev-calls.synthetic.ndjson` is **synthetic**: hand-written from the documented response shape by `pnpm jev --write-synthetic`, not captured from a call. Its answers follow the bot's rule, it holds one made-up failure, and it carries no times. It plays seed 20260962 on level 1, the first seed where that rule clears a level and meets all three questions. The tests replay it, and so can you:
 
 ```sh
-pnpm jev --replay docs/jev-calls.synthetic.ndjson
+pnpm jev --replay docs/jev-calls.synthetic.ndjson --seed 20260962 --level 1
 ```
 
 `--replay` also takes a captured `docs/jev-calls.ndjson`, landing each answer as late as it was recorded.

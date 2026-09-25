@@ -33,17 +33,62 @@ const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(ma
 export function predictPaddleX(ball: Ball, width = W, paddleY = PADDLE_Y) { if (ball.vy <= 0) return width / 2; const t = (paddleY - ball.y) / ball.vy, raw = ball.x + ball.vx * t, period = 2 * width, folded = ((raw % period) + period) % period; return folded <= width ? folded : period - folded; }
 function intersects(ball: { x: number; y: number; radius: number }, rect: { x: number; y: number; width: number; height: number }) { return ball.x + ball.radius >= rect.x && ball.x - ball.radius <= rect.x + rect.width && ball.y + ball.radius >= rect.y && ball.y - ball.radius <= rect.y + rect.height; }
 
+// Where a ball moving (dx, dy) this tick first meets a brick grown by the
+// ball's radius, as a fraction of the move, and which faces it meets. The slab
+// the path enters last names the face; entering both at once is a corner and
+// turns both ways. A path that starts inside or only grazes an edge meets nothing.
+function sweep(ball: Ball, dx: number, dy: number, brick: Brick) {
+  const slab = (p: number, d: number, lo: number, hi: number) => d > 0 ? [(lo - p) / d, (hi - p) / d] : d < 0 ? [(hi - p) / d, (lo - p) / d] : p > lo && p < hi ? [-Infinity, Infinity] : [Infinity, -Infinity];
+  const [xIn, xOut] = slab(ball.x, dx, brick.x - ball.radius, brick.x + brick.width + ball.radius), [yIn, yOut] = slab(ball.y, dy, brick.y - ball.radius, brick.y + brick.height + ball.radius);
+  const t = Math.max(xIn, yIn);
+  return t < 0 || t > 1 || t >= Math.min(xOut, yOut) ? null : { t, x: xIn >= yIn, y: yIn >= xIn };
+}
+
+// A ball that starts a tick inside a brick leaves by the shortest way out and
+// turns on that axis if it was heading further in.
+function pushOut(ball: Ball, brick: Brick) {
+  const exits = [
+    { axis: 'x', to: brick.x - ball.radius, depth: ball.x + ball.radius - brick.x, inward: ball.vx > 0 },
+    { axis: 'x', to: brick.x + brick.width + ball.radius, depth: brick.x + brick.width - (ball.x - ball.radius), inward: ball.vx < 0 },
+    { axis: 'y', to: brick.y - ball.radius, depth: ball.y + ball.radius - brick.y, inward: ball.vy > 0 },
+    { axis: 'y', to: brick.y + brick.height + ball.radius, depth: brick.y + brick.height - (ball.y - ball.radius), inward: ball.vy < 0 },
+  ] as const;
+  if (exits.some(exit => exit.depth <= 0)) return;
+  const exit = exits.reduce((best, item) => item.depth < best.depth ? item : best);
+  if (exit.axis === 'x') { ball.x = exit.to; if (exit.inward) ball.vx *= -1; } else { ball.y = exit.to; if (exit.inward) ball.vy *= -1; }
+}
+
+// Moves a ball one tick through the bricks: to the nearest face on its path,
+// off it, and on with the rest of the move, so no speed carries it through a
+// brick. A piercing ball passes breakable bricks, damaging each it overlaps,
+// but not unbreakable ones. A ball wedged past eight bounces stops where it is.
+function moveThroughBricks(ball: Ball, bricks: Brick[], dt: number, damage: (brick: Brick) => void) {
+  const blocks = (brick: Brick) => brick.unbreakable || (brick.durability > 0 && !ball.piercing);
+  for (const brick of bricks) if (blocks(brick)) pushOut(ball, brick);
+  let dx = ball.vx * dt, dy = ball.vy * dt;
+  for (let bounces = 0; bounces < 8; bounces++) {
+    let hit: { brick: Brick; t: number; x: boolean; y: boolean } | null = null;
+    for (const brick of bricks) { if (!blocks(brick)) continue; const found = sweep(ball, dx, dy, brick); if (found && (!hit || found.t < hit.t)) hit = { brick, ...found }; }
+    if (!hit) { ball.x += dx; ball.y += dy; break; }
+    ball.x += dx * hit.t; ball.y += dy * hit.t; dx *= 1 - hit.t; dy *= 1 - hit.t;
+    if (hit.x) { ball.x = dx > 0 ? hit.brick.x - ball.radius : hit.brick.x + hit.brick.width + ball.radius; dx *= -1; ball.vx *= -1; }
+    if (hit.y) { ball.y = dy > 0 ? hit.brick.y - ball.radius : hit.brick.y + hit.brick.height + ball.radius; dy *= -1; ball.vy *= -1; }
+    damage(hit.brick);
+  }
+  if (ball.piercing) for (const brick of bricks) if (!brick.unbreakable && brick.durability > 0 && intersects(ball, brick)) damage(brick);
+}
+
 export function step(state: BoardState, dt = 1): BoardState {
   if (state.completed) return state;
   const next = structuredClone(state); next.tick += dt; next.paddleX += clamp(next.paddleTargetX - (next.paddleX + next.paddleWidth / 2), -next.paddleSpeed * dt, next.paddleSpeed * dt); const random = rng(next.seed + next.tick + next.level * 997);
   for (const brick of next.bricks) if (brick.regenerates && brick.durability > 0 && brick.durability < brick.maxDurability && next.tick - brick.lastDamagedTick >= 90) brick.durability++;
+  const damage = (brick: Brick) => { if (brick.unbreakable) return; brick.durability--; brick.lastDamagedTick = next.tick; if (brick.durability === 0) { next.bricksCleared++; if (random() < 0.18) { const kinds = powerUpKinds[next.level % powerUpKinds.length]; next.powerUps.push({ id: `power-${next.tick}-${brick.id}`, kind: kinds[next.bricksCleared % kinds.length], x: brick.x + brick.width / 2, y: brick.y, vy: 1.2 }); } } };
   for (const ball of next.balls) {
-    ball.x += ball.vx * dt; ball.y += ball.vy * dt;
+    moveThroughBricks(ball, next.bricks, dt, damage);
     if (ball.x - ball.radius < 0 || ball.x + ball.radius > W) { ball.x = clamp(ball.x, ball.radius, W - ball.radius); ball.vx *= -1; }
     if (ball.y - ball.radius < 0) { ball.y = ball.radius; ball.vy = Math.abs(ball.vy); }
     const paddle = { x: next.paddleX, y: PADDLE_Y, width: next.paddleWidth, height: 10 };
     if (ball.vy > 0 && intersects(ball, paddle)) { ball.y = PADDLE_Y - ball.radius; ball.vy = -Math.abs(ball.vy); ball.vx = clamp((ball.x - (paddle.x + paddle.width / 2)) / 12, -3.8, 3.8); if (next.magnetPaddle) ball.vx *= 0.45; }
-    for (const brick of next.bricks) if (intersects(ball, brick) && (brick.unbreakable || brick.durability > 0)) { if (!ball.piercing) ball.vy *= -1; if (!brick.unbreakable) { brick.durability--; brick.lastDamagedTick = next.tick; if (brick.durability === 0) { next.bricksCleared++; if (random() < 0.18) { const kinds = powerUpKinds[next.level % powerUpKinds.length]; next.powerUps.push({ id: `power-${next.tick}-${brick.id}`, kind: kinds[next.bricksCleared % kinds.length], x: brick.x + brick.width / 2, y: brick.y, vy: 1.2 }); } } } break; }
     if (ball.y > H + 20) { next.livesLost++; ball.x = W / 2; ball.y = PADDLE_Y - 30; ball.vy = -2.6; }
   }
   for (const power of next.powerUps) { power.y += power.vy * dt; const paddle = { x: next.paddleX, y: PADDLE_Y, width: next.paddleWidth, height: 10 }; if (intersects({ ...next.balls[0], x: power.x, y: power.y, radius: 5 }, paddle)) { next.powerUpsTaken++; if (power.kind === 'long-slow-paddle') { next.paddleWidth = Math.min(130, next.paddleWidth + 24); next.paddleSpeed = 3; } if (power.kind === 'short-paddle') next.paddleWidth = Math.max(70, next.paddleWidth - 36); if (power.kind === 'magnet-paddle') next.magnetPaddle = true; if (power.kind === 'piercing-ball') for (const item of next.balls) item.piercing = true; if (power.kind === 'extra-ball') next.balls.push({ id: `ball-${next.balls.length}`, x: power.x, y: power.y, vx: 2.4, vy: -2.4, radius: BALL_R, tracked: false, piercing: false }); power.y = H + 100; } }

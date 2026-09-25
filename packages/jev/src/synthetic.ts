@@ -7,8 +7,10 @@ import { targetKeys, type SystemOneResponse } from './wire';
 // was made: each answer follows the documented response shape
 // ({ model, answers: { <key>: { type: 'choice', choice } }, usage }) with a
 // fixed rule, and one call returns the documented error shape. Every record
-// says `synthetic: true` and carries no time and no token counts.
-export const SYNTHETIC = { model: 'typesafe-ai/jev', seed: 20260919, level: 0, maxTicks: 12000, failedCall: 6 } as const;
+// says `synthetic: true` and carries no time and no token counts. The seed and
+// level are the first where that rule clears a level and meets all three
+// questions; on the other seeds it settles into one column and never clears.
+export const SYNTHETIC = { model: 'typesafe-ai/jev', seed: 20260962, level: 1, maxTicks: 12000, failedCall: 6 } as const;
 
 export async function syntheticRecording(): Promise<CallRecord[]> {
   const records: CallRecord[] = [];

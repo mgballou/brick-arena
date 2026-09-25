@@ -27,12 +27,14 @@ The web game's rules live in `packages/engine/src/arena.ts`, over `step`.
 Change `createBoard` or `step` and the recorded fixtures in `docs/` must be
 regenerated.
 
-`createBoard` keeps the 180-wide paddle on purpose. Measured 24 September over
-`step` with the deterministic bot, seed 20260919, 12000 ticks a level: at 180
-and speed 5 it clears level 0 only; at the arena's 120 and speed 7 it clears no
-level and loses almost no lives, so the ball settles into a loop rather than
-getting past it. Narrowing `createBoard` would leave `pnpm session` recording
-five stalled levels.
+`createBoard` keeps the 180-wide paddle, but its reason is gone. Measured 24
+September over `step` with the deterministic bot, seed 20260919, 12000 ticks a
+level: before the brick collision fix, 180 at speed 5 cleared level 0 and the
+arena's 120 at speed 7 cleared none. After it, neither width clears a level. The
+bot catches the ball dead center, which sends it straight up one column for
+good; the old collision bug turned the ball the wrong way often enough to knock
+it out of that loop. The arena escapes it with `minReturnVx`; `step` has no such
+floor, so `pnpm session` now records only the Human clearing level 1.
 
 <!-- block:begin -->
 ## Agents
