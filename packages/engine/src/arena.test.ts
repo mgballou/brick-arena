@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ARENA, arenaBoard, arenaStep, boardAhead, bounced, clearBonus, holdServe, launch, levelOver, levelWinner, livesLeft, POINTS, sideStatus } from './arena';
-import { applyDecision, createBoard, PADDLE_Y } from './index';
+import { ARENA, arenaBoard, arenaStep, boardAhead, bounced, clearBonus, holdServe, launch, levelOver, levelScore, levelWinner, livesLeft, percentCleared, POINTS, sideStatus } from './arena';
+import { aimShot, applyDecision, askForDecision, createBoard, openHitPoints, PADDLE_Y, type BoardState } from './index';
 
 describe('arena board', () => {
   it('narrows the paddle and leaves createBoard as recorded', () => {
@@ -30,18 +30,34 @@ describe('serving', () => {
 });
 
 describe('arena step', () => {
-  it('scores a brick hit and a break by durability', () => {
+  it('reads a brick hit and a break, and scores each hit point broken as a share of the level', () => {
     const board = arenaBoard(1, 0);
+    const total = board.bricks.reduce((n, item) => n + item.maxDurability, 0);
     const brick = board.bricks.find(item => item.maxDurability === 2)!;
     board.balls[0] = { ...board.balls[0], x: brick.x + 20, y: brick.y + brick.height + 7, vx: 0, vy: -2 };
     const first = arenaStep(board);
     expect(first.events.hits).toEqual([{ x: brick.x + 20, y: brick.y + 9, broke: false, maxDurability: 2 }]);
-    expect(first.events.points).toBe(POINTS.hit);
+    expect(percentCleared(first.state)).toBe(Math.floor(100 / total));
 
     first.state.balls[0] = { ...first.state.balls[0], x: brick.x + 20, y: brick.y + brick.height + 7, vx: 0, vy: -2 };
     const second = arenaStep(first.state);
     expect(second.events.hits[0].broke).toBe(true);
-    expect(second.events.points).toBe(POINTS.hit + 2 * POINTS.breakPerHitPoint);
+    expect(levelScore(second.state, null)).toBe(POINTS.percentCleared * Math.floor(200 / total));
+  });
+
+  it('scores nothing for a lost ball, which costs only the serve, and ends the level on the last', () => {
+    let board = arenaBoard(1, 0);
+    board.bricks[0].durability = 0;
+    const before = levelScore(board, null);
+    for (let ball = 1; ball <= ARENA.lives; ball++) {
+      board.balls[0] = { ...board.balls[0], y: board.height + 19, vy: 3 };
+      const { state, events } = arenaStep(board);
+      expect(events.lifeLost).toBe(true);
+      expect(levelScore(state, null)).toBe(before);
+      expect(sideStatus(state)).toBe(ball < ARENA.lives ? 'playing' : 'out');
+      board = holdServe(state);
+    }
+    expect(ARENA.serveTicks).toBe(45);
   });
 
   it('costs a life only when the last ball falls', () => {
@@ -88,16 +104,48 @@ describe('level outcome', () => {
     expect(levelOver(side('playing', null, 0), side('playing', null, 0), 0)).toBe(true);
   });
 
-  it('gives the level to the first clear, then the higher score', () => {
-    expect(levelWinner(side('cleared', 900, 10), side('playing', null, 800))).toBe('human');
+  // A board of `level` with every breakable hit point broken but `left`.
+  const leaving = (level: number, left: number): BoardState => {
+    const board = arenaBoard(3, level);
+    let keep = left;
+    for (const brick of board.bricks) if (!brick.unbreakable) { brick.durability = Math.min(keep, brick.maxDurability); keep -= brick.durability; }
+    board.completed = left === 0;
+    return board;
+  };
+
+  it('scores the first clear above any board not cleared, however late the clear', () => {
+    const lastFrame = ARENA.levelSeconds * ARENA.ticksPerSecond;
+    for (let level = 0; level < ARENA.levels; level++) {
+      const cleared = side('cleared', lastFrame, levelScore(leaving(level, 0), lastFrame));
+      const almost = side('playing', null, levelScore(leaving(level, 1), null));
+      expect(percentCleared(leaving(level, 1))).toBeLessThan(100);
+      expect(cleared.levelScore).toBeGreaterThan(almost.levelScore);
+      expect(levelWinner(cleared, almost)).toBe('human');
+      expect(levelWinner(almost, cleared)).toBe('jev');
+    }
+  });
+
+  it('gives the level to the higher score: the clear, else the larger share cleared', () => {
     expect(levelWinner(side('out', null, 300), side('out', null, 200))).toBe('human');
     expect(levelWinner(side('out', null, 100), side('playing', null, 200))).toBe('jev');
     expect(levelWinner(side('out', null, 100), side('out', null, 100))).toBe('tie');
+    expect(levelWinner(side('cleared', 600, 1800), side('cleared', 600, 1800))).toBe('tie');
   });
 
-  it('pays for time left on a clear', () => {
-    expect(clearBonus(12.7)).toBe(POINTS.clear + 12 * POINTS.secondLeft);
+  it('pays for time left on a clear, by the frame of the clear', () => {
+    expect(clearBonus(12.7)).toBe(12 * POINTS.secondLeft);
+    expect(levelScore(leaving(0, 0), 30 * ARENA.ticksPerSecond)).toBe(100 * POINTS.percentCleared + (ARENA.levelSeconds - 30) * POINTS.secondLeft);
     expect(sideStatus({ ...arenaBoard(1, 0), livesLost: ARENA.lives })).toBe('out');
+  });
+
+  it('counts a regenerated hit point as unbroken again', () => {
+    const board = arenaBoard(1, 3);
+    const brick = board.bricks.find(item => item.regenerates)!;
+    brick.durability = 1;
+    brick.lastDamagedTick = 0;
+    board.tick = 89;
+    const damaged = percentCleared(board);
+    expect(percentCleared(arenaStep(board).state)).toBeLessThan(damaged);
   });
 });
 
@@ -126,5 +174,51 @@ describe('asking ahead', () => {
     falling.balls[0].vy = 2.6;
     expect(bounced(board, falling)).toBe(true);
     expect(bounced(board, arenaStep(board).state)).toBe(false);
+  });
+});
+
+describe('aiming at the densest bricks', () => {
+  it('counts each column\'s hit points open from below, stopping at an unbreakable brick', () => {
+    const board = arenaBoard(1, 0);
+    for (const brick of board.bricks) if (brick.id.startsWith('brick-7-')) brick.durability = 3;
+    expect(openHitPoints(board).get(18 + 7 * 44 + 20)).toBe(6);
+    expect(openHitPoints(board).get(18 + 20)).toBe(3);
+
+    // Split walls: column 3 is a 1 over a 1 over a wall.
+    expect(openHitPoints(arenaBoard(1, 1)).get(18 + 3 * 44 + 20)).toBe(0);
+  });
+
+  it('sends a caught ball into that column', () => {
+    let board = arenaBoard(1, 0);
+    for (const brick of board.bricks) if (brick.id.startsWith('brick-7-')) brick.durability = 3;
+    board.balls[0] = { ...board.balls[0], x: 100, y: 250, vx: 0, vy: 2.6 };
+    const ask = askForDecision(board);
+    const aim = Number(ask.options[1]);
+    expect(ask.options[0]).toBe(100);
+    board = applyDecision(board, { kind: 'target', x: aim });
+    board.paddleX = aim - board.paddleWidth / 2;
+    for (let i = 0; i < 400; i++) {
+      const { state, events } = arenaStep(board);
+      board = state;
+      if (events.hits.length) { expect(events.hits[0].x).toBe(18 + 7 * 44 + 20); return; }
+    }
+    throw new Error('the ball hit no brick');
+  });
+
+  it('never aims a return the arena would steepen, so a column overhead is sought at an angle', () => {
+    const board = arenaBoard(1, 0);
+    for (const brick of board.bricks) if (brick.id.startsWith('brick-2-')) brick.durability = 3;
+    const ball = { ...board.balls[0], x: 106, y: 250, vx: 0, vy: 2.6 };
+    const shot = aimShot(board, ball, 106)!;
+    expect(Math.abs(106 - shot.paddleX) / 12).toBeGreaterThanOrEqual(ARENA.minReturnVx);
+    expect(aimShot(createBoard(1, 0), ball, 106)).not.toBeNull();
+  });
+
+  it('offers a 45 degree return each way', () => {
+    const board = arenaBoard(1, 0);
+    board.balls[0] = { ...board.balls[0], x: 240, y: 250, vx: 0, vy: 2.6 };
+    const [landing, , left, right] = askForDecision(board).options.map(Number);
+    expect((landing - left) / 12).toBeCloseTo(-2.6);
+    expect((landing - right) / 12).toBeCloseTo(2.6);
   });
 });

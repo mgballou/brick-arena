@@ -62,6 +62,20 @@ body {
 .hud-clock { font: 700 20px var(--mono); font-variant-numeric: tabular-nums; }
 .hud-clock.low { color: var(--warn); }
 
+/* What decides the level, live */
+.decider { display: flex; justify-content: center; align-items: baseline; gap: 14px; flex-wrap: wrap; font: 13px var(--mono); color: #c9ccdb; }
+.decider button.text { color: var(--muted); font: 12px var(--mono); }
+.decider kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 4px; }
+
+/* How scoring works */
+.card.rules { text-align: left; align-items: stretch; z-index: 3; }
+.card.rules .eyebrow, .card.rules .banner, .card.rules .keys { text-align: center; }
+.card.rules .primary { align-self: center; }
+.rules dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; font-size: 14px; line-height: 1.45; }
+.rules dt { font: 700 11px/1.9 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.rules dd { margin: 0; color: #c9ccdb; }
+@media (max-width: 560px) { .rules dl { grid-template-columns: 1fr; } }
+
 /* Boards */
 .arena {
   position: relative;

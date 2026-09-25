@@ -8,7 +8,9 @@ import { jevPlayer, jevPlayerFromKeyFile } from './player';
 import { raceWithLatency, summarize, TICK_MS } from './race';
 import { SYNTHETIC, syntheticRecording } from './synthetic';
 import { httpTransport, readRecording, recordingTransport, replayTransport } from './transport';
-import { fromResponse, toRequest } from './wire';
+import { POINTS } from '../../engine/src/arena';
+import { alwaysLanding, clearFast } from './stand-in';
+import { fromResponse, OBJECTIVE, toRequest } from './wire';
 
 function keyFile(text: string) {
   const path = join(mkdtempSync(join(tmpdir(), 'jev-key-')), 'key');
@@ -57,13 +59,26 @@ describe('construction from the key file', () => {
 });
 
 describe('mapping each question onto one Choice', () => {
-  it('target: four named positions, answered with the matching x', () => {
+  it('target: four named catches, answered with the matching x', () => {
     const ask = askWith('target');
     const question = toRequest(ask, 'm').questions.decision;
     expect(question.type).toBe('choice');
-    expect(Object.keys(question.criteria)).toEqual(['landing', 'center', 'left', 'right']);
+    expect(Object.keys(question.criteria)).toEqual(['landing', 'aim', 'angle-left', 'angle-right']);
     expect(fromResponse(ask, choose('landing'))).toEqual({ kind: 'target', x: ask.options[0] });
-    expect(fromResponse(ask, choose('left'))).toEqual({ kind: 'target', x: 80 });
+    expect(fromResponse(ask, choose('aim'))).toEqual({ kind: 'target', x: ask.options[1] });
+    expect(fromResponse(ask, choose('angle-left'))).toEqual({ kind: 'target', x: ask.options[2] });
+    expect(question.criteria.aim).toMatch(/densest bricks it can reach/);
+  });
+
+  it('opens every question with the objective and the scoring', () => {
+    for (const kind of ['target', 'chase', 'track'] as const) {
+      const { instructions } = toRequest(askWith(kind), 'm').questions.decision;
+      expect(instructions.startsWith(OBJECTIVE)).toBe(true);
+    }
+    expect(OBJECTIVE).toContain(`${POINTS.percentCleared} per percent`);
+    expect(OBJECTIVE).toContain(`${POINTS.secondLeft} per second left`);
+    expect(OBJECTIVE).toMatch(/first to break every breakable brick wins/);
+    expect(OBJECTIVE).toMatch(/lost ball scores nothing/);
   });
 
   it('chase: each falling power-up by id, plus none', () => {
@@ -86,9 +101,24 @@ describe('mapping each question onto one Choice', () => {
   });
 });
 
+describe('the stand-in rules', () => {
+  it('aims every catch, goes only for power-ups that speed a clear, and plays the lowest falling ball', () => {
+    expect(clearFast(toRequest(askWith('target'), 'm'))).toBe('aim');
+    expect(alwaysLanding(toRequest(askWith('target'), 'm'))).toBe('landing');
+    expect(clearFast(toRequest(askWith('chase'), 'm'))).toBe('none');
+    const extra = askWith('chase');
+    extra.state.powerUps.push({ id: 'power-2', kind: 'extra-ball', x: 200, y: 100, vy: 1.2 });
+    expect(clearFast(toRequest(askForDecision(extra.state), 'm'))).toBe('power-2');
+    const track = askWith('track');
+    track.state.balls[0].vy = -2;
+    track.state.balls[1].vy = 2;
+    expect(clearFast(toRequest(askForDecision(track.state), 'm'))).toBe('ball-1');
+  });
+});
+
 describe('transport', () => {
   it('posts to /v1/systemone with a bearer key and records the call without the key', async () => {
-    const fetch = vi.fn(async () => new Response(JSON.stringify(choose('center')), { status: 200 }));
+    const fetch = vi.fn(async () => new Response(JSON.stringify(choose('aim')), { status: 200 }));
     vi.stubGlobal('fetch', fetch);
     const path = join(mkdtempSync(join(tmpdir(), 'jev-')), 'calls.ndjson');
     const player = jevPlayerFromKeyFile({ ...link, recordTo: path });
@@ -100,7 +130,7 @@ describe('transport', () => {
     expect((init.headers as Record<string, string>).authorization).toBe('Bearer test-key-not-real');
 
     const [record] = readRecording(path);
-    expect(record).toMatchObject({ synthetic: false, request: toRequest(ask, 'jev-test'), response: choose('center') });
+    expect(record).toMatchObject({ synthetic: false, request: toRequest(ask, 'jev-test'), response: choose('aim') });
     expect(typeof record.ms).toBe('number');
     expect(readFileSync(path, 'utf8')).not.toContain('test-key-not-real');
   });

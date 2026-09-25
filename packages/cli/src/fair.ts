@@ -39,7 +39,7 @@ type Result = { livesLost: number; bricks: number; cleared: boolean; framesPlaye
 function standIn(state: BoardState, ahead: number): Decision {
   const ask = askForDecision(ahead ? boardAhead(state, ahead) : state);
   const request = toRequest(ask, 'stand-in');
-  const choice = standInChoice(Object.keys(request.questions.decision.criteria));
+  const choice = standInChoice(request);
   return fromResponse(ask, { answers: { decision: { type: 'choice', choice } } });
 }
 

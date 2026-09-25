@@ -90,7 +90,7 @@ describe('the /api/jev route', () => {
     const { url, server } = await serve(options(standIn.url, true));
     const response = await fetch(url, { method: 'POST', body: ask() });
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ answers: { decision: { type: 'choice', choice: 'landing' } }, answered_by: 'stand-in' });
+    expect(await response.json()).toMatchObject({ answers: { decision: { type: 'choice', choice: 'aim' } }, answered_by: 'stand-in' });
     server.close();
   });
 

@@ -1,4 +1,5 @@
-import type { Ask, BoardState, Decision } from '../../engine/src/index.ts';
+import { ARENA, POINTS } from '../../engine/src/arena.ts';
+import { aimShot, predictPaddleX, type Ask, type BoardState, type Decision, type PowerUpKind } from '../../engine/src/index.ts';
 
 // Wire shape of POST {baseUrl}/v1/systemone, as documented by TypeSafe and
 // mirrored by Vercel AI Gateway (https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe).
@@ -27,8 +28,8 @@ export function refusal(by: AnsweredBy, debug: boolean): string | null {
   return 'A stand-in answered, not Jev. It plays only in debug mode: start the dev server with VITE_DEBUG=1.';
 }
 
-// The four `target` options, in the order askForDecision builds them.
-export const targetKeys = ['landing', 'center', 'left', 'right'] as const;
+// The four `target` options, in the order targetOptions builds them.
+export const targetKeys = ['landing', 'aim', 'angle-left', 'angle-right'] as const;
 
 function boardForJev(state: BoardState) {
   return {
@@ -47,12 +48,18 @@ function criteriaFor(ask: Ask): Record<string, string> {
   const { state, options } = ask;
   if (ask.question === 'target') {
     if (options.length !== targetKeys.length) throw new Error(`target ask has ${options.length} options, expected ${targetKeys.length}`);
-    const [landing, center, left, right] = options.map(Number);
+    const [landing, aim, left, right] = options.map(Number);
+    const ball = state.balls.find(item => item.tracked) ?? state.balls[0];
+    const shot = aimShot(state, ball, predictPaddleX(ball));
     return {
-      landing: `Move the paddle under the tracked ball's predicted landing point, x=${landing.toFixed(1)}`,
-      center: `Move the paddle to the middle of the board, x=${center}`,
-      left: `Move the paddle toward the left side, x=${left}`,
-      right: `Move the paddle toward the right side, x=${right}`,
+      landing: ball.vy > 0
+        ? `Catch the ball dead center at its landing point, x=${landing.toFixed(1)}: the safest catch, sending it back up almost straight`
+        : `Wait in the middle, x=${landing.toFixed(1)}, while the ball is still rising`,
+      aim: shot
+        ? `Catch it at x=${aim.toFixed(1)} to send it into the densest bricks it can reach: the column at x=${shot.x}, ${shot.hitPoints} hit points open from below`
+        : `No return reaches a breakable brick: catch it dead center at x=${aim.toFixed(1)}`,
+      'angle-left': `Catch it on the paddle's right side at x=${left.toFixed(1)} to send it up and to the left at 45 degrees`,
+      'angle-right': `Catch it on the paddle's left side at x=${right.toFixed(1)} to send it up and to the right at 45 degrees`,
     };
   }
   if (ask.question === 'chase') {
@@ -60,7 +67,7 @@ function criteriaFor(ask: Ask): Record<string, string> {
       const id = String(option);
       if (id === 'none') return [id, 'Ignore every falling power-up and keep playing the ball'];
       const power = state.powerUps.find(item => item.id === id);
-      return [id, power ? `Catch the falling ${power.kind} power-up at x=${power.x.toFixed(1)}, y=${power.y.toFixed(1)}` : `Catch power-up ${id}`];
+      return [id, power ? `Catch the falling ${power.kind} power-up at x=${power.x.toFixed(1)}, y=${power.y.toFixed(1)}: ${POWER_UP_EFFECTS[power.kind]}` : `Catch power-up ${id}`];
     }));
   }
   return Object.fromEntries(options.map(option => {
@@ -70,14 +77,36 @@ function criteriaFor(ask: Ask): Record<string, string> {
   }));
 }
 
-const instructions: Record<Ask['question'], string> = {
-  target: 'Where should the paddle go next so the ball is not lost and bricks keep breaking?',
-  chase: 'A power-up is falling. Which one should the paddle catch, if any?',
-  track: 'Several balls are in play. Which ball should the paddle follow?',
+// What each power-up does to the pace of a clear, for the chase question.
+const POWER_UP_EFFECTS: Record<PowerUpKind, string> = {
+  'extra-ball': 'a second ball breaks bricks alongside the first',
+  'piercing-ball': 'balls pass through breakable bricks, damaging each',
+  'long-slow-paddle': 'a wider paddle that moves slower',
+  'magnet-paddle': 'returns leave the paddle steeper, so aiming sideways is harder',
+  'short-paddle': 'a narrower paddle, so more balls are missed',
 };
 
+// The objective and the scoring, as docs/scoring.md defines them. Every
+// question opens with it, so each answer is aimed at winning the level.
+export const OBJECTIVE = [
+  'You play a level of breakout against a human on an identical board.',
+  'Performance is clearing fast: the first to break every breakable brick wins the level, and that ends it.',
+  `If nobody clears in ${ARENA.levelSeconds} seconds, the larger share of the level's brick hit points broken wins.`,
+  `Score: ${POINTS.percentCleared} per percent of hit points broken, plus ${POINTS.secondLeft} per second left on the clock when you clear.`,
+  `A lost ball scores nothing and costs nothing but the time to serve again; losing the last of your ${ARENA.lives} ends your level where it stands.`,
+  'Choose whatever breaks bricks soonest, and risk the ball when that speeds the clear.',
+].join(' ');
+
+const questions: Record<Ask['question'], string> = {
+  target: 'Where should the paddle catch the ball, and so where does the ball go next?',
+  chase: 'A power-up is falling. Which one should the paddle go for, if any?',
+  track: 'Several balls are in play. Which ball should the paddle play?',
+};
+
+const instructions = (question: Ask['question']) => `${OBJECTIVE} ${questions[question]}`;
+
 export function toRequest(ask: Ask, model: string): SystemOneRequest {
-  return { model, state: boardForJev(ask.state), questions: { decision: { type: 'choice', instructions: instructions[ask.question], criteria: criteriaFor(ask) } } };
+  return { model, state: boardForJev(ask.state), questions: { decision: { type: 'choice', instructions: instructions(ask.question), criteria: criteriaFor(ask) } } };
 }
 
 export function fromResponse(ask: Ask, response: SystemOneResponse): Decision {

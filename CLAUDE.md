@@ -29,6 +29,13 @@ which says so on screen and in the match record. `refusal` in
 `packages/jev/src/wire.ts` is the one gate; the proxy and the browser both
 ask it. Who answered comes from the reply's `answered_by` mark, never the URL.
 
+`docs/scoring.md` defines performance once: clearing fast. `POINTS` and
+`levelWinner` in `arena.ts`, the scoring panel in `main.tsx`, and `OBJECTIVE`
+and the `target` options in `packages/jev/src/wire.ts` all follow it; change
+the definition and change all four. `askForDecision` builds the options, so a
+change to it means regenerating `docs/session.ndjson` and the synthetic
+recording.
+
 The web game's rules live in `packages/engine/src/arena.ts`, over `step`.
 Change `createBoard` or `step` and the recorded fixtures in `docs/` must be
 regenerated.

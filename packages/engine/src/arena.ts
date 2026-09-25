@@ -1,4 +1,4 @@
-import { createBoard, PADDLE_Y, step, type BoardState, type PowerUpKind } from './index';
+import { createBoard, PADDLE_Y, step, type BoardState, type PowerUpKind } from './index.ts';
 
 // The arcade rules the web game plays by, layered over the pure board. Nothing
 // here changes `step`, so recorded sessions still replay against the engine as
@@ -9,6 +9,8 @@ export const ARENA = {
   askEvery: 30,
   levelSeconds: 90,
   ticksPerSecond: 60,
+  // After a lost ball, Jev serves this many ticks later; you serve on Space.
+  serveTicks: 45,
   paddleWidth: 120,
   paddleSpeed: 7,
   // A return never goes steeper than this: a dead-center catch would
@@ -16,14 +18,17 @@ export const ARENA = {
   minReturnVx: 1.1,
 } as const;
 
-export const POINTS = { hit: 10, breakPerHitPoint: 40, powerUp: 25, clear: 500, secondLeft: 5 } as const;
+// Performance is clearing fast (docs/scoring.md). A level scores the share of
+// its brick hit points broken, plus the seconds left when it is cleared. Only a
+// clear reaches 100 percent, so whoever clears first always leads; a lost ball
+// and a caught power-up score nothing in themselves.
+export const POINTS = { percentCleared: 10, secondLeft: 10 } as const;
 
 export type ArenaEvents = {
   hits: Array<{ x: number; y: number; broke: boolean; maxDurability: number }>;
   paddleBounces: number[];
   caught: PowerUpKind[];
   lifeLost: boolean;
-  points: number;
 };
 
 // createBoard's 180-wide paddle covers most of a 480 board and never misses;
@@ -34,6 +39,7 @@ export function arenaBoard(seed: number, level: number): BoardState {
   board.paddleSpeed = ARENA.paddleSpeed;
   board.paddleX = board.width / 2 - board.paddleWidth / 2;
   board.paddleTargetX = board.width / 2;
+  board.minReturnVx = ARENA.minReturnVx;
   return board;
 }
 
@@ -76,20 +82,18 @@ export function sideStatus(state: BoardState): SideStatus {
 // a life, and `lifeLost` tells the caller to hold for a serve.
 export function arenaStep(state: BoardState): { state: BoardState; events: ArenaEvents } {
   const next = step(state);
-  const events: ArenaEvents = { hits: [], paddleBounces: [], caught: [], lifeLost: false, points: 0 };
+  const events: ArenaEvents = { hits: [], paddleBounces: [], caught: [], lifeLost: false };
 
   next.bricks.forEach((brick, index) => {
     const before = state.bricks[index];
     if (!before || brick.durability >= before.durability) return;
     const broke = brick.durability === 0;
     events.hits.push({ x: brick.x + brick.width / 2, y: brick.y + brick.height / 2, broke, maxDurability: brick.maxDurability });
-    events.points += POINTS.hit + (broke ? POINTS.breakPerHitPoint * brick.maxDurability : 0);
   });
 
   for (const power of state.powerUps) {
     if (power.y < state.height && !next.powerUps.some(item => item.id === power.id)) events.caught.push(power.kind);
   }
-  events.points += events.caught.length * POINTS.powerUp;
 
   const lost = state.balls.filter(ball => ball.y + ball.vy > state.height + 20).map(ball => ball.id);
   if (lost.length) {
@@ -145,7 +149,27 @@ export function boardAhead(state: BoardState, leadTicks: number): BoardState {
   return ahead;
 }
 
-export type LevelSide ={ status: SideStatus; clearedAt: number | null; levelScore: number };
+// The share of the level's breakable hit points broken, 0 to 100, rounded
+// down so that only a clear reads 100. A hit point that regenerates counts as
+// unbroken again.
+export function percentCleared(state: BoardState): number {
+  let total = 0, left = 0;
+  for (const brick of state.bricks) if (!brick.unbreakable) { total += brick.maxDurability; left += brick.durability; }
+  return total ? Math.floor((100 * (total - left)) / total) : 100;
+}
+
+export function clearBonus(secondsLeft: number) {
+  return Math.max(0, Math.floor(secondsLeft)) * POINTS.secondLeft;
+}
+
+// A side's score on a level: what it has cleared, plus the clock it left if it
+// cleared. `clearedAt` is the frame of the clear, counted from the level's start.
+export function levelScore(state: BoardState, clearedAt: number | null): number {
+  const bonus = clearedAt === null ? 0 : clearBonus(ARENA.levelSeconds - clearedAt / ARENA.ticksPerSecond);
+  return POINTS.percentCleared * percentCleared(state) + bonus;
+}
+
+export type LevelSide = { status: SideStatus; clearedAt: number | null; levelScore: number };
 
 // A level ends when either side clears it, when neither side can play on, or
 // when the clock runs out.
@@ -155,14 +179,10 @@ export function levelOver(human: LevelSide, jev: LevelSide, secondsLeft: number)
   return secondsLeft <= 0;
 }
 
-// First to clear wins; otherwise the higher score on the level; otherwise a tie.
+// The higher level score takes the level. A clear ends the level and only a
+// clear reaches 100 percent, so this is the first to clear, or else the larger
+// share cleared; the same share, or a clear on the same frame, is a tie.
 export function levelWinner(human: LevelSide, jev: LevelSide): 'human' | 'jev' | 'tie' {
-  if (human.clearedAt !== null && (jev.clearedAt === null || human.clearedAt < jev.clearedAt)) return 'human';
-  if (jev.clearedAt !== null && (human.clearedAt === null || jev.clearedAt < human.clearedAt)) return 'jev';
   if (human.levelScore !== jev.levelScore) return human.levelScore > jev.levelScore ? 'human' : 'jev';
   return 'tie';
-}
-
-export function clearBonus(secondsLeft: number) {
-  return POINTS.clear + Math.max(0, Math.floor(secondsLeft)) * POINTS.secondLeft;
 }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client';
 import { applyDecision, askForDecision, levelNames, type BoardState } from '../../engine/src/index';
 import {
-  ARENA, arenaBoard, arenaStep, boardAhead, bounced, clearBonus, holdServe, launch, levelOver, levelWinner, livesLeft, sideStatus,
+  ARENA, arenaBoard, arenaStep, boardAhead, bounced, holdServe, launch, levelOver, levelScore, levelWinner, livesLeft, percentCleared, POINTS, sideStatus,
   type ArenaEvents, type LevelSide, type SideStatus,
 } from '../../engine/src/arena';
 import { burst, reducedMotion, Sound, stepParticles } from './feedback';
@@ -13,7 +13,6 @@ import './style.css';
 
 const SEED = 20260919;
 const TICK_MS = 1000 / ARENA.ticksPerSecond;
-const JEV_SERVE_TICKS = 45;
 // No live Jev, no game. An offline answer pauses the match at once; so do this
 // many timeouts in a row, since a board with no answers is not Jev playing.
 const MISSED_AFTER = 3;
@@ -33,7 +32,7 @@ type Side = {
 };
 
 type JevStats = { calls: number; answered: number; timeouts: number; errors: number; missedStreak: number; lastChoice: string; lastMs: number | null; ms: number[]; pending: boolean; answeredBy: Record<AnsweredBy, number> };
-type LevelResult = { level: number; winner: 'human' | 'jev' | 'tie'; human: number; jev: number; humanCleared: boolean; jevCleared: boolean };
+type LevelResult = { level: number; winner: 'human' | 'jev' | 'tie'; human: number; jev: number; humanPercent: number; jevPercent: number; humanCleared: boolean; jevCleared: boolean };
 
 // `opponent` is who answered the check before the match, and `debug` whether
 // the stand-in was allowed. Both travel with every read of the match.
@@ -64,11 +63,11 @@ const median = (values: number[]) => values.length ? [...values].sort((a, b) => 
 const clock = (seconds: number) => { const s = Math.max(0, Math.ceil(seconds)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 const title = (name: string) => name[0].toUpperCase() + name.slice(1);
 
-type SideHud = { score: number; levelScore: number; lives: number; status: SideStatus; serving: boolean };
+type SideHud = { score: number; levelScore: number; percent: number; lives: number; status: SideStatus; serving: boolean };
 type Hud = { level: number; seconds: number; human: SideHud; jev: SideHud; stats: JevStats; opponent: AnsweredBy };
 
 function snapshot(match: Match): Hud {
-  const side = (s: Side): SideHud => ({ score: s.score, levelScore: s.levelScore, lives: livesLeft(s.state), status: sideStatus(s.state), serving: s.serving });
+  const side = (s: Side): SideHud => ({ score: s.score, levelScore: s.levelScore, percent: percentCleared(s.state), lives: livesLeft(s.state), status: sideStatus(s.state), serving: s.serving });
   return { level: match.level, seconds: secondsLeft(match), human: side(match.human), jev: side(match.jev), stats: { ...match.stats, ms: match.stats.ms }, opponent: match.opponent };
 }
 
@@ -85,11 +84,27 @@ function App() {
   const probeMs = useRef(0);
   const [hud, setHud] = useState<Hud>(() => snapshot(game.current));
   const [muted, setMuted] = useState(false);
+  // The scoring panel. Opened mid-level it pauses the match, and closing it
+  // plays on.
+  const [rules, setRules] = useState(false);
+  const rulesPaused = useRef(false);
 
   const setPhase = useCallback((next: Phase) => {
     phaseRef.current = next;
     setPhaseState(next);
   }, []);
+
+  const openRules = useCallback(() => {
+    rulesPaused.current = phaseRef.current === 'playing';
+    if (rulesPaused.current) setPhase('paused');
+    setRules(true);
+  }, [setPhase]);
+
+  const closeRules = useCallback(() => {
+    setRules(false);
+    if (rulesPaused.current && phaseRef.current === 'paused') setPhase('playing');
+    rulesPaused.current = false;
+  }, [setPhase]);
 
   const checkJev = useCallback(async () => {
     setProbe('checking');
@@ -129,7 +144,7 @@ function App() {
     const match = game.current;
     const human = levelSide(match.human), jev = levelSide(match.jev);
     const winner = levelWinner(human, jev);
-    match.results.push({ level: match.level, winner, human: match.human.levelScore, jev: match.jev.levelScore, humanCleared: human.clearedAt !== null, jevCleared: jev.clearedAt !== null });
+    match.results.push({ level: match.level, winner, human: match.human.levelScore, jev: match.jev.levelScore, humanPercent: percentCleared(match.human.state), jevPercent: percentCleared(match.jev.state), humanCleared: human.clearedAt !== null, jevCleared: jev.clearedAt !== null });
     match.gen++;
     setHud(snapshot(match));
     setPhase('levelEnd');
@@ -157,12 +172,10 @@ function App() {
     }
   }, [checkJev, setPhase]);
 
-  // What a scored step means on screen and in the speakers.
+  // What a step means on screen and in the speakers.
   const feel = useCallback((side: Side, before: BoardState, events: ArenaEvents) => {
     const pan = side.who === 'human' ? -0.6 : 0.6;
     const motion = side.view.motion;
-    side.score += events.points;
-    side.levelScore += events.points;
     for (const hit of events.hits) {
       const brick = before.bricks.find(item => item.x + item.width / 2 === hit.x && item.y + item.height / 2 === hit.y);
       const color = brick ? brickColor(brick) : PALETTE.ink;
@@ -223,7 +236,7 @@ function App() {
     }
     if (side.serving) {
       side.state = holdServe(side.state);
-      const go = side.who === 'human' ? keys.current.launch : ++side.serveWait >= JEV_SERVE_TICKS;
+      const go = side.who === 'human' ? keys.current.launch : ++side.serveWait >= ARENA.serveTicks;
       if (go) {
         side.state = launch(side.state);
         side.serving = false;
@@ -238,12 +251,12 @@ function App() {
     side.state = state;
     feel(side, before, events);
     if (events.lifeLost) side.serving = true;
-    if (state.completed && side.clearedAt === null) {
-      side.clearedAt = match.frame;
-      const bonus = clearBonus(secondsLeft(match));
-      side.score += bonus;
-      side.levelScore += bonus;
-    }
+    if (state.completed && side.clearedAt === null) side.clearedAt = match.frame;
+    // The score is the board, not a tally of events: what is cleared now, plus
+    // the clock left at a clear (docs/scoring.md).
+    const now = levelScore(state, side.clearedAt);
+    side.score += now - side.levelScore;
+    side.levelScore = now;
     // Jev is asked on a steady cadence and again after any bounce, when the
     // landing point it last chose has just moved.
     if (side.who === 'jev' && !side.serving && !state.completed && (bounced(before, state) || state.tick % ARENA.askEvery === 0) && !match.stats.pending) askJevFor(match);
@@ -310,6 +323,11 @@ function App() {
       if (event.repeat) return;
       const confirm = key === ' ' || key === 'Enter';
       const current = phaseRef.current;
+      if (rules) {
+        if (confirm || key === 'Escape' || key === 'h' || key === 'H') closeRules();
+        return;
+      }
+      if (key === 'h' || key === 'H') { openRules(); return; }
       if (current === 'playing') {
         if (key === ' ' || key === 'ArrowUp') keys.current.launch = true;
         if (key === 'p' || key === 'P' || key === 'Escape') setPhase('paused');
@@ -332,7 +350,7 @@ function App() {
     window.addEventListener('keydown', onDown);
     window.addEventListener('keyup', onUp);
     return () => { window.removeEventListener('keydown', onDown); window.removeEventListener('keyup', onUp); };
-  }, [advance, probe, setPhase, startGame]);
+  }, [advance, closeRules, openRules, probe, rules, setPhase, startGame]);
 
   // The level banner steps aside on its own.
   useEffect(() => {
@@ -380,6 +398,11 @@ function App() {
         <SideScore who="jev" label={rival} side={hud.jev} />
       </header>
 
+      <div className="decider" role="status" aria-live="off">
+        <span>{decider(hud, rival)}</span>
+        <button className="text" onClick={openRules}>How scoring works <kbd>H</kbd></button>
+      </div>
+
       <main className="arena">
         <figure className="board human">
           <figcaption><span className="tag human">You</span><span className="hint">← → move · Space launch</span></figcaption>
@@ -406,7 +429,7 @@ function App() {
           <Overlay>
             <p className="eyebrow">A TypeSafe Jev tech demo</p>
             <h1 className="logo">Brick<span>Arena</span></h1>
-            <p className="lede">Five levels. One seed. You on the arrow keys, Jev on the other board. First to clear a level takes it; the higher total after five wins.</p>
+            <p className="lede">Five levels. One seed. You on the arrow keys, Jev on the other board. The first to clear a level takes it, and the score counts how much you cleared and how fast. The higher total after five wins.</p>
             {probe !== 'checking' && !probe.ok ? (
               <div className="no-jev" role="alert">
                 <h2 className="banner">Jev isn't reachable</h2>
@@ -423,7 +446,7 @@ function App() {
                 </ul>
                 <JevLink probe={probe} />
                 <button className="primary" disabled={!ready} onClick={() => void startGame()}>Start</button>
-                <p className="keys">Enter to start · ← → move · Space or ↑ launch · P pause · M {muted ? 'unmute' : 'mute'}</p>
+                <p className="keys">Enter to start · ← → move · Space or ↑ launch · P pause · H scoring · M {muted ? 'unmute' : 'mute'}</p>
               </>
             )}
           </Overlay>
@@ -437,7 +460,7 @@ function App() {
           </Overlay>
         )}
 
-        {phase === 'paused' && (
+        {phase === 'paused' && !rules && (
           <Overlay compact>
             <h2 className="banner">Paused</h2>
             <p className="keys">P or Space to resume</p>
@@ -462,8 +485,8 @@ function App() {
             <p className="eyebrow">Level {last.level + 1} · {title(levelNames[last.level])}</p>
             <h2 className={`banner ${last.winner}`}>{last.winner === 'human' ? 'You take it' : last.winner === 'jev' ? `${rival} takes it` : 'Dead even'}</h2>
             <div className="tally">
-              <div className="human"><b>{last.human}</b><small>{last.humanCleared ? 'cleared' : 'this level'}</small></div>
-              <div className="jev"><b>{last.jev}</b><small>{last.jevCleared ? 'cleared' : 'this level'}</small></div>
+              <div className="human"><b>{last.human}</b><small>{last.humanCleared ? 'cleared' : `${last.humanPercent}% cleared`}</small></div>
+              <div className="jev"><b>{last.jev}</b><small>{last.jevCleared ? 'cleared' : `${last.jevPercent}% cleared`}</small></div>
             </div>
             <p className="keys">{last.level + 1 < ARENA.levels ? `Space for level ${last.level + 2}` : 'Space for the final score'}</p>
           </Overlay>
@@ -489,9 +512,11 @@ function App() {
             <button className="primary" onClick={() => setPhase('title')}>Play again</button>
           </Overlay>
         )}
+
+        {rules && <Rules rival={rival} onClose={closeRules} resumes={rulesPaused.current} />}
       </main>
 
-      <footer className="keys-bar">← → move · Space or ↑ launch · P pause · M {muted ? 'unmute' : 'mute'}</footer>
+      <footer className="keys-bar">← → move · Space or ↑ launch · P pause · H scoring · M {muted ? 'unmute' : 'mute'}</footer>
     </div>
   );
 }
@@ -505,6 +530,44 @@ function SideScore({ who, label, side }: { who: Who; label: string; side: SideHu
         {Array.from({ length: ARENA.lives }, (_, i) => <i key={i} className={i < side.lives ? 'on' : ''} />)}
       </span>
     </div>
+  );
+}
+
+// What decides this level right now, in one line.
+function decider(hud: Hud, rival: string) {
+  const { human, jev } = hud;
+  const share = (side: SideHud) => side.status === 'cleared' ? 'cleared' : `${side.percent}%`;
+  const standing = `You ${share(human)} · ${rival} ${share(jev)}`;
+  if (human.status === 'cleared') return `You cleared first · ${standing}`;
+  if (jev.status === 'cleared') return `${rival} cleared first · ${standing}`;
+  if (human.status === 'out' && jev.status === 'out') return `Both out of balls: the larger share takes it · ${standing}`;
+  if (human.status === 'out') return `You're out of balls: ${rival} takes it past ${human.percent}% · ${standing}`;
+  if (jev.status === 'out') return `${rival} is out of balls: you take it past ${jev.percent}% · ${standing}`;
+  if (hud.seconds < 15) return `First to clear wins; at 0:00 the larger share does · ${standing}`;
+  return `First to clear wins · ${standing}`;
+}
+
+// How scoring works, as docs/scoring.md defines it.
+function Rules({ rival, onClose, resumes }: { rival: string; onClose: () => void; resumes: boolean }) {
+  return (
+    <div className="overlay"><div className="card rules" role="dialog" aria-label="How scoring works">
+      <p className="eyebrow">How scoring works</p>
+      <h2 className="banner">Clear it first</h2>
+      <dl>
+        <dt>Winning a level</dt>
+        <dd>The first board to break every breakable brick takes the level, and the level ends there. If the {ARENA.levelSeconds} s clock runs out, or both boards run out of balls, the larger share cleared takes it.</dd>
+        <dt>The score</dt>
+        <dd>{POINTS.percentCleared} for each percent of the level's brick hit points broken, plus {POINTS.secondLeft} for each second left on the clock when you clear. Only a clear reaches 100%, so whoever clears first leads the level. A brick that heals counts as unbroken again.</dd>
+        <dt>A lost ball</dt>
+        <dd>Scores nothing and costs no points, only the time to serve again. Lose all {ARENA.lives} and your board stops where it stands.</dd>
+        <dt>Power-ups</dt>
+        <dd>Score nothing. They matter only for how fast they help you clear.</dd>
+        <dt>The match</dt>
+        <dd>The higher total after {ARENA.levels} levels wins. {rival === 'Jev' ? 'Jev is told these rules and asked, at each catch, to aim at them.' : 'The stand-in plays a fixed rule aimed at them: every catch sent at the densest bricks.'}</dd>
+      </dl>
+      <button className="primary" onClick={onClose}>{resumes ? 'Back to the level' : 'Close'}</button>
+      <p className="keys">H, Space or Esc to close</p>
+    </div></div>
   );
 }
 

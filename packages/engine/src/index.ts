@@ -6,7 +6,7 @@ export type Brick = { id: string; x: number; y: number; width: number; height: n
 export type Ball = { id: string; x: number; y: number; vx: number; vy: number; radius: number; tracked: boolean; piercing: boolean };
 export type PowerUpKind = 'extra-ball' | 'long-slow-paddle' | 'piercing-ball' | 'magnet-paddle' | 'short-paddle';
 export type PowerUp = { id: string; kind: PowerUpKind; x: number; y: number; vy: number };
-export type BoardState = { seed: number; level: number; tick: number; width: number; height: number; paddleX: number; paddleWidth: number; paddleTargetX: number; paddleSpeed: number; magnetPaddle: boolean; bricks: Brick[]; balls: Ball[]; powerUps: PowerUp[]; completed: boolean; livesLost: number; bricksCleared: number; powerUpsTaken: number };
+export type BoardState = { seed: number; level: number; tick: number; width: number; height: number; paddleX: number; paddleWidth: number; paddleTargetX: number; paddleSpeed: number; magnetPaddle: boolean; bricks: Brick[]; balls: Ball[]; powerUps: PowerUp[]; completed: boolean; livesLost: number; bricksCleared: number; powerUpsTaken: number; minReturnVx?: number };
 export type Ask = { state: BoardState; at: number; question: 'target' | 'chase' | 'track'; options: ReadonlyArray<string | number> };
 export type Player = { readonly name: string; readonly decide: (ask: Ask) => Promise<{ decision: Decision; ms: number }> };
 export type DecisionRecord = { seed: number; tick: number; ask: Ask; question: Ask['question']; options: Ask['options']; decision: Decision; ms: number; outcome: string };
@@ -95,7 +95,93 @@ export function step(state: BoardState, dt = 1): BoardState {
   next.powerUps = next.powerUps.filter(power => power.y < H + 20); next.completed = next.bricks.every(brick => brick.unbreakable || brick.durability === 0); return next;
 }
 
-export function askForDecision(state: BoardState): Ask { const visible = state.powerUps.filter(power => power.y < state.height && power.y > 0); if (visible.length) return { state, at: state.tick, question: 'chase', options: [...visible.map(power => power.id), 'none'] }; if (state.balls.length > 1) return { state, at: state.tick, question: 'track', options: state.balls.map(ball => ball.id) }; const ball = state.balls.find(item => item.tracked) ?? state.balls[0]; return { state, at: state.tick, question: 'target', options: [predictPaddleX(ball), state.width / 2, 80, state.width - 80] }; }
+// The paddle sends a ball back at (hit point - paddle center) / 12 px a tick
+// sideways, no faster than 3.8 (see `step`), so where the paddle stands under
+// the landing point picks where the ball goes next. The reach keeps the hit
+// point this far inside the paddle's edge, so an aimed catch is still a catch.
+const RETURN_SLOPE = 12, MAX_RETURN_VX = 3.8, AIM_EDGE = 10;
+const magnetDamping = (state: BoardState) => state.magnetPaddle ? 0.45 : 1;
+const paddleReach = (state: BoardState) => Math.min(state.paddleWidth / 2 - AIM_EDGE, RETURN_SLOPE * MAX_RETURN_VX);
+
+// The x at which the paddle's center sends the ball off at `vx`, given where
+// it lands. A magnet paddle damps the return, so it stands further off.
+function paddleForReturn(state: BoardState, landing: number, vx: number) {
+  const reach = paddleReach(state);
+  return landing - clamp(RETURN_SLOPE * vx / magnetDamping(state), -reach, reach);
+}
+
+// Each column's hit points a ball can reach from below: counting up from its
+// lowest live brick until an unbreakable one blocks the way. Keyed by the
+// column's center x.
+export function openHitPoints(state: BoardState): Map<number, number> {
+  const columns = new Map<number, Brick[]>();
+  for (const brick of state.bricks) {
+    if (!brick.unbreakable && brick.durability === 0) continue;
+    const x = brick.x + brick.width / 2;
+    columns.set(x, [...(columns.get(x) ?? []), brick]);
+  }
+  const open = new Map<number, number>();
+  for (const [x, bricks] of columns) {
+    let hitPoints = 0;
+    for (const brick of [...bricks].sort((a, b) => b.y - a.y)) { if (brick.unbreakable) break; hitPoints += brick.durability; }
+    open.set(x, hitPoints);
+  }
+  return open;
+}
+
+// The first brick a ball sent up from `landing` at `vx` meets, cast leg by leg
+// between the side walls with the same sweep `step` moves it by; null if it
+// reaches the top untouched.
+function firstBrick(state: BoardState, ball: Ball, landing: number, vx: number): Brick | null {
+  const blocking = state.bricks.filter(brick => brick.unbreakable || brick.durability > 0);
+  const r = ball.radius, vy = -Math.abs(ball.vy);
+  let x = landing, y = PADDLE_Y - r, dx = vx;
+  for (let leg = 0; leg < 8; leg++) {
+    const toTop = (y - r) / -vy;
+    const toWall = dx > 0 ? (state.width - r - x) / dx : dx < 0 ? (r - x) / dx : Infinity;
+    const t = Math.min(toTop, toWall);
+    const probe: Ball = { ...ball, x, y };
+    let met: { brick: Brick; t: number } | null = null;
+    for (const brick of blocking) { const found = sweep(probe, dx * t, vy * t, brick); if (found && (!met || found.t < met.t)) met = { brick, t: found.t }; }
+    if (met) return met.brick;
+    if (toTop <= toWall) return null;
+    x += dx * t; y += vy * t; dx = -dx;
+  }
+  return null;
+}
+
+// The return that sends the ball into the most open hit points it can reach
+// from this catch: every sideways speed the paddle can give, in steps of 0.1,
+// flown to the first brick it meets. A board may floor the return's speed
+// (`minReturnVx`, as the arena does), and a return under it is not offered.
+// Ties go to the steeper return. Null when no return reaches a breakable brick.
+export function aimShot(state: BoardState, ball: Ball, landing: number): { paddleX: number; x: number; hitPoints: number } | null {
+  const open = openHitPoints(state);
+  const fastest = (paddleReach(state) / RETURN_SLOPE) * magnetDamping(state);
+  const slowest = state.minReturnVx ?? 0;
+  let best: { vx: number; x: number; hitPoints: number } | null = null;
+  for (let tenths = -Math.floor(fastest * 10); tenths <= fastest * 10; tenths++) {
+    const vx = tenths / 10;
+    if (Math.abs(vx) < slowest) continue;
+    const brick = firstBrick(state, ball, landing, vx);
+    if (!brick || brick.unbreakable) continue;
+    const x = brick.x + brick.width / 2, hitPoints = open.get(x) ?? 0;
+    if (!best || hitPoints > best.hitPoints || (hitPoints === best.hitPoints && Math.abs(vx) < Math.abs(best.vx))) best = { vx, x, hitPoints };
+  }
+  return best && { paddleX: paddleForReturn(state, landing, best.vx), x: best.x, hitPoints: best.hitPoints };
+}
+
+// The target question's four places for the paddle, in the order `targetKeys`
+// names them in packages/jev/src/wire.ts: under the landing point, aimed at the
+// densest bricks the ball can reach (under the landing point if none), and off
+// the landing point so the ball leaves at 45 degrees to the left or right.
+export function targetOptions(state: BoardState, ball: Ball): number[] {
+  const landing = predictPaddleX(ball);
+  const diagonal = Math.abs(ball.vy);
+  return [landing, aimShot(state, ball, landing)?.paddleX ?? landing, paddleForReturn(state, landing, -diagonal), paddleForReturn(state, landing, diagonal)];
+}
+
+export function askForDecision(state: BoardState): Ask { const visible = state.powerUps.filter(power => power.y < state.height && power.y > 0); if (visible.length) return { state, at: state.tick, question: 'chase', options: [...visible.map(power => power.id), 'none'] }; if (state.balls.length > 1) return { state, at: state.tick, question: 'track', options: state.balls.map(ball => ball.id) }; const ball = state.balls.find(item => item.tracked) ?? state.balls[0]; return { state, at: state.tick, question: 'target', options: targetOptions(state, ball) }; }
 export function botPlayer(): Player { return { name: 'Deterministic bot', decide: async ask => { const start = performance.now(); if (ask.question === 'chase') { const choice = ask.options.find(option => typeof option === 'string' && option !== 'none'); return { decision: { kind: 'chase', powerUpId: String(choice ?? 'none') }, ms: Math.round(performance.now() - start) }; } if (ask.question === 'track') return { decision: { kind: 'track', ballId: String(ask.options[0]) }, ms: Math.round(performance.now() - start) }; const ball = ask.state.balls.find(item => item.tracked) ?? ask.state.balls[0]; return { decision: { kind: 'target', x: predictPaddleX(ball) }, ms: Math.round(performance.now() - start) }; } }; }
 export function humanPlayer(target?: number): Player { return { name: 'Human', decide: async ask => ({ decision: ask.question === 'target' ? { kind: 'target', x: target ?? Number(ask.options[0]) } : ask.question === 'chase' ? { kind: 'chase', powerUpId: String(ask.options.at(-1)) } : { kind: 'track', ballId: String(ask.options[0]) }, ms: 180 }) }; }
 export function applyDecision(state: BoardState, decision: Decision): BoardState { const next = structuredClone(state); if (decision.kind === 'target') next.paddleTargetX = clamp(decision.x, next.paddleWidth / 2, next.width - next.paddleWidth / 2); if (decision.kind === 'chase') { const power = next.powerUps.find(item => item.id === decision.powerUpId); if (power) next.paddleTargetX = clamp(power.x, next.paddleWidth / 2, next.width - next.paddleWidth / 2); } if (decision.kind === 'track') for (const ball of next.balls) ball.tracked = ball.id === decision.ballId; return next; }

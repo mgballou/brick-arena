@@ -4,11 +4,11 @@ A contained tech demo: you against TypeSafe's Jev at breakout, five levels on on
 
 **Play it: `pnpm dev`, open http://localhost:5173**
 
-- Left and Right move your paddle; Space or Up serves; P pauses; M mutes.
-- Each level runs 90 seconds with three balls a side. The first to clear it takes it; otherwise the higher score on the level does. The higher total after level 5 wins.
+- Left and Right move your paddle; Space or Up serves; P pauses; H shows how scoring works; M mutes.
+- Each level runs 90 seconds with three balls a side. The first to clear it takes it; otherwise the larger share cleared does. A level scores 10 per percent cleared plus 10 per second left at a clear, so the score leader is the one winning. A lost ball costs only the serve. The higher total after level 5 wins. [docs/scoring.md](docs/scoring.md) defines it, and Jev's prompt states it.
 - Jev plays the right-hand board. The dev server reads the TypeSafe key from `~/.jev-key` when it starts and forwards Jev's calls itself, so the browser never sees the key.
 - No live Jev, no game. Start checks Jev first; with no key, no answer or a stand-in answering, the title screen says Jev isn't reachable and why, and offers no match. If Jev drops mid-match (one failed call, or three timeouts in a row), the match pauses with a Retry and never goes on without it.
-- Debug mode is the one way to play without Jev. `pnpm jev:stub` runs a local stand-in that always picks `landing` and marks every reply `"answered_by": "stand-in"`; start the game against it with `VITE_DEBUG=1 JEV_KEY_FILE=<a file holding any token> JEV_BASE_URL=http://127.0.0.1:18787 pnpm dev`. The screen then shows a `DEBUG · stand-in` banner and names the right-hand board Stand-in, and the match record (`window.__arena.read()`) carries `debug` and `opponent`. Automated runs and Playwright use this mode. The endpoint overrides apply only with `JEV_KEY_FILE`, so the real key goes only to TypeSafe.
+- Debug mode is the one way to play without Jev. `pnpm jev:stub` runs a local stand-in that aims every catch at the densest bricks (`clearFast` in `packages/jev/src/stand-in.ts`) and marks every reply `"answered_by": "stand-in"`; start the game against it with `VITE_DEBUG=1 JEV_KEY_FILE=<a file holding any token> JEV_BASE_URL=http://127.0.0.1:18787 pnpm dev`. The screen then shows a `DEBUG · stand-in` banner and names the right-hand board Stand-in, and the match record (`window.__arena.read()`) carries `debug` and `opponent`. Automated runs and Playwright use this mode. The endpoint overrides apply only with `JEV_KEY_FILE`, so the real key goes only to TypeSafe.
 - Who answered comes from the reply, never the URL: a reply marked `answered_by: "stand-in"` is the stand-in, and one without the mark is live Jev. The proxy and the browser both refuse the stand-in outside debug mode.
 
 ## The engine
@@ -52,13 +52,13 @@ That races Jev against the deterministic bot on level 0 (`--level`, `--seed`, `-
 
 Each `Ask` becomes one `choice` question keyed `decision`, and the answer must be one of the offered keys or the call fails:
 
-- `target`: `landing`, `center`, `left`, `right`, the four `x` values `askForDecision` offers, in that order.
+- `target`: `landing`, `aim`, `angle-left`, `angle-right`, the four `x` values `askForDecision` offers, in that order: a dead-center catch, a catch that sends the ball into the densest bricks it can reach, and catches that send it off at 45 degrees. Every question opens with the objective and scoring from `docs/scoring.md`.
 - `chase`: each falling power-up by id, plus `none`.
 - `track`: each ball by id.
 
 A call never holds the board. Its wall-clock time becomes game time at 60 ticks a second: the board keeps stepping on the last target, and the answer lands `ceil(ms / 16.7)` ticks after its ask. An 800 ms answer lands 48 ticks late and the player misses the next ask. A call with no answer by `--deadline` (1000 ms) is a timeout, and a failed call is an error; neither applies anything. The summary prints each of these: applied, timeouts, errors, asks missed while waiting, ticks spent waiting, and ms median, p95 and max.
 
-In the web game Jev is asked about the board as it will stand when its answer lands (`boardAhead` in `arena.ts`, led by the match's median answer time), so a slow answer still fits the ball. `pnpm fair` measures what that buys: both boards on one seed, the stand-in's rule answering after `--ms` (default 728, the one live Jev call), against a player on the keys who reacts in `--react` ms.
+In the web game Jev is asked about the board as it will stand when its answer lands (`boardAhead` in `arena.ts`, led by the match's median answer time), so a slow answer still fits the ball. `pnpm fair` measures what that buys: both boards on one seed, the stand-in's rule answering after `--ms` (default 728, the one live Jev call), against a player on the keys who reacts in `--react` ms. `pnpm objective` compares clear times for the stand-in's old rule (always `landing`) and its new one (always `aim`) over many seeds.
 
 `docs/jev-calls.synthetic.ndjson` is **synthetic**: hand-written from the documented response shape by `pnpm jev --write-synthetic`, not captured from a call. Its answers follow the bot's rule, it holds one made-up failure, and it carries no times. It plays seed 20260962 on level 1, the first seed where that rule clears a level and meets all three questions. The tests replay it, and so can you:
 
