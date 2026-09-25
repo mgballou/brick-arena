@@ -1,15 +1,17 @@
 import { appendFileSync, readFileSync } from 'node:fs';
-import type { SystemOneRequest, SystemOneResponse } from './wire';
+import { answeredBy, type AnsweredBy, type SystemOneRequest, type SystemOneResponse } from './wire';
 
 export type Transport = (request: SystemOneRequest) => Promise<SystemOneResponse>;
 
 // One line of a call recording. `at` and `ms` are wall-clock facts of a
 // captured call, and null in a synthetic one, which carries no time at all.
+// `answeredBy` says whether live Jev or the stand-in answered a captured call.
 export type CallRecord = {
   synthetic: boolean;
   at: string | null;
   request: SystemOneRequest;
   response?: SystemOneResponse;
+  answeredBy?: AnsweredBy;
   error?: string;
   ms: number | null;
 };
@@ -32,13 +34,13 @@ export function httpTransport(options: { baseUrl: string; apiKey: string; timeou
 export function recordingTransport(inner: Transport, path: string): Transport {
   return async request => {
     const start = performance.now();
-    const write = (outcome: Pick<CallRecord, 'response' | 'error'>) => {
+    const write = (outcome: Pick<CallRecord, 'response' | 'error' | 'answeredBy'>) => {
       const record: CallRecord = { synthetic: false, at: new Date().toISOString(), request, ...outcome, ms: Math.round(performance.now() - start) };
       appendFileSync(path, JSON.stringify(record) + '\n');
     };
     try {
       const response = await inner(request);
-      write({ response });
+      write({ response, answeredBy: answeredBy(response) });
       return response;
     } catch (error) {
       write({ error: error instanceof Error ? error.message : String(error) });

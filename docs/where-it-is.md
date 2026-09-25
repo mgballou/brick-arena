@@ -11,8 +11,12 @@ and no key field.
 pnpm --dir ~/projects/brick-arena dev
 ```
 
-Open http://localhost:5173/ and press Enter. The title screen checks the link
-to Jev before Start lights up.
+Open http://localhost:5173/ and press Enter. Start checks the link to Jev
+first. No live Jev means no match: the title screen says Jev isn't reachable
+and why. A stand-in answering counts as no Jev unless the server started with
+`VITE_DEBUG=1`, and then a `DEBUG · stand-in` banner stays on screen
+(`docs/screens/2026-09-24/no-jev-*.png`, `debug-*.png`). Mid-match, one failed
+call or three timeouts in a row pause the match until Retry finds Jev again.
 
 ## The key
 
@@ -34,6 +38,7 @@ restart `pnpm dev`.
 
 ## Played against a stand-in
 
+This run predates debug mode; today it would need `VITE_DEBUG=1`.
 The full five levels ran through Playwright on 24 September against
 `pnpm jev:stub`, a local stand-in that always picks `landing` after 250 to
 550 ms. They did not run against live Jev. The stand-in took three levels and

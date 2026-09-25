@@ -1,4 +1,4 @@
-import type { Ask, BoardState, Decision } from '../../engine/src/index';
+import type { Ask, BoardState, Decision } from '../../engine/src/index.ts';
 
 // Wire shape of POST {baseUrl}/v1/systemone, as documented by TypeSafe and
 // mirrored by Vercel AI Gateway (https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe).
@@ -7,7 +7,25 @@ export type SystemOneRequest = { model: string; state: unknown; questions: { dec
 // Only `type` and `choice` are documented for a Choice answer; any per-option
 // probabilities are kept in the recording as received, never read here.
 export type ChoiceAnswer = { type: 'choice'; choice: string; [field: string]: unknown };
-export type SystemOneResponse = { model?: string; answers: Record<string, unknown>; usage?: { input_tokens?: number; output_tokens?: number } };
+export type SystemOneResponse = { model?: string; answers: Record<string, unknown>; usage?: { input_tokens?: number; output_tokens?: number }; answered_by?: string };
+
+// Who answered a call. The stand-in names itself in every reply it sends;
+// TypeSafe's documented reply has no `answered_by`, so a reply without the mark
+// came from live Jev. Read it from the reply, never from the URL it came from.
+export type AnsweredBy = 'live' | 'stand-in';
+export const STAND_IN_MARK = { answered_by: 'stand-in' } as const;
+
+export function answeredBy(response: { answered_by?: unknown }): AnsweredBy {
+  return response.answered_by === STAND_IN_MARK.answered_by ? 'stand-in' : 'live';
+}
+
+// No live Jev, no game. The stand-in may play only in debug mode (VITE_DEBUG=1
+// when the dev server starts). The proxy and the browser both ask this, so
+// neither lets a stand-in answer pass for Jev. Null means the answer may play.
+export function refusal(by: AnsweredBy, debug: boolean): string | null {
+  if (by === 'live' || debug) return null;
+  return 'A stand-in answered, not Jev. It plays only in debug mode: start the dev server with VITE_DEBUG=1.';
+}
 
 // The four `target` options, in the order askForDecision builds them.
 export const targetKeys = ['landing', 'center', 'left', 'right'] as const;

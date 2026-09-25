@@ -1,5 +1,5 @@
 import { createBoard, askForDecision, step } from '../../engine/src/index.ts';
-import { toRequest, fromResponse } from '../../jev/src/wire.ts';
+import { answeredBy, toRequest, fromResponse } from '../../jev/src/wire.ts';
 import { JEV_DEFAULTS, readJevLink } from '../../jev/src/key.ts';
 
 // One live call, to confirm the key in ~/.jev-key reaches Jev: pnpm smoke
@@ -40,6 +40,8 @@ try {
 
   const decision = fromResponse(ask, body as never);
   const answer = (body['answers'] as Record<string, Record<string, unknown>> | undefined)?.['decision'];
+  const by = answeredBy(body);
+  console.log(`Answered by: ${by === 'live' ? 'live Jev' : 'the stand-in, not Jev'}`);
   console.log(`Choice: ${answer?.['choice']}`);
   console.log(`Decision: ${JSON.stringify(decision)}`);
   console.log(`Latency: ${ms}ms`);
@@ -62,6 +64,10 @@ try {
     console.log(`Usage: field absent from response`);
   }
 
+  if (by === 'stand-in') {
+    console.log(`\nThe stand-in answered, not Jev. The key file points at it; live Jev is untested.`);
+    process.exit(1);
+  }
   console.log(`\nEndpoint is available and responds correctly.`);
   if (ms > GAME_DEADLINE) {
     console.log(`Latency (${ms}ms) exceeds the ${GAME_DEADLINE}ms game deadline; Jev would miss most asks.`);

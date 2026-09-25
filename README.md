@@ -6,8 +6,10 @@ A contained tech demo: you against TypeSafe's Jev at breakout, five levels on on
 
 - Left and Right move your paddle; Space or Up serves; P pauses; M mutes.
 - Each level runs 90 seconds with three balls a side. The first to clear it takes it; otherwise the higher score on the level does. The higher total after level 5 wins.
-- Jev plays the right-hand board. The dev server reads the TypeSafe key from `~/.jev-key` when it starts and forwards Jev's calls itself, so the browser never sees the key. With no key, or no answer, the game says Jev is offline instead of stalling.
-- No key at hand? `pnpm jev:stub` runs a local stand-in that always picks `landing`; start the game against it with `JEV_KEY_FILE=<a file holding any token> JEV_BASE_URL=http://127.0.0.1:18787 pnpm dev`. The endpoint overrides apply only with `JEV_KEY_FILE`, so the real key goes only to TypeSafe.
+- Jev plays the right-hand board. The dev server reads the TypeSafe key from `~/.jev-key` when it starts and forwards Jev's calls itself, so the browser never sees the key.
+- No live Jev, no game. Start checks Jev first; with no key, no answer or a stand-in answering, the title screen says Jev isn't reachable and why, and offers no match. If Jev drops mid-match (one failed call, or three timeouts in a row), the match pauses with a Retry and never goes on without it.
+- Debug mode is the one way to play without Jev. `pnpm jev:stub` runs a local stand-in that always picks `landing` and marks every reply `"answered_by": "stand-in"`; start the game against it with `VITE_DEBUG=1 JEV_KEY_FILE=<a file holding any token> JEV_BASE_URL=http://127.0.0.1:18787 pnpm dev`. The screen then shows a `DEBUG · stand-in` banner and names the right-hand board Stand-in, and the match record (`window.__arena.read()`) carries `debug` and `opponent`. Automated runs and Playwright use this mode. The endpoint overrides apply only with `JEV_KEY_FILE`, so the real key goes only to TypeSafe.
+- Who answered comes from the reply, never the URL: a reply marked `answered_by: "stand-in"` is the stand-in, and one without the mark is live Jev. The proxy and the browser both refuse the stand-in outside debug mode.
 
 ## The engine
 

@@ -21,7 +21,13 @@ repeatable stepping.
 Vite plugin in `vite.config.ts` when the dev server starts, and the `jev` and
 `smoke` CLIs. Never move it into an environment variable, a log, a recording or
 the web bundle. To test without it, run `pnpm jev:stub` and start `pnpm dev`
-with `JEV_KEY_FILE` pointing at a dummy file (see the README).
+with `VITE_DEBUG=1` and `JEV_KEY_FILE` pointing at a dummy file (see the
+README). Never call live Jev from a test.
+
+No live Jev, no game. The stand-in plays only in debug mode (`VITE_DEBUG=1`),
+which says so on screen and in the match record. `refusal` in
+`packages/jev/src/wire.ts` is the one gate; the proxy and the browser both
+ask it. Who answered comes from the reply's `answered_by` mark, never the URL.
 
 The web game's rules live in `packages/engine/src/arena.ts`, over `step`.
 Change `createBoard` or `step` and the recorded fixtures in `docs/` must be

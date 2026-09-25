@@ -6,14 +6,17 @@ import {
   type ArenaEvents, type LevelSide, type SideStatus,
 } from '../../engine/src/arena';
 import { burst, reducedMotion, Sound, stepParticles } from './feedback';
-import { askJev, probeJev, type Probe } from './jev';
+import type { AnsweredBy } from '../../jev/src/wire';
+import { askJev, DEBUG, probeJev, type Probe } from './jev';
 import { brickColor, drawBoard, PALETTE, POWER_UPS, type View } from './render';
 import './style.css';
 
 const SEED = 20260919;
 const TICK_MS = 1000 / ARENA.ticksPerSecond;
 const JEV_SERVE_TICKS = 45;
-const OFFLINE_AFTER = 2;
+// No live Jev, no game. An offline answer pauses the match at once; so do this
+// many timeouts in a row, since a board with no answers is not Jev playing.
+const MISSED_AFTER = 3;
 
 type Phase = 'title' | 'banner' | 'playing' | 'paused' | 'offline' | 'levelEnd' | 'final';
 type Who = 'human' | 'jev';
@@ -29,12 +32,14 @@ type Side = {
   view: View;
 };
 
-type JevStats = { calls: number; answered: number; timeouts: number; errors: number; offlineStreak: number; lastChoice: string; lastMs: number | null; ms: number[]; pending: boolean };
+type JevStats = { calls: number; answered: number; timeouts: number; errors: number; missedStreak: number; lastChoice: string; lastMs: number | null; ms: number[]; pending: boolean; answeredBy: Record<AnsweredBy, number> };
 type LevelResult = { level: number; winner: 'human' | 'jev' | 'tie'; human: number; jev: number; humanCleared: boolean; jevCleared: boolean };
 
-type Match = { level: number; frame: number; gen: number; human: Side; jev: Side; stats: JevStats; results: LevelResult[]; offlineReason: string };
+// `opponent` is who answered the check before the match, and `debug` whether
+// the stand-in was allowed. Both travel with every read of the match.
+type Match = { level: number; frame: number; gen: number; human: Side; jev: Side; stats: JevStats; results: LevelResult[]; offlineReason: string; opponent: AnsweredBy; debug: boolean };
 
-const blankStats = (): JevStats => ({ calls: 0, answered: 0, timeouts: 0, errors: 0, offlineStreak: 0, lastChoice: '', lastMs: null, ms: [], pending: false });
+const blankStats = (): JevStats => ({ calls: 0, answered: 0, timeouts: 0, errors: 0, missedStreak: 0, lastChoice: '', lastMs: null, ms: [], pending: false, answeredBy: { live: 0, 'stand-in': 0 } });
 
 function newSide(who: Who, level: number, score = 0): Side {
   return {
@@ -49,8 +54,8 @@ function newSide(who: Who, level: number, score = 0): Side {
   };
 }
 
-function newMatch(): Match {
-  return { level: 0, frame: 0, gen: 0, human: newSide('human', 0), jev: newSide('jev', 0), stats: blankStats(), results: [], offlineReason: '' };
+function newMatch(opponent: AnsweredBy = 'live'): Match {
+  return { level: 0, frame: 0, gen: 0, human: newSide('human', 0), jev: newSide('jev', 0), stats: blankStats(), results: [], offlineReason: '', opponent, debug: DEBUG };
 }
 
 const levelSide = (side: Side): LevelSide => ({ status: sideStatus(side.state), clearedAt: side.clearedAt, levelScore: side.levelScore });
@@ -60,11 +65,11 @@ const clock = (seconds: number) => { const s = Math.max(0, Math.ceil(seconds)); 
 const title = (name: string) => name[0].toUpperCase() + name.slice(1);
 
 type SideHud = { score: number; levelScore: number; lives: number; status: SideStatus; serving: boolean };
-type Hud = { level: number; seconds: number; human: SideHud; jev: SideHud; stats: JevStats };
+type Hud = { level: number; seconds: number; human: SideHud; jev: SideHud; stats: JevStats; opponent: AnsweredBy };
 
 function snapshot(match: Match): Hud {
   const side = (s: Side): SideHud => ({ score: s.score, levelScore: s.levelScore, lives: livesLeft(s.state), status: sideStatus(s.state), serving: s.serving });
-  return { level: match.level, seconds: secondsLeft(match), human: side(match.human), jev: side(match.jev), stats: { ...match.stats, ms: match.stats.ms } };
+  return { level: match.level, seconds: secondsLeft(match), human: side(match.human), jev: side(match.jev), stats: { ...match.stats, ms: match.stats.ms }, opponent: match.opponent };
 }
 
 function App() {
@@ -110,11 +115,15 @@ function App() {
     sound.current.banner();
   }, [setPhase]);
 
-  const startGame = useCallback(() => {
+  // Every match starts with a fresh check. No Jev, and the title screen says
+  // why instead of starting.
+  const startGame = useCallback(async () => {
     sound.current.wake();
-    game.current = newMatch();
+    const result = await checkJev();
+    if (!result.ok || phaseRef.current !== 'title') return;
+    game.current = newMatch(result.answeredBy);
     startLevel(0);
-  }, [startLevel]);
+  }, [checkJev, startLevel]);
 
   const endLevel = useCallback(() => {
     const match = game.current;
@@ -138,9 +147,13 @@ function App() {
 
   const retryJev = useCallback(async () => {
     const result = await checkJev();
+    if (phaseRef.current !== 'offline') return;
     if (result.ok) {
-      game.current.stats.offlineStreak = 0;
+      game.current.stats.missedStreak = 0;
       setPhase('playing');
+    } else {
+      game.current.offlineReason = result.reason;
+      setHud(snapshot(game.current));
     }
   }, [checkJev, setPhase]);
 
@@ -182,7 +195,8 @@ function App() {
       if (answer.ok) {
         match.jev.state = applyDecision(match.jev.state, answer.decision);
         stats.answered++;
-        stats.offlineStreak = 0;
+        stats.answeredBy[answer.answeredBy]++;
+        stats.missedStreak = 0;
         stats.lastChoice = answer.choice;
         stats.lastMs = answer.ms;
         stats.ms.push(answer.ms);
@@ -190,10 +204,11 @@ function App() {
       }
       if (answer.kind === 'timeout') stats.timeouts++;
       else stats.errors++;
-      if (answer.kind === 'offline') {
-        stats.offlineStreak++;
-        match.offlineReason = answer.reason;
-        if (stats.offlineStreak >= OFFLINE_AFTER && phaseRef.current === 'playing') setPhase('offline');
+      if (answer.kind === 'bad-answer') return;
+      stats.missedStreak++;
+      if (answer.kind === 'offline' || stats.missedStreak >= MISSED_AFTER) {
+        match.offlineReason = answer.kind === 'offline' ? answer.reason : `Jev missed ${stats.missedStreak} calls in a row. ${answer.reason}`;
+        if (phaseRef.current === 'playing' || phaseRef.current === 'paused') setPhase('offline');
       }
     });
   }, [setPhase]);
@@ -307,7 +322,7 @@ function App() {
       } else if (current === 'final') {
         if (confirm) setPhase('title');
       } else if (current === 'title') {
-        if (confirm && probe !== 'checking' && probe.ok) startGame();
+        if (confirm && probe !== 'checking') void startGame();
       }
     };
     const onUp = (event: KeyboardEvent) => {
@@ -332,7 +347,7 @@ function App() {
       read: () => {
         const match = game.current;
         const side = (s: Side) => ({ ...snapshot(match)[s.who], paddle: s.state.paddleX + s.state.paddleWidth / 2, paddleWidth: s.state.paddleWidth, balls: s.state.balls.map(b => ({ x: b.x, y: b.y, vx: b.vx, vy: b.vy })), powerUps: s.state.powerUps.map(p => ({ x: p.x, y: p.y, kind: p.kind })), bricksLeft: s.state.bricks.filter(b => !b.unbreakable && b.durability > 0).length });
-        return { phase: phaseRef.current, level: match.level, seconds: secondsLeft(match), human: side(match.human), jev: side(match.jev), stats: match.stats, results: match.results };
+        return { phase: phaseRef.current, debug: match.debug, opponent: match.opponent, level: match.level, seconds: secondsLeft(match), human: side(match.human), jev: side(match.jev), stats: match.stats, results: match.results };
       },
     };
   }, []);
@@ -342,10 +357,19 @@ function App() {
   const jevMedian = median(stats.ms);
   const levelName = title(levelNames[hud.level]);
   const last = match.results.at(-1);
+  // Whoever answered is named as such: the stand-in never plays under Jev's name.
+  const rival = hud.opponent === 'stand-in' ? 'Stand-in' : 'Jev';
+  const ready = probe !== 'checking' && probe.ok;
+  const debugOpponent = phase === 'title' ? (ready ? probe.answeredBy : null) : hud.opponent;
   const wins = (who: 'human' | 'jev') => { const n = match.results.filter(r => r.winner === who).length; return `${n} ${n === 1 ? 'level' : 'levels'}`; };
 
   return (
-    <div className="app">
+    <div className={`app${DEBUG ? ' debug' : ''}`}>
+      {DEBUG && (
+        <div className="debug-banner" role="status">
+          DEBUG · {debugOpponent === 'live' ? 'live Jev' : debugOpponent === 'stand-in' ? 'stand-in' : 'stand-in allowed'}
+        </div>
+      )}
       <header className="hud">
         <SideScore who="human" label="You" side={hud.human} />
         <div className="hud-center">
@@ -353,7 +377,7 @@ function App() {
           <span className="hud-name">{levelName}</span>
           <span className={`hud-clock${hud.seconds < 15 && phase === 'playing' ? ' low' : ''}`}>{clock(hud.seconds)}</span>
         </div>
-        <SideScore who="jev" label="Jev" side={hud.jev} />
+        <SideScore who="jev" label={rival} side={hud.jev} />
       </header>
 
       <main className="arena">
@@ -363,13 +387,13 @@ function App() {
         </figure>
         <figure className="board jev">
           <figcaption>
-            <span className="tag jev">Jev</span>
+            <span className="tag jev">{rival}</span>
             <span className="hint">
               {stats.pending ? <span className="thinking">thinking</span> : stats.lastChoice ? <>chose <b>{stats.lastChoice}</b></> : 'waiting to serve'}
               {stats.lastMs !== null && <> · {stats.lastMs} ms</>}
             </span>
           </figcaption>
-          <canvas ref={jevCanvas} width={960} height={640} aria-label="Jev's board" />
+          <canvas ref={jevCanvas} width={960} height={640} aria-label={`${rival}'s board`} />
           <div className="jev-meter">
             <span>{stats.answered}/{stats.calls} answered</span>
             <span>median {jevMedian ?? '—'} ms</span>
@@ -383,14 +407,25 @@ function App() {
             <p className="eyebrow">A TypeSafe Jev tech demo</p>
             <h1 className="logo">Brick<span>Arena</span></h1>
             <p className="lede">Five levels. One seed. You on the arrow keys, Jev on the other board. First to clear a level takes it; the higher total after five wins.</p>
-            <ul className="legend">
-              {Object.entries(POWER_UPS).map(([kind, look]) => (
-                <li key={kind}><i style={{ background: look.color }} className={look.good ? '' : 'bad'}>{look.glyph}</i>{look.label}</li>
-              ))}
-            </ul>
-            <JevLink probe={probe} onRetry={() => void checkJev()} />
-            <button className="primary" disabled={probe === 'checking' || !probe.ok} onClick={startGame}>Start</button>
-            <p className="keys">Enter to start · ← → move · Space or ↑ launch · P pause · M {muted ? 'unmute' : 'mute'}</p>
+            {probe !== 'checking' && !probe.ok ? (
+              <div className="no-jev" role="alert">
+                <h2 className="banner">Jev isn't reachable</h2>
+                <p className="why">{probe.reason}</p>
+                <p className="lede small">This game is you against Jev. Without Jev there is no match.</p>
+                <button className="primary" onClick={() => void checkJev()}>Check again</button>
+              </div>
+            ) : (
+              <>
+                <ul className="legend">
+                  {Object.entries(POWER_UPS).map(([kind, look]) => (
+                    <li key={kind}><i style={{ background: look.color }} className={look.good ? '' : 'bad'}>{look.glyph}</i>{look.label}</li>
+                  ))}
+                </ul>
+                <JevLink probe={probe} />
+                <button className="primary" disabled={!ready} onClick={() => void startGame()}>Start</button>
+                <p className="keys">Enter to start · ← → move · Space or ↑ launch · P pause · M {muted ? 'unmute' : 'mute'}</p>
+              </>
+            )}
           </Overlay>
         )}
 
@@ -411,9 +446,10 @@ function App() {
 
         {phase === 'offline' && (
           <Overlay compact>
-            <p className="eyebrow warn">The game is paused</p>
-            <h2 className="banner">Jev is offline</h2>
+            <p className="eyebrow warn">The match is paused</p>
+            <h2 className="banner">Jev isn't reachable</h2>
             <p className="lede">{match.offlineReason}</p>
+            <p className="lede small">The match waits for Jev. It never goes on without it.</p>
             <div className="row">
               <button className="primary" onClick={() => void retryJev()}>{probe === 'checking' ? 'Checking…' : 'Retry'}</button>
               <button onClick={() => setPhase('title')}>Quit</button>
@@ -424,7 +460,7 @@ function App() {
         {phase === 'levelEnd' && last && (
           <Overlay compact>
             <p className="eyebrow">Level {last.level + 1} · {title(levelNames[last.level])}</p>
-            <h2 className={`banner ${last.winner}`}>{last.winner === 'human' ? 'You take it' : last.winner === 'jev' ? 'Jev takes it' : 'Dead even'}</h2>
+            <h2 className={`banner ${last.winner}`}>{last.winner === 'human' ? 'You take it' : last.winner === 'jev' ? `${rival} takes it` : 'Dead even'}</h2>
             <div className="tally">
               <div className="human"><b>{last.human}</b><small>{last.humanCleared ? 'cleared' : 'this level'}</small></div>
               <div className="jev"><b>{last.jev}</b><small>{last.jevCleared ? 'cleared' : 'this level'}</small></div>
@@ -437,18 +473,19 @@ function App() {
           <Overlay>
             <p className="eyebrow">Final</p>
             <h2 className={`banner big ${match.human.score > match.jev.score ? 'human' : match.jev.score > match.human.score ? 'jev' : ''}`}>
-              {match.human.score > match.jev.score ? 'You win' : match.jev.score > match.human.score ? 'Jev wins' : 'A draw'}
+              {match.human.score > match.jev.score ? 'You win' : match.jev.score > match.human.score ? `${rival} wins` : 'A draw'}
             </h2>
             <div className="tally">
               <div className="human"><b>{match.human.score}</b><small>you · {wins('human')}</small></div>
-              <div className="jev"><b>{match.jev.score}</b><small>Jev · {wins('jev')}</small></div>
+              <div className="jev"><b>{match.jev.score}</b><small>{rival} · {wins('jev')}</small></div>
             </div>
             <ol className="levels">
               {match.results.map(r => (
                 <li key={r.level}><span>{r.level + 1}. {title(levelNames[r.level])}</span><span className={r.winner}>{r.human} – {r.jev}</span></li>
               ))}
             </ol>
-            <p className="lede small">Jev answered {stats.answered} of {stats.calls} calls, median {jevMedian ?? '—'} ms; {stats.timeouts} late, {stats.errors} failed.</p>
+            <p className="lede small">{rival} answered {stats.answered} of {stats.calls} calls, median {jevMedian ?? '—'} ms; {stats.timeouts} late, {stats.errors} failed.</p>
+            {hud.opponent === 'stand-in' && <p className="lede small warn">Debug match against the stand-in. It is not a result against Jev.</p>}
             <button className="primary" onClick={() => setPhase('title')}>Play again</button>
           </Overlay>
         )}
@@ -475,14 +512,11 @@ function Overlay({ children, compact }: { children: ReactNode; compact?: boolean
   return <div className={`overlay${compact ? ' compact' : ''}`}><div className="card">{children}</div></div>;
 }
 
-function JevLink({ probe, onRetry }: { probe: Probe | 'checking'; onRetry: () => void }) {
+function JevLink({ probe }: { probe: Probe | 'checking' }) {
   if (probe === 'checking') return <p className="link checking">Reaching Jev…</p>;
-  if (probe.ok) return <p className="link ok">Jev is online · {probe.ms} ms to answer</p>;
-  return (
-    <p className="link offline">
-      Jev is offline: {probe.reason} <button className="text" onClick={onRetry}>Retry</button>
-    </p>
-  );
+  if (!probe.ok) return null;
+  if (probe.answeredBy === 'stand-in') return <p className="link offline">Debug: the stand-in answered, not Jev · {probe.ms} ms</p>;
+  return <p className="link ok">Jev is online · {probe.ms} ms to answer</p>;
 }
 
 const host = document.getElementById('root');
