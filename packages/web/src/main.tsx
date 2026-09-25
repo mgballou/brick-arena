@@ -6,7 +6,8 @@ import {
   type ArenaEvents, type LevelSide, type SideStatus,
 } from '../../engine/src/arena';
 import { burst, reducedMotion, Sound, stepParticles } from './feedback';
-import type { AnsweredBy } from '../../jev/src/wire';
+import type { AnsweredBy, Down } from '../../jev/src/wire';
+import { Checking, DownPage } from './down';
 import { askJev, DEBUG, probeJev, type Probe } from './jev';
 import { brickColor, drawBoard, PALETTE, POWER_UPS, type View } from './render';
 import './style.css';
@@ -71,7 +72,18 @@ function snapshot(match: Match): Hud {
   return { level: match.level, seconds: secondsLeft(match), human: side(match.human), jev: side(match.jev), stats: { ...match.stats, ms: match.stats.ms }, opponent: match.opponent };
 }
 
-function App() {
+// The first check runs before the game mounts. When the forwarder says Jev is
+// down, then or mid-match, the down page takes the whole screen and the game,
+// boards and all, is not mounted.
+export function Root({ initial = 'checking' }: { initial?: Probe | 'checking' }) {
+  const [probe, setProbe] = useState<Probe | 'checking'>(initial);
+  useEffect(() => { if (initial === 'checking') void probeJev().then(setProbe); }, [initial]);
+  if (probe === 'checking') return <Checking />;
+  if (!probe.ok && probe.down) return <DownPage down={probe.down} onProbe={setProbe} />;
+  return <App initialProbe={probe} onDown={down => setProbe({ ok: false, reason: 'Jev is down.', down })} />;
+}
+
+function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Down) => void }) {
   const game = useRef<Match>(newMatch());
   const phaseRef = useRef<Phase>('title');
   const keys = useRef({ left: false, right: false, launch: false });
@@ -80,8 +92,8 @@ function App() {
   const jevCanvas = useRef<HTMLCanvasElement>(null);
 
   const [phase, setPhaseState] = useState<Phase>('title');
-  const [probe, setProbe] = useState<Probe | 'checking'>('checking');
-  const probeMs = useRef(0);
+  const [probe, setProbe] = useState<Probe | 'checking'>(initialProbe);
+  const probeMs = useRef(initialProbe.ok ? initialProbe.ms : 0);
   const [hud, setHud] = useState<Hud>(() => snapshot(game.current));
   const [muted, setMuted] = useState(false);
   // The scoring panel. Opened mid-level it pauses the match, and closing it
@@ -111,10 +123,9 @@ function App() {
     const result = await probeJev();
     if (result.ok) probeMs.current = result.ms;
     setProbe(result);
+    if (!result.ok && result.down) onDown(result.down);
     return result;
-  }, []);
-
-  useEffect(() => { void checkJev(); }, [checkJev]);
+  }, [onDown]);
 
   const startLevel = useCallback((level: number) => {
     const match = game.current;
@@ -205,6 +216,7 @@ function App() {
     void askJev(askForDecision(boardAhead(match.jev.state, leadTicks))).then(answer => {
       if (game.current !== match || match.gen !== gen) return;
       stats.pending = false;
+      if (!answer.ok && answer.kind === 'down') { onDown(answer.down); return; }
       if (answer.ok) {
         match.jev.state = applyDecision(match.jev.state, answer.decision);
         stats.answered++;
@@ -224,7 +236,7 @@ function App() {
         if (phaseRef.current === 'playing' || phaseRef.current === 'paused') setPhase('offline');
       }
     });
-  }, [setPhase]);
+  }, [onDown, setPhase]);
 
   const tickSide = useCallback((match: Match, side: Side) => {
     if (sideStatus(side.state) !== 'playing') return;
@@ -582,5 +594,5 @@ function JevLink({ probe }: { probe: Probe | 'checking' }) {
   return <p className="link ok">Jev is online · {probe.ms} ms to answer</p>;
 }
 
-const host = document.getElementById('root');
-if (host) createRoot(host).render(<App />);
+const host = typeof document === 'undefined' ? null : document.getElementById('root');
+if (host) createRoot(host).render(<Root />);

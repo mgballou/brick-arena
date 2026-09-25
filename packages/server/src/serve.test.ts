@@ -1,0 +1,66 @@
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { createServer, type Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { createCap } from '../../jev/src/cap';
+import { startStandIn } from '../../jev/src/stand-in-server';
+import { DOWN_STATUS, JEV_PATH } from '../../jev/src/wire';
+import { hostedApp } from './serve';
+
+// The hosted server over a stand-in dist/ and the local stand-in. Nothing here
+// reaches live Jev, and the key is a dummy.
+let standIn: { url: string; close: () => Promise<void> };
+let server: Server;
+let base: string;
+const logged: string[] = [];
+
+beforeAll(async () => {
+  const dist = mkdtempSync(join(tmpdir(), 'brick-arena-hosted-'));
+  mkdirSync(join(dist, 'assets'));
+  writeFileSync(join(dist, 'index.html'), '<!doctype html><div id="root"></div>');
+  writeFileSync(join(dist, 'assets', 'index-abc123.js'), 'console.log(1)');
+  writeFileSync(join(dist, '..', 'brick-arena-secret.txt'), 'outside dist');
+  standIn = await startStandIn({ port: 0, ms: 5 });
+  // Not in debug mode, as hosted: a stand-in's answer is Jev being down.
+  server = createServer(hostedApp({ dist, proxy: { link: { baseUrl: standIn.url, model: 'jev-test', key: 'test-key-not-real' }, keyFrom: 'the JEV_API_KEY secret', debug: false, cap: createCap({ perVisitor: 100, total: 100 }), log: line => logged.push(line) } }));
+  await new Promise<void>(done => server.listen(0, '127.0.0.1', done));
+  base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+});
+afterAll(async () => {
+  server.close();
+  await standIn.close();
+});
+
+describe('the hosted server', () => {
+  it('serves the page, and its hashed assets for good', async () => {
+    const page = await fetch(base);
+    expect(page.status).toBe(200);
+    expect(page.headers.get('content-type')).toMatch(/text\/html/);
+    expect(await page.text()).toContain('id="root"');
+    const asset = await fetch(`${base}/assets/index-abc123.js`);
+    expect(asset.headers.get('content-type')).toMatch(/javascript/);
+    expect(asset.headers.get('cache-control')).toContain('immutable');
+  });
+
+  it('answers the host health check without calling Jev', async () => {
+    const before = logged.length;
+    expect(await (await fetch(`${base}/healthz`)).text()).toBe('ok');
+    expect(logged.length).toBe(before);
+  });
+
+  it('serves nothing outside dist', async () => {
+    // fetch folds a bare ../ away, so the escape is spelled inside one segment.
+    for (const path of ['/..%2fbrick-arena-secret.txt', '/%2e%2e%2fbrick-arena-secret.txt', '/nope.js']) {
+      expect((await fetch(`${base}${path}`)).status, path).toBe(404);
+    }
+  });
+
+  it('mounts the forwarder at the path the browser calls, and never plays the stand-in', async () => {
+    const response = await fetch(`${base}${JEV_PATH}`);
+    expect(response.status).toBe(DOWN_STATUS);
+    expect(await response.json()).toEqual({ ok: false, down: 'unreachable', answeredBy: 'stand-in' });
+    expect(logged.at(-1)).toMatch(/stand-in answered, not Jev/);
+  });
+});
