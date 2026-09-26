@@ -6,11 +6,13 @@ import { targetKeys, type SystemOneResponse } from './wire';
 // Builds the hand-written recording in docs/jev-calls.synthetic.ndjson. No call
 // was made: each answer follows the documented response shape
 // ({ model, answers: { <key>: { type: 'choice', choice } }, usage }) with a
-// fixed rule, and one call returns the documented error shape. Every record
-// says `synthetic: true` and carries no time and no token counts. The seed and
-// level are the first where that rule clears a level and meets all three
-// questions; on the other seeds it settles into one column and never clears.
-export const SYNTHETIC = { model: 'typesafe-ai/jev', seed: 20260962, level: 1, maxTicks: 12000, failedCall: 6 } as const;
+// fixed rule (`aim` every catch, else the first key offered), and one call
+// returns the documented error shape. Every record says `synthetic: true` and
+// carries no time and no token counts. The seed and level are the first where
+// that rule clears a level and meets all three questions. Always `landing`
+// clears none of the first 80 seeds: a dead-center catch on createBoard's
+// paddle sends the ball up one column for good.
+export const SYNTHETIC = { model: 'typesafe-ai/jev', seed: 20260919, level: 0, maxTicks: 12000, failedCall: 6 } as const;
 
 export async function syntheticRecording(): Promise<CallRecord[]> {
   const records: CallRecord[] = [];
@@ -21,7 +23,7 @@ export async function syntheticRecording(): Promise<CallRecord[]> {
       records.push({ synthetic: true, at: null, request, error, ms: null });
       throw new Error(error);
     }
-    const choice = keys.includes(targetKeys[0]) ? targetKeys[0] : keys[0];
+    const choice = keys.includes(targetKeys[1]) ? targetKeys[1] : keys[0];
     const response: SystemOneResponse = { model: SYNTHETIC.model, answers: { decision: { type: 'choice', choice } } };
     records.push({ synthetic: true, at: null, request, response, ms: null });
     return response;

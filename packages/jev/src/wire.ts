@@ -1,5 +1,5 @@
 import { ARENA, POINTS } from '../../engine/src/arena.ts';
-import { aimShot, predictPaddleX, type Ask, type BoardState, type Decision, type PowerUpKind } from '../../engine/src/index.ts';
+import { aimShot, keepsBall, landingOf, landingX, type Ask, type BoardState, type Decision, type PowerUpKind } from '../../engine/src/index.ts';
 
 // Wire shape of POST {baseUrl}/v1/systemone, as documented by TypeSafe and
 // mirrored by Vercel AI Gateway (https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe).
@@ -50,30 +50,36 @@ export function downOf(status: number, body: unknown): Down | null {
 // The four `target` options, in the order targetOptions builds them.
 export const targetKeys = ['landing', 'aim', 'angle-left', 'angle-right'] as const;
 
+// Each ball says where and in how many ticks it comes down to the paddle's
+// line, and each power-up whether the paddle can go for it and still get under
+// the ball, so a ball about to be lost is plain in the state.
 function boardForJev(state: BoardState) {
   return {
     tick: state.tick,
     width: state.width,
     height: state.height,
     paddle: { x: state.paddleX, width: state.paddleWidth, targetX: state.paddleTargetX, speed: state.paddleSpeed, magnet: state.magnetPaddle },
-    balls: state.balls.map(({ id, x, y, vx, vy, tracked, piercing }) => ({ id, x, y, vx, vy, tracked, piercing })),
-    powerUps: state.powerUps.map(({ id, kind, x, y, vy }) => ({ id, kind, x, y, vy })),
+    balls: state.balls.map(ball => {
+      const { id, x, y, vx, vy, tracked, piercing } = ball, landing = landingOf(state, ball);
+      return { id, x, y, vx, vy, tracked, piercing, landsAt: landing && { x: landing.x, inTicks: landing.ticks } };
+    }),
+    powerUps: state.powerUps.map(power => ({ id: power.id, kind: power.kind, x: power.x, y: power.y, vy: power.vy, keepsBall: keepsBall(state, power) })),
     bricks: state.bricks.filter(brick => brick.unbreakable || brick.durability > 0).map(({ x, y, durability, unbreakable, regenerates }) => ({ x, y, durability, unbreakable, regenerates })),
     livesLost: state.livesLost,
   };
 }
+
+const trackedBall = (state: BoardState) => state.balls.find(item => item.tracked) ?? state.balls[0];
 
 function criteriaFor(ask: Ask): Record<string, string> {
   const { state, options } = ask;
   if (ask.question === 'target') {
     if (options.length !== targetKeys.length) throw new Error(`target ask has ${options.length} options, expected ${targetKeys.length}`);
     const [landing, aim, left, right] = options.map(Number);
-    const ball = state.balls.find(item => item.tracked) ?? state.balls[0];
-    const shot = aimShot(state, ball, predictPaddleX(ball));
+    const ball = trackedBall(state);
+    const shot = aimShot(state, ball, landingX(state, ball));
     return {
-      landing: ball.vy > 0
-        ? `Catch the ball dead center at its landing point, x=${landing.toFixed(1)}: the safest catch, sending it back up almost straight`
-        : `Wait in the middle, x=${landing.toFixed(1)}, while the ball is still rising`,
+      landing: `Catch the ball dead center where it comes down, x=${landing.toFixed(1)}: the safest catch, sending it back up almost straight`,
       aim: shot
         ? `Catch it at x=${aim.toFixed(1)} to send it into the densest bricks it can reach: the column at x=${shot.x}, ${shot.hitPoints} hit points open from below`
         : `No return reaches a breakable brick: catch it dead center at x=${aim.toFixed(1)}`,
@@ -84,9 +90,11 @@ function criteriaFor(ask: Ask): Record<string, string> {
   if (ask.question === 'chase') {
     return Object.fromEntries(options.map(option => {
       const id = String(option);
-      if (id === 'none') return [id, 'Ignore every falling power-up and keep playing the ball'];
+      if (id === 'none') return [id, `Leave the power-ups and play the ball: catch it dead center where it comes down, x=${landingX(state, trackedBall(state)).toFixed(1)}`];
       const power = state.powerUps.find(item => item.id === id);
-      return [id, power ? `Catch the falling ${power.kind} power-up at x=${power.x.toFixed(1)}, y=${power.y.toFixed(1)}: ${POWER_UP_EFFECTS[power.kind]}` : `Catch power-up ${id}`];
+      if (!power) return [id, `Catch power-up ${id}`];
+      const cost = keepsBall(state, power) ? 'the paddle can still get back under the ball' : 'the ball comes down out of reach first, so going for it loses the ball';
+      return [id, `Catch the falling ${power.kind} power-up at x=${power.x.toFixed(1)}, y=${power.y.toFixed(1)}: ${POWER_UP_EFFECTS[power.kind]}; ${cost}`];
     }));
   }
   return Object.fromEntries(options.map(option => {
@@ -112,13 +120,13 @@ export const OBJECTIVE = [
   'Performance is clearing fast: the first to break every breakable brick wins the level, and that ends it.',
   `If nobody clears in ${ARENA.levelSeconds} seconds, the larger share of the level's brick hit points broken wins.`,
   `Score: ${POINTS.percentCleared} per percent of hit points broken, plus ${POINTS.secondLeft} per second left on the clock when you clear.`,
-  `A lost ball scores nothing and costs nothing but the time to serve again; losing the last of your ${ARENA.lives} ends your level where it stands.`,
-  'Choose whatever breaks bricks soonest, and risk the ball when that speeds the clear.',
+  `A lost ball scores nothing and costs no points, but it costs the serve and the trip back up to the bricks, and losing the last of your ${ARENA.lives} ends your level where it stands, with every brick left unbroken.`,
+  'So keep the ball first: never choose an option that lets a ball past the paddle, for bricks or for a power-up. Among the options that keep the ball, choose whatever breaks bricks soonest.',
 ].join(' ');
 
 const questions: Record<Ask['question'], string> = {
   target: 'Where should the paddle catch the ball, and so where does the ball go next?',
-  chase: 'A power-up is falling. Which one should the paddle go for, if any?',
+  chase: 'A power-up is falling. Which one should the paddle go for, if any, or should it stay with the ball?',
   track: 'Several balls are in play. Which ball should the paddle play?',
 };
 
@@ -134,6 +142,8 @@ export function fromResponse(ask: Ask, response: SystemOneResponse): Decision {
   const keys = Object.keys(criteriaFor(ask));
   if (!keys.includes(answer.choice)) throw new Error(`Jev chose "${answer.choice}", outside the offered set ${JSON.stringify(keys)}`);
   if (ask.question === 'target') return { kind: 'target', x: Number(ask.options[targetKeys.indexOf(answer.choice as typeof targetKeys[number])]) };
+  // Leaving the power-ups means playing the ball, so the paddle goes under it.
+  if (ask.question === 'chase' && answer.choice === 'none') return { kind: 'target', x: landingX(ask.state, trackedBall(ask.state)) };
   if (ask.question === 'chase') return { kind: 'chase', powerUpId: answer.choice };
   return { kind: 'track', ballId: answer.choice };
 }

@@ -56,7 +56,9 @@ arena's 120 at speed 7 cleared none. After it, neither width clears a level. The
 bot catches the ball dead center, which sends it straight up one column for
 good; the old collision bug turned the ball the wrong way often enough to knock
 it out of that loop. The arena escapes it with `minReturnVx`; `step` has no such
-floor, so `pnpm session` now records only the Human clearing level 1.
+floor. The Human in `pnpm session` catches at the `landing` option, which since
+26 September is where the ball really comes down (`landingOf`), so it loops too,
+and `pnpm session` now records no level cleared.
 
 <!-- block:begin -->
 ## Agents
