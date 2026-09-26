@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createCap } from '../../jev/src/cap';
 import { startStandIn } from '../../jev/src/stand-in-server';
 import { DOWN_STATUS, JEV_PATH } from '../../jev/src/wire';
+import { createMatchStore } from './matches';
 import { hostedApp } from './serve';
 
 // The hosted server over a stand-in dist/ and the local stand-in. Nothing here
@@ -24,7 +25,7 @@ beforeAll(async () => {
   writeFileSync(join(dist, '..', 'brick-arena-secret.txt'), 'outside dist');
   standIn = await startStandIn({ port: 0, ms: 5 });
   // Not in debug mode, as hosted: a stand-in's answer is Jev being down.
-  server = createServer(hostedApp({ dist, proxy: { link: { baseUrl: standIn.url, model: 'jev-test', key: 'test-key-not-real' }, keyFrom: 'the JEV_API_KEY secret', debug: false, cap: createCap({ perVisitor: 100, total: 100 }), log: line => logged.push(line) } }));
+  server = createServer(hostedApp({ dist, proxy: { link: { baseUrl: standIn.url, model: 'jev-test', key: 'test-key-not-real' }, keyFrom: 'the JEV_API_KEY secret', debug: false, cap: createCap({ perVisitor: 100, total: 100 }), log: line => logged.push(line) }, matches: createMatchStore(mkdtempSync(join(tmpdir(), 'brick-arena-matches-'))) }));
   await new Promise<void>(done => server.listen(0, '127.0.0.1', done));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 });
