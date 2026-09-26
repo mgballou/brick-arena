@@ -4,6 +4,7 @@ import { capFromEnv } from './packages/jev/src/cap.ts';
 import { JEV_DEFAULTS, readJevLink, type JevLink } from './packages/jev/src/key.ts';
 import { jevMiddleware } from './packages/jev/src/proxy.ts';
 import { JEV_PATH } from './packages/jev/src/wire.ts';
+import { adminSecretFromEnv, BACKSTAGE_PAGE, refuseUnlessAdmin } from './packages/server/src/admin.ts';
 import { MATCHES_PATH, matchesMiddleware, storeFromEnv } from './packages/server/src/matches.ts';
 
 // Reads ~/.jev-key once, when the dev server starts, and hands it to the same
@@ -47,7 +48,15 @@ function matchRecords(): Plugin {
       if (process.env.VITEST) return;
       const store = storeFromEnv(process.env);
       server.config.logger.info(`  [matches] records in ${store.dir}`);
-      server.middlewares.use(MATCHES_PATH, matchesMiddleware(store, line => server.config.logger.warn(`  [matches] ${line}`)));
+      // Only the admin reads them, here as on the host (admin.ts). Vite serves
+      // the page itself, so the gate runs ahead of it, for /matches too.
+      const admin = adminSecretFromEnv(process.env);
+      server.middlewares.use((req, res, next) => {
+        const path = new URL(req.url ?? '/', 'http://host').pathname;
+        if ((path === BACKSTAGE_PAGE || path === BACKSTAGE_PAGE.slice(0, -'.html'.length)) && refuseUnlessAdmin(req, res, admin)) return;
+        next();
+      });
+      server.middlewares.use(MATCHES_PATH, matchesMiddleware(store, admin, line => server.config.logger.warn(`  [matches] ${line}`)));
     },
   };
 }

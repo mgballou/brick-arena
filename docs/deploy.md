@@ -30,9 +30,10 @@ paid instance type stays awake.
 2. **Blueprint.** In the dashboard choose **New → Blueprint**, pick
    `brick-arena`, and keep branch `main`. Render reads `render.yaml` and lists
    one service, `brick-arena`, on the free plan.
-3. **Secret.** Render asks for `JEV_API_KEY`, the one value marked
-   `sync: false`. Paste the TypeSafe key. It goes nowhere else: not the repo,
-   not the page, not a log.
+3. **Secrets.** Render asks for the two values marked `sync: false`. For
+   `JEV_API_KEY`, paste the TypeSafe key. For `ADMIN_SECRET`, paste a long
+   random password you keep (`openssl rand -base64 24`); it opens the match
+   records. Neither goes anywhere else: not the repo, not the page, not a log.
 4. **Deploy.** Choose **Apply**. Render runs the build
    (`npx pnpm@11 install --frozen-lockfile && npx pnpm@11 build`) and then
    `node packages/server/src/serve.ts`.
@@ -56,6 +57,7 @@ dashboard). Saving one redeploys.
 | `JEV_CALLS_PER_DAY` | 50000 | Jev calls everyone together may make per UTC day. |
 | `JEV_BASE_URL`, `JEV_MODEL` | `https://api.typesafe.ai`, `jev-latest` | Where Jev is. Leave them unset. |
 | `MATCHES_DIR` | `var/matches` in the checkout | Where match records go (see *Match records*). Set it only with a disk. |
+| `ADMIN_SECRET` | none | The one password that reads match records. Unset, no one reads them. |
 
 ## When Jev is down
 
@@ -92,16 +94,23 @@ match, named for the match: `20260926-050211-iw4brr.ndjson`. A full match is
 about half a megabyte, most of it Jev's calls. The format is in
 `packages/server/src/record.ts`.
 
-Nothing about the player is kept: no address, no browser, no name. The list
-is public, like the game, at `/matches.html`, and `/api/matches` serves the
-same data as JSON.
+Nothing about the player is kept: no address, no browser, no name.
+
+**Only the admin reads them.** The game writes a record without signing in,
+but `/matches.html`, `/api/matches` and `/api/matches/<id>` answer only a
+request that carries `ADMIN_SECRET` as the password of HTTP Basic auth (any
+user name). Anyone else gets 401 and nothing from the store; with no
+`ADMIN_SECRET` set, everyone gets 404. The server checks it
+(`packages/server/src/admin.ts`); the page and its script never hold it. The
+dev server gates the same routes the same way.
 
 To read them:
 
-- **Page.** `https://<your service>/matches.html` lists the 50 most recent
+- **Page.** `https://<your service>/matches.html`. The browser asks for a
+  name and password: any name, and `ADMIN_SECRET`. It lists the 50 most recent
   matches; each opens its timeline, one chart and one event list per level.
-- **CLI.** `pnpm match --from https://<your service>` lists them, and
-  `pnpm match --from https://<your service> <id>` prints one. Add `--state`
+- **CLI.** `ADMIN_SECRET=... pnpm match --from https://<your service>` lists
+  them, and `... pnpm match --from https://<your service> <id>` prints one. Add `--state`
   for the board behind each Jev call, and `--progress` for the clear once a
   second. Without `--from` it reads `var/matches`, where `pnpm dev` writes.
 

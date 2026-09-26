@@ -2,6 +2,7 @@ import { appendFileSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { refuseUnlessAdmin } from './admin.ts';
 import { foldSummary, idTime, isMatchId, MATCHES_PATH, parseLine, parseRecord, startSummary, summarize, type MatchLine, type MatchSummary } from './record.ts';
 
 // Where the hosted server keeps match records (record.ts): one NDJSON file per
@@ -11,8 +12,10 @@ import { foldSummary, idTime, isMatchId, MATCHES_PATH, parseLine, parseRecord, s
 // the service restarts or sleeps.
 //
 //   POST /api/matches/<id>   lines to append; a new match must open with `start`
-//   GET  /api/matches        the most recent matches, summarized, as JSON
-//   GET  /api/matches/<id>   one match's record, as NDJSON
+//   GET  /api/matches        the most recent matches, summarized, as JSON (admin only)
+//   GET  /api/matches/<id>   one match's record, as NDJSON (admin only)
+//
+// The game writes without signing in; only the admin reads (admin.ts).
 export { MATCHES_PATH };
 export const MATCHES_DEFAULTS = {
   dir: fileURLToPath(new URL('../../../var/matches', import.meta.url)),
@@ -104,9 +107,9 @@ async function readBody(req: IncomingMessage, max: number): Promise<string | nul
 }
 
 // Mounted at MATCHES_PATH by the hosted server and the dev server; the dev
-// server strips the mount from the URL and the hosted one doesn't. Match records are the game alone, so
-// reading them takes no key.
-export function matchesMiddleware(store: MatchStore, log: (line: string) => void = line => console.error(`[matches] ${line}`)) {
+// server strips the mount from the URL and the hosted one doesn't. `admin` is
+// the ADMIN_SECRET; without it no one reads a record.
+export function matchesMiddleware(store: MatchStore, admin: string | null, log: (line: string) => void = line => console.error(`[matches] ${line}`)) {
   const handle = async (req: IncomingMessage, res: ServerResponse) => {
     const send = (status: number, body: unknown, type = 'application/json') => {
       res.statusCode = status;
@@ -118,10 +121,12 @@ export function matchesMiddleware(store: MatchStore, log: (line: string) => void
     const rest = (path.startsWith(MATCHES_PATH) ? path.slice(MATCHES_PATH.length) : path).replace(/^\/+|\/+$/g, '');
     if (rest === '') {
       if (req.method !== 'GET') return send(405, { ok: false, error: 'List matches with GET.' });
+      if (refuseUnlessAdmin(req, res, admin)) return;
       return send(200, { ok: true, matches: store.list() });
     }
     if (!isMatchId(rest)) return send(404, { ok: false, error: 'No such match.' });
     if (req.method === 'GET') {
+      if (refuseUnlessAdmin(req, res, admin)) return;
       const text = store.read(rest);
       return text === null ? send(404, { ok: false, error: 'No such match.' }) : send(200, text, 'application/x-ndjson; charset=utf-8');
     }

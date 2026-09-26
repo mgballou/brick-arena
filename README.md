@@ -130,8 +130,9 @@ the cap is spent, the page says so and shows no board. [docs/deploy.md](docs/dep
 up the host.
 
 The server keeps a record of each match: every launch, lost ball and Jev call, with the board
-Jev was sent, and both boards' clear over time. `/matches.html` lists recent matches and opens
-each one's timeline; `npm run match` prints them.
+Jev was sent, and both boards' clear over time. Only the admin reads them, with the server's
+`ADMIN_SECRET`: `/matches.html` lists recent matches and opens each one's timeline, and
+`npm run match` prints them with a tally of every choice Jev made.
 [docs/deploy.md](docs/deploy.md#match-records) says where they live.
 
 Left and Right move your paddle. After a lost ball, Space or Up serves. P pauses, H shows how
