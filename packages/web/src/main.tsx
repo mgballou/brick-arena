@@ -594,7 +594,7 @@ function Rules({ rival, onClose, resumes }: { rival: string; onClose: () => void
         <dt>Power-ups</dt>
         <dd>Score nothing. They matter only for how fast they help you clear.</dd>
         <dt>The match</dt>
-        <dd>The higher total after {ARENA.levels} levels wins. {rival === 'Jev' ? 'Jev is told these rules and asked, at each catch, to aim at them.' : 'The stand-in plays a fixed rule aimed at them: every catch sent at the densest bricks.'}</dd>
+        <dd>The higher total after {ARENA.levels} levels wins. {rival === 'Jev' ? 'Jev is told these rules, told to keep the ball first, and asked at each catch to aim at them.' : 'The stand-in plays a fixed rule aimed at them: keep the ball first, and send every catch at the densest bricks.'}</dd>
       </dl>
       <button className="primary" onClick={onClose}>{resumes ? 'Back to the level' : 'Close'}</button>
       <p className="keys">H, Space or Esc to close</p>

@@ -7,7 +7,7 @@ import { readRecording, replayTransport } from '../../jev/src/transport.ts';
 import { syntheticRecording } from '../../jev/src/synthetic.ts';
 
 // Live:   pnpm jev   (reads the TypeSafe key from ~/.jev-key; --key-file, --base-url, --model override)
-// Replay: pnpm jev --replay docs/jev-calls.synthetic.ndjson --seed 20260962 --level 1
+// Replay: pnpm jev --replay docs/jev-calls.synthetic.ndjson --seed 20260919 --level 0
 // Write the synthetic recording again: pnpm jev --write-synthetic
 const { values } = parseArgs({
   options: {
