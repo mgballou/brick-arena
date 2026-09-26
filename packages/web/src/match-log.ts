@@ -39,12 +39,15 @@ export function lostLines(at: { level: number; frame: number; side: RecordSide }
 export type Sender = (id: string, body: string, last: boolean) => Promise<boolean>;
 
 // Same origin, like /api/jev. The last write of a closing page goes as a
-// beacon, which the browser finishes after the page is gone.
+// beacon, which the browser finishes after the page is gone. The others are
+// plain POSTs: Chrome allows a page 64 KiB of keepalive and beacon bodies in
+// all, and a keepalive write past it never settled, which held back every
+// write after it (match-log.test.ts).
 export const sendToServer: Sender = async (id, body, last) => {
   const url = `${MATCHES_PATH}/${id}`;
   if (last && typeof navigator !== 'undefined' && navigator.sendBeacon) return navigator.sendBeacon(url, new Blob([body], { type: 'application/x-ndjson' }));
   try {
-    const response = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/x-ndjson' }, body, keepalive: body.length < 60_000 });
+    const response = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/x-ndjson' }, body });
     return response.ok;
   } catch {
     return false;
