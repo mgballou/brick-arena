@@ -45,6 +45,12 @@ the definition and change all four. `askForDecision` builds the options, so a
 change to it means regenerating `docs/session.ndjson` and the synthetic
 recording.
 
+Each match of the web game leaves a record on the server: the browser builds
+the lines (`packages/web/src/match-log.ts`), `packages/server/src/matches.ts`
+appends them to one NDJSON file per match in `MATCHES_DIR`, and `pnpm match`
+and `/matches.html` read them. The format is `packages/server/src/record.ts`.
+It holds the game only; never add who played it.
+
 The web game's rules live in `packages/engine/src/arena.ts`, over `step`.
 Change `createBoard` or `step` and the recorded fixtures in `docs/` must be
 regenerated.

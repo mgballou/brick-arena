@@ -157,6 +157,7 @@ describe('arena step', () => {
     board.balls.push({ ...board.balls[0], id: 'ball-1', y: 100, vy: -2, tracked: false });
     const one = arenaStep(board);
     expect(one.events.lifeLost).toBe(false);
+    expect(one.events.ballsLost).toEqual([board.balls[0].x]);
     expect(one.state.livesLost).toBe(0);
     expect(one.state.balls.map(ball => ball.id)).toEqual(['ball-1']);
     expect(one.state.balls[0].tracked).toBe(true);
@@ -164,6 +165,7 @@ describe('arena step', () => {
     one.state.balls[0] = { ...one.state.balls[0], y: board.height + 19, vy: 3 };
     const last = arenaStep(one.state);
     expect(last.events.lifeLost).toBe(true);
+    expect(last.events.ballsLost).toHaveLength(1);
     expect(last.state.balls).toHaveLength(1);
     expect(livesLeft(last.state)).toBe(ARENA.lives - 1);
   });

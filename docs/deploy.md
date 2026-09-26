@@ -55,6 +55,7 @@ dashboard). Saving one redeploys.
 | `JEV_CALLS_PER_VISITOR_PER_DAY` | 5000 | Jev calls one visitor may make per UTC day, about five full matches. |
 | `JEV_CALLS_PER_DAY` | 50000 | Jev calls everyone together may make per UTC day. |
 | `JEV_BASE_URL`, `JEV_MODEL` | `https://api.typesafe.ai`, `jev-latest` | Where Jev is. Leave them unset. |
+| `MATCHES_DIR` | `var/matches` in the checkout | Where match records go (see *Match records*). Set it only with a disk. |
 
 ## When Jev is down
 
@@ -79,6 +80,72 @@ Screens: `docs/screens/2026-09-25/`.
 - Render's docs don't say which pnpm the Node runtime preloads, or whether
   `NODE_ENV` is `production` during the build, so the build command pins pnpm 11
   and keeps devDependencies itself.
+
+## Match records
+
+The server keeps a record of every match: when it started, the level and
+tuning, every launch and who made it, every lost ball (side and where), both
+boards' clear once a second, each Jev call with the board it was sent and what
+it chose, and the result. The browser sends the lines every five seconds, and
+once more when the page closes. The server appends them to one NDJSON file per
+match, named for the match: `20260926-050211-iw4brr.ndjson`. A full match is
+about half a megabyte, most of it Jev's calls. The format is in
+`packages/server/src/record.ts`.
+
+Nothing about the player is kept: no address, no browser, no name. The list
+is public, like the game, at `/matches.html`, and `/api/matches` serves the
+same data as JSON.
+
+To read them:
+
+- **Page.** `https://<your service>/matches.html` lists the 50 most recent
+  matches; each opens its timeline, one chart and one event list per level.
+- **CLI.** `pnpm match --from https://<your service>` lists them, and
+  `pnpm match --from https://<your service> <id>` prints one. Add `--state`
+  for the board behind each Jev call, and `--progress` for the clear once a
+  second. Without `--from` it reads `var/matches`, where `pnpm dev` writes.
+
+### Where they live, and why a disk
+
+Records are files in `MATCHES_DIR` (default `var/matches` in the checkout).
+A file on a disk needs no new package, no second account and no second secret,
+and the one Node process that already holds the cap is the one writer.
+
+On the free plan that directory is **not kept**: Render's free web services
+lose their filesystem on every deploy, restart and sleep (render.com/docs/free,
+read 26 September 2026). The records last until the service next sleeps, 15
+minutes after the last visit. That is enough to read a match you just played
+and not much more.
+
+To keep them, the service needs a persistent disk, which Render offers only on
+paid instances: Starter is $7 a month and a disk is $0.25 per GB a month, 1 GB
+at least (render.com/docs/disks, read 26 September 2026). A disk also turns off
+zero-downtime deploys, so each deploy drops the service for a few seconds.
+Render's other free stores don't fit: free Postgres expires after 30 days, and
+free Key Value keeps nothing on disk.
+
+**Your step, if you want records kept.** In `render.yaml`, change `plan: free`
+to `plan: starter` and add to the service:
+
+```yaml
+    disk:
+      name: matches
+      mountPath: /var/data
+      sizeGB: 1
+```
+
+and to its `envVars`:
+
+```yaml
+      - key: MATCHES_DIR
+        value: /var/data/matches
+```
+
+Merge to `main`, and Render moves the service to Starter and mounts the disk. Set
+`MATCHES_DIR` only together with the disk: without one, the server can't make
+`/var/data` and won't start. The server takes no new match once its records
+pass 500 MB, about 1000 matches, and no more lines for a match past 4 MB, so
+1 GB is room enough.
 
 ## Trying the hosted build locally
 

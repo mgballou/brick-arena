@@ -55,6 +55,8 @@ export type ArenaEvents = {
   hits: Array<{ x: number; y: number; broke: boolean; maxDurability: number }>;
   paddleBounces: number[];
   caught: PowerUpKind[];
+  // Where each ball that left the board this step crossed its bottom edge.
+  ballsLost: number[];
   lifeLost: boolean;
 };
 
@@ -134,7 +136,7 @@ export function sideStatus(state: BoardState): SideStatus {
 export function arenaStep(state: BoardState, tuning: Tuning = TUNINGS.standard): { state: BoardState; events: ArenaEvents } {
   const next = step(state);
   next.paddleSpeed = Math.max(next.paddleSpeed, tuning.minPaddleSpeed);
-  const events: ArenaEvents = { hits: [], paddleBounces: [], caught: [], lifeLost: false };
+  const events: ArenaEvents = { hits: [], paddleBounces: [], caught: [], ballsLost: [], lifeLost: false };
 
   next.bricks.forEach((brick, index) => {
     const before = state.bricks[index];
@@ -148,6 +150,7 @@ export function arenaStep(state: BoardState, tuning: Tuning = TUNINGS.standard):
   }
 
   const lost = state.balls.filter(ball => ball.y + ball.vy > state.height + 20).map(ball => ball.id);
+  events.ballsLost = state.balls.filter(ball => lost.includes(ball.id)).map(ball => ball.x);
   if (lost.length) {
     const kept = next.balls.filter(ball => !lost.includes(ball.id));
     if (kept.length) {
