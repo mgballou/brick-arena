@@ -24,7 +24,7 @@ export type SentState = Record<string, unknown> & { bricks: string };
 
 // `answered`: the choice moved the paddle. `stale`: it came back after the
 // level it was asked on had ended. The rest are the browser's failures
-// (packages/web/src/jev.ts), and `down` ends the match.
+// (packages/web/src/jev.ts); a `down` on the level in play ends the match.
 export type JevOutcome = 'answered' | 'stale' | 'timeout' | 'bad-answer' | 'offline' | 'down';
 
 export type MatchLine =
@@ -33,7 +33,8 @@ export type MatchLine =
   // `first` is the level's first ball, which both sides launch together when
   // the countdown runs out; after a lost ball each side serves its own.
   | { type: 'launch'; level: number; frame: number; side: RecordSide; x: number; first: boolean }
-  // `x` is where the ball left the board. Only the last ball in play costs a life.
+  // `x` is where the ball left the board. Only the last ball in play costs a
+  // life; when two go on one step, the second line carries it.
   | { type: 'lost'; level: number; frame: number; side: RecordSide; x: number; lifeLost: boolean; livesLeft: number }
   // Once a second of the level clock, and once more when the level ends.
   | { type: 'progress'; level: number; frame: number; human: SideTotal; jev: SideTotal }
@@ -52,6 +53,8 @@ const LINE_TYPES: ReadonlySet<string> = new Set<LineType>(['start', 'level', 'la
 // 20260926-143205-k3m9qa.
 const ID = /^\d{8}-\d{6}-[a-z0-9]{6}$/;
 export const isMatchId = (id: string) => ID.test(id);
+// When the id says the match began, in milliseconds since 1970.
+export const idTime = (id: string) => Date.parse(`${id.slice(0, 4)}-${id.slice(4, 6)}-${id.slice(6, 8)}T${id.slice(9, 11)}:${id.slice(11, 13)}:${id.slice(13, 15)}Z`);
 
 export function newMatchId(now = new Date(), random: () => number = Math.random): string {
   const stamp = now.toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
@@ -74,10 +77,6 @@ export function parseRecord(text: string): MatchLine[] {
   return text.split('\n').filter(Boolean).map(parseLine).filter((line): line is MatchLine => line !== null);
 }
 
-// The list of recent matches reads only these, so it can skip the Jev lines,
-// which are most of a file.
-export const SUMMARY_TYPES: ReadonlySet<string> = new Set<LineType>(['start', 'level', 'lost', 'levelEnd', 'end']);
-
 export type MatchSummary = {
   id: string;
   at: string;
@@ -90,20 +89,27 @@ export type MatchSummary = {
   end: { reason: 'final' | 'down' | 'left'; human: number; jev: number } | null;
 };
 
+export const startSummary = (start: Extract<MatchLine, { type: 'start' }>): MatchSummary =>
+  ({ id: start.id, at: start.at, tuning: start.tuning, opponent: start.opponent, debug: start.debug, levels: [], ballsLost: { human: 0, jev: 0 }, end: null });
+
+// One more line into a summary, so the server can keep each match's summary
+// up to date as lines arrive.
+export function foldSummary(summary: MatchSummary, line: MatchLine) {
+  if (line.type === 'level') summary.levels.push({ level: line.level, winner: null });
+  if (line.type === 'lost' && (line.side === 'human' || line.side === 'jev')) summary.ballsLost[line.side]++;
+  if (line.type === 'levelEnd') {
+    const level = summary.levels.find(item => item.level === line.level);
+    if (level) level.winner = line.winner;
+    else summary.levels.push({ level: line.level, winner: line.winner });
+  }
+  if (line.type === 'end') summary.end = { reason: line.reason, human: line.human, jev: line.jev };
+}
+
 export function summarize(lines: MatchLine[]): MatchSummary | null {
   const start = lines.find(line => line.type === 'start');
   if (!start || start.type !== 'start') return null;
-  const summary: MatchSummary = { id: start.id, at: start.at, tuning: start.tuning, opponent: start.opponent, debug: start.debug, levels: [], ballsLost: { human: 0, jev: 0 }, end: null };
-  for (const line of lines) {
-    if (line.type === 'level') summary.levels.push({ level: line.level, winner: null });
-    if (line.type === 'lost') summary.ballsLost[line.side]++;
-    if (line.type === 'levelEnd') {
-      const level = summary.levels.find(item => item.level === line.level);
-      if (level) level.winner = line.winner;
-      else summary.levels.push({ level: line.level, winner: line.winner });
-    }
-    if (line.type === 'end') summary.end = { reason: line.reason, human: line.human, jev: line.jev };
-  }
+  const summary = startSummary(start);
+  for (const line of lines) foldSummary(summary, line);
   return summary;
 }
 
@@ -130,7 +136,7 @@ export function describe(line: MatchLine, opponent = 'Jev'): Row {
     case 'launch':
       return at(line.level, line.frame, line.side, `${who(line.side)} launched at x=${Math.round(line.x)}${line.first ? ' (the countdown)' : ''}`);
     case 'lost':
-      return at(line.level, line.frame, line.side, `${who(line.side)} lost a ball at x=${Math.round(line.x)}${line.lifeLost ? `: ${line.livesLeft} ${line.livesLeft === 1 ? 'ball' : 'balls'} left` : ', another still in play'}`);
+      return at(line.level, line.frame, line.side, `${who(line.side)} lost a ball at x=${Math.round(line.x)}${line.lifeLost ? `: ${line.livesLeft} ${line.livesLeft === 1 ? 'ball' : 'balls'} left` : ', no life lost'}`);
     case 'progress':
       return at(line.level, line.frame, null, `You ${line.human.percent}%, ${opponent} ${line.jev.percent}%`);
     case 'jev': {

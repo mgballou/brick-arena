@@ -1,11 +1,12 @@
-import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { appendFileSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isMatchId, MATCHES_PATH, parseLine, parseRecord, SUMMARY_TYPES, summarize, type MatchLine, type MatchSummary } from './record.ts';
+import { foldSummary, idTime, isMatchId, MATCHES_PATH, parseLine, parseRecord, startSummary, summarize, type MatchLine, type MatchSummary } from './record.ts';
 
 // Where the hosted server keeps match records (record.ts): one NDJSON file per
-// match in one directory, appended to and never rewritten. On Render that
+// match in one directory, appended to and never rewritten. This process is the
+// only writer. On Render that
 // directory is a persistent disk (docs/deploy.md); without one it lasts until
 // the service restarts or sleeps.
 //
@@ -26,7 +27,7 @@ export const MATCHES_DEFAULTS = {
 } as const;
 
 export type StoreLimits = { maxTotalBytes: number; maxMatchBytes: number };
-export type Refused = 'bad-line' | 'no-start' | 'started' | 'full' | 'match-full';
+export type Refused = 'bad-line' | 'no-start' | 'started' | 'bad-time' | 'full' | 'match-full';
 export type MatchStore = {
   dir: string;
   append: (id: string, lines: MatchLine[]) => 'ok' | Refused;
@@ -34,40 +35,54 @@ export type MatchStore = {
   list: (limit?: number) => MatchSummary[];
 };
 
-export function createMatchStore(dir: string, limits: StoreLimits = MATCHES_DEFAULTS): MatchStore {
+// A new match's id must name a start within this much of the server's clock,
+// so no one can date a match ahead and hold the top of the list.
+const ID_SKEW_MS = 60 * 60 * 1000;
+
+// Each match's size and summary are read once, when the store opens, and kept
+// up to date as lines arrive, so a write or the list never reads the files.
+export function createMatchStore(dir: string, limits: StoreLimits = MATCHES_DEFAULTS, now: () => number = Date.now): MatchStore {
   const root = resolve(dir);
   mkdirSync(root, { recursive: true });
   const fileOf = (id: string) => join(root, `${id}.ndjson`);
-  const files = () => readdirSync(root).filter(name => name.endsWith('.ndjson') && isMatchId(name.slice(0, -'.ndjson'.length)));
-  const used = () => files().reduce((sum, name) => sum + statSync(join(root, name)).size, 0);
+  const matches = new Map<string, { bytes: number; summary: MatchSummary | null }>();
+  let used = 0;
+  for (const name of readdirSync(root)) {
+    const id = name.slice(0, -'.ndjson'.length);
+    if (!name.endsWith('.ndjson') || !isMatchId(id)) continue;
+    const text = readFileSync(join(root, name), 'utf8');
+    const bytes = Buffer.byteLength(text);
+    matches.set(id, { bytes, summary: summarize(parseRecord(text)) });
+    used += bytes;
+  }
   return {
     dir: root,
     append(id, lines) {
-      const file = fileOf(id);
-      const exists = existsSync(file);
-      if (!exists && lines[0]?.type !== 'start') return 'no-start';
-      if (lines.some((line, i) => line.type === 'start' && (exists || i > 0 || line.id !== id))) return 'started';
-      // `type` leads every line, so the list can skip Jev's lines unparsed.
+      const match = matches.get(id);
+      if (!match && lines[0]?.type !== 'start') return 'no-start';
+      if (lines.some((line, i) => line.type === 'start' && (match || i > 0 || line.id !== id))) return 'started';
+      if (!match && Math.abs(idTime(id) - now()) > ID_SKEW_MS) return 'bad-time';
       // The server's clock, not the browser's, says when a match began and ended.
-      const at = new Date().toISOString();
-      const text = lines.map(({ type, ...rest }) => JSON.stringify({ type, ...rest, ...(type === 'start' || type === 'end' ? { at } : {}) }) + '\n').join('');
+      const at = new Date(now()).toISOString();
+      const stamped = lines.map(line => line.type === 'start' || line.type === 'end' ? { ...line, at } : line);
+      const text = stamped.map(line => JSON.stringify(line) + '\n').join('');
       const bytes = Buffer.byteLength(text);
-      if (!exists && used() + bytes > limits.maxTotalBytes) return 'full';
-      if ((exists ? statSync(file).size : 0) + bytes > limits.maxMatchBytes) return 'match-full';
-      appendFileSync(file, text);
+      if (used + bytes > limits.maxTotalBytes) return 'full';
+      if ((match?.bytes ?? 0) + bytes > limits.maxMatchBytes) return 'match-full';
+      appendFileSync(fileOf(id), text);
+      used += bytes;
+      const entry = match ?? { bytes: 0, summary: stamped[0].type === 'start' ? startSummary(stamped[0]) : null };
+      entry.bytes += bytes;
+      if (entry.summary) for (const line of stamped) foldSummary(entry.summary, line);
+      matches.set(id, entry);
       return 'ok';
     },
     read(id) {
-      return isMatchId(id) && existsSync(fileOf(id)) ? readFileSync(fileOf(id), 'utf8') : null;
+      return matches.has(id) ? readFileSync(fileOf(id), 'utf8') : null;
     },
     list(limit = MATCHES_DEFAULTS.recent) {
       // Ids open with their UTC start, so the names sort newest last.
-      return files().sort().reverse().slice(0, limit).flatMap(name => {
-        const text = readFileSync(join(root, name), 'utf8');
-        const kept = text.split('\n').filter(line => SUMMARY_TYPES.has(/^\{"type":"(\w+)"/.exec(line)?.[1] ?? ''));
-        const summary = summarize(parseRecord(kept.join('\n')));
-        return summary ? [summary] : [];
-      });
+      return [...matches.keys()].sort().reverse().slice(0, limit).flatMap(id => matches.get(id)!.summary ?? []);
     },
   };
 }
@@ -92,7 +107,7 @@ async function readBody(req: IncomingMessage, max: number): Promise<string | nul
 // server strips the mount from the URL and the hosted one doesn't. Match records are the game alone, so
 // reading them takes no key.
 export function matchesMiddleware(store: MatchStore, log: (line: string) => void = line => console.error(`[matches] ${line}`)) {
-  return async (req: IncomingMessage, res: ServerResponse) => {
+  const handle = async (req: IncomingMessage, res: ServerResponse) => {
     const send = (status: number, body: unknown, type = 'application/json') => {
       res.statusCode = status;
       res.setHeader('content-type', type);
@@ -119,4 +134,10 @@ export function matchesMiddleware(store: MatchStore, log: (line: string) => void
     if (written === 'full' || written === 'match-full') log(`refused ${rest}: ${written === 'full' ? 'the store is full' : 'the match is at its size limit'}`);
     return written === 'ok' ? send(200, { ok: true }) : send(written === 'full' || written === 'match-full' ? 507 : 409, { ok: false, error: written });
   };
+  // A write cut off mid-body, or a disk that fails, costs that write and
+  // nothing else: never the server, which also carries the game and Jev.
+  return (req: IncomingMessage, res: ServerResponse) => handle(req, res).catch(error => {
+    log(`write failed: ${error instanceof Error ? error.message : String(error)}`);
+    if (!res.headersSent && !res.destroyed) { res.statusCode = 500; res.end(); }
+  });
 }
