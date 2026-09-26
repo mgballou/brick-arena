@@ -1,4 +1,5 @@
 import { levelNames } from '../../engine/src/index.ts';
+import { targetKeys } from '../../jev/src/wire.ts';
 
 // The record of one match of the web game, as the hosted server keeps it: one
 // NDJSON file per match, appended to as the match plays and never rewritten.
@@ -85,18 +86,73 @@ export type MatchSummary = {
   debug: boolean;
   levels: Array<{ level: number; winner: 'human' | 'jev' | 'tie' | null }>;
   ballsLost: Record<RecordSide, number>;
+  jev: JevTally;
   // Null while the match is still playing, or if the page closed before it could say.
   end: { reason: 'final' | 'down' | 'left'; human: number; jev: number } | null;
 };
 
+// Every call to Jev in a match, and what it chose. A choice that came back too
+// late for its level (`stale`) still counts: it is what Jev picked. `target`
+// counts the four catches of `targetKeys`; `aim` is the aimed catch and
+// `landing` the safe one (docs/scoring.md).
+export type TargetKey = typeof targetKeys[number];
+export type JevTally = {
+  calls: number;
+  answered: number;
+  stale: number;
+  missed: number;
+  questions: Record<'target' | 'chase' | 'track', number>;
+  target: Record<TargetKey, number>;
+};
+
+const blankTally = (): JevTally => ({ calls: 0, answered: 0, stale: 0, missed: 0, questions: { target: 0, chase: 0, track: 0 }, target: { landing: 0, aim: 0, 'angle-left': 0, 'angle-right': 0 } });
+
+// Anyone can write a record, so only the known questions and catches count.
+function foldTally(tally: JevTally, line: Extract<MatchLine, { type: 'jev' }>) {
+  tally.calls++;
+  if (line.outcome === 'answered') tally.answered++;
+  else if (line.outcome === 'stale') tally.stale++;
+  else tally.missed++;
+  if (Object.hasOwn(tally.questions, line.question)) tally.questions[line.question]++;
+  const choice = line.question === 'target' && (line.outcome === 'answered' || line.outcome === 'stale') ? line.choice : undefined;
+  if (typeof choice === 'string' && (targetKeys as readonly string[]).includes(choice)) tally.target[choice as TargetKey]++;
+}
+
+export function tallyJev(lines: MatchLine[]): JevTally {
+  const tally = blankTally();
+  for (const line of lines) if (line.type === 'jev') foldTally(tally, line);
+  return tally;
+}
+
+const caught = (tally: JevTally) => targetKeys.reduce((sum, key) => sum + tally.target[key], 0);
+const share = (count: number, of: number) => count && of ? ` (${Math.round(count / of * 100)}%)` : '';
+
+// The tally as rows a person reads, under `pnpm match <id>` and on the page.
+export function tallyRows(tally: JevTally, opponent = 'Jev'): string[] {
+  if (!tally.calls) return [`${opponent}: no calls`];
+  const chosen = caught(tally);
+  const byCount = [...targetKeys].sort((a, b) => tally.target[b] - tally.target[a] || targetKeys.indexOf(a) - targetKeys.indexOf(b));
+  return [
+    `${opponent}: ${tally.calls} calls, ${tally.answered} answered, ${tally.stale} too late for its level, ${tally.missed} not answered`,
+    `Target catches: ${chosen} chosen, ${byCount.map(key => `${key} ${tally.target[key]}${share(tally.target[key], chosen)}`).join(', ')}`,
+    `Aimed ${tally.target.aim}, played safe ${tally.target.landing}, angled ${tally.target['angle-left'] + tally.target['angle-right']}`,
+    `Other questions: chase ${tally.questions.chase}, track ${tally.questions.track}`,
+  ];
+}
+
+// The tally in a few words, for one match's line in a list.
+export const tallyLine = (tally: JevTally) =>
+  tally.calls ? `${tally.calls} calls, aimed ${tally.target.aim} of ${caught(tally)} catches, safe ${tally.target.landing}` : 'no calls';
+
 export const startSummary = (start: Extract<MatchLine, { type: 'start' }>): MatchSummary =>
-  ({ id: start.id, at: start.at, tuning: start.tuning, opponent: start.opponent, debug: start.debug, levels: [], ballsLost: { human: 0, jev: 0 }, end: null });
+  ({ id: start.id, at: start.at, tuning: start.tuning, opponent: start.opponent, debug: start.debug, levels: [], ballsLost: { human: 0, jev: 0 }, jev: blankTally(), end: null });
 
 // One more line into a summary, so the server can keep each match's summary
 // up to date as lines arrive.
 export function foldSummary(summary: MatchSummary, line: MatchLine) {
   if (line.type === 'level') summary.levels.push({ level: line.level, winner: null });
   if (line.type === 'lost' && (line.side === 'human' || line.side === 'jev')) summary.ballsLost[line.side]++;
+  if (line.type === 'jev') foldTally(summary.jev, line);
   if (line.type === 'levelEnd') {
     const level = summary.levels.find(item => item.level === line.level);
     if (level) level.winner = line.winner;

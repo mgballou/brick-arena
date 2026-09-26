@@ -105,6 +105,11 @@ To read them:
   for the board behind each Jev call, and `--progress` for the clear once a
   second. Without `--from` it reads `var/matches`, where `pnpm dev` writes.
 
+Both show Jev's tally for each match, counted from every call in the record
+(`tallyJev` in `record.ts`): its calls, the target catch it chose each time,
+and how many it aimed (`aim`) against played safe (`landing`). A choice that
+came back too late for its level still counts, since Jev made it.
+
 ### Where they live, and why a disk
 
 Records are files in `MATCHES_DIR` (default `var/matches` in the checkout).

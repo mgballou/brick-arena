@@ -1,11 +1,11 @@
 import { parseArgs } from 'node:util';
 import { MATCHES_DEFAULTS, storeFromEnv } from '../../server/src/matches.ts';
-import { MATCHES_PATH, parseRecord, timeline, type MatchSummary } from '../../server/src/record.ts';
+import { MATCHES_PATH, parseRecord, tallyJev, tallyLine, tallyRows, timeline, type MatchSummary } from '../../server/src/record.ts';
 
 // Reads the match records the game server keeps (packages/server/src/record.ts).
 //
 //   pnpm match                          the recent matches in var/matches (or MATCHES_DIR)
-//   pnpm match <id>                     one match, line by line
+//   pnpm match <id>                     one match, line by line, then Jev's tally
 //   pnpm match <id> --progress --state  with the clear once a second, and each board Jev was sent
 //   pnpm match --from https://brick-arena.onrender.com [<id>]   the hosted server's
 const { values, positionals } = parseArgs({
@@ -31,7 +31,7 @@ function listLine(match: MatchSummary): string {
   const levels = match.levels.map(level => level.winner === null ? '?' : level.winner === 'human' ? 'you' : level.winner === 'jev' ? 'jev' : 'tie').join(' ');
   const end = match.end ? `${match.end.reason}, you ${match.end.human} to ${match.end.jev}` : 'unfinished';
   const who = match.opponent === 'live' ? 'live Jev' : 'stand-in';
-  return `${match.id}  ${who}${match.debug ? ' (debug)' : ''}, ${match.tuning}  levels: ${levels || 'none'}  balls lost: you ${match.ballsLost.human}, ${who} ${match.ballsLost.jev}  ${end}`;
+  return `${match.id}  ${who}${match.debug ? ' (debug)' : ''}, ${match.tuning}  levels: ${levels || 'none'}  balls lost: you ${match.ballsLost.human}, ${who} ${match.ballsLost.jev}  ${who} ${tallyLine(match.jev)}  ${end}`;
 }
 
 if (!id) {
@@ -45,6 +45,9 @@ if (!id) {
     console.error(`No match ${id} in ${store!.dir}.`);
     process.exitCode = 1;
   } else {
-    for (const row of timeline(parseRecord(text), { progress: values.progress, state: values.state })) console.log(row);
+    const lines = parseRecord(text);
+    const start = lines.find(line => line.type === 'start');
+    const opponent = start?.type === 'start' && start.opponent === 'stand-in' ? 'Stand-in' : 'Jev';
+    for (const row of [...timeline(lines, { progress: values.progress, state: values.state }), '', ...tallyRows(tallyJev(lines), opponent)]) console.log(row);
   }
 }

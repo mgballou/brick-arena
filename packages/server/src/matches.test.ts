@@ -13,7 +13,7 @@ import { startStandIn } from '../../jev/src/stand-in-server';
 import { fromResponse, JEV_PATH, toRequest, type SystemOneResponse } from '../../jev/src/wire';
 import { jevLine, lostLines, MatchLog, sideTotal, type Sender } from '../../web/src/match-log';
 import { createMatchStore, type MatchStore } from './matches';
-import { MATCHES_PATH, newMatchId, parseRecord, timeline, type MatchLine } from './record';
+import { MATCHES_PATH, newMatchId, parseRecord, tallyJev, tallyLine, tallyRows, timeline, type MatchLine, type MatchSummary } from './record';
 import { hostedApp } from './serve';
 
 // The hosted server over the local stand-in, in debug mode so the stand-in may
@@ -113,15 +113,28 @@ describe('a match record', () => {
     expect(printed.some(row => /Stand-in asked target \[.*\]: chose /.test(row))).toBe(true);
     expect(printed.at(-1)).toMatch(/Match over/);
     const root = fileURLToPath(new URL('../../..', import.meta.url));
+    // Every call is in the record, in the order it was made, and the tally
+    // counts them all: the stand-in aims every catch.
+    const calls = lines.filter((line): line is Extract<MatchLine, { type: 'jev' }> => line.type === 'jev');
+    expect(calls.length).toBeGreaterThan(1);
+    expect(calls.map(line => line.tick)).toEqual([...calls.map(line => line.tick)].sort((a, b) => a - b));
+    const tally = tallyJev(lines);
+    expect(tally.calls).toBe(calls.length);
+    const catches = calls.filter(line => line.question === 'target');
+    expect(tally.target.aim).toBe(catches.length);
+    expect(tally.target.landing).toBe(0);
     const cli = execFileSync(join(root, 'node_modules/.bin/tsx'), [join(root, 'packages/cli/src/match.ts'), id], { env: { ...process.env, MATCHES_DIR: store.dir }, encoding: 'utf8' });
-    expect(cli.trim().split('\n')).toEqual(printed);
+    expect(cli.trim().split('\n')).toEqual([...printed, '', ...tallyRows(tally, 'Stand-in')]);
+    expect(cli).toContain(`Aimed ${catches.length}, played safe 0`);
     const list = execFileSync(join(root, 'node_modules/.bin/tsx'), [join(root, 'packages/cli/src/match.ts')], { env: { ...process.env, MATCHES_DIR: store.dir }, encoding: 'utf8' });
     expect(list).toMatch(new RegExp(`^${id}  stand-in \\(debug\\), standard  levels: `, 'm'));
+    expect(list.split('\n').find(row => row.startsWith(id))).toContain(`stand-in ${tallyLine(tally)}`);
 
-    const listed = await (await fetch(`${base}${MATCHES_PATH}`)).json() as { matches: Array<{ id: string; end: unknown; ballsLost: { human: number } }> };
+    const listed = await (await fetch(`${base}${MATCHES_PATH}`)).json() as { matches: MatchSummary[] };
     const summary = listed.matches.find(match => match.id === id)!;
     expect(summary.end).toMatchObject({ reason: 'final' });
     expect(summary.ballsLost.human).toBe(lines.filter(line => line.type === 'lost' && line.side === 'human').length);
+    expect(summary.jev).toEqual(tally);
   }, 60_000);
 
   it('opens with start, takes one start, and takes only lines it knows', async () => {

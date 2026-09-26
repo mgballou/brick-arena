@@ -1,5 +1,5 @@
 import { ARENA } from '../../engine/src/arena';
-import { clockOf, describe, isMatchId, levelTitle, MATCHES_PATH, parseRecord, type MatchLine, type MatchSummary, type RecordSide } from '../../server/src/record';
+import { clockOf, describe, isMatchId, levelTitle, MATCHES_PATH, parseRecord, tallyJev, tallyLine, tallyRows, type MatchLine, type MatchSummary, type RecordSide } from '../../server/src/record';
 import './matches.css';
 
 // The recorded matches (packages/server/src/record.ts): a list of the recent
@@ -21,11 +21,11 @@ async function showList() {
     const rival = match.opponent === 'live' ? 'Jev' : 'Stand-in';
     const levels = match.levels.map(level => `<span class="win-${esc(String(level.winner ?? 'none'))}">${esc(winnerOf(level.winner, rival))}</span>`).join(' ');
     const end = match.end ? `${match.end.reason === 'final' ? 'finished' : match.end.reason === 'down' ? 'Jev went down' : 'left'}: ${match.end.human} to ${match.end.jev}` : 'unfinished';
-    return `<tr><td><a href="?id=${esc(match.id)}">${esc(new Date(match.at).toLocaleString())}</a></td><td>${rival}${match.debug ? ' (debug)' : ''}</td><td>${esc(match.tuning)}</td><td>${levels || '–'}</td><td class="num">${Number(match.ballsLost.human)} / ${Number(match.ballsLost.jev)}</td><td>${esc(end)}</td></tr>`;
+    return `<tr><td><a href="?id=${esc(match.id)}">${esc(new Date(match.at).toLocaleString())}</a></td><td>${rival}${match.debug ? ' (debug)' : ''}</td><td>${esc(match.tuning)}</td><td>${levels || '–'}</td><td class="num">${Number(match.ballsLost.human)} / ${Number(match.ballsLost.jev)}</td><td>${esc(tallyLine(match.jev))}</td><td>${esc(end)}</td></tr>`;
   }).join('');
   root.innerHTML = `<h1>Recorded matches</h1>
     <p class="muted">The ${matches.length} most recent, newest first. Each opens its timeline.</p>
-    ${matches.length ? `<table class="list"><thead><tr><th>Started</th><th>Against</th><th>Tuning</th><th>Levels won</th><th class="num">Balls lost, you / Jev</th><th>Result</th></tr></thead><tbody>${rows}</tbody></table>` : '<p>No matches recorded yet.</p>'}`;
+    ${matches.length ? `<table class="list"><thead><tr><th>Started</th><th>Against</th><th>Tuning</th><th>Levels won</th><th class="num">Balls lost, you / Jev</th><th>Jev's calls</th><th>Result</th></tr></thead><tbody>${rows}</tbody></table>` : '<p>No matches recorded yet.</p>'}`;
 }
 
 // A level's clear over time, both boards on one scale, with a mark for every
@@ -87,6 +87,7 @@ async function showMatch(matchId: string) {
   const start = lines.find(line => line.type === 'start');
   const rival = start?.type === 'start' && start.opponent === 'stand-in' ? 'Stand-in' : 'Jev';
   const header = lines.filter(line => line.type === 'start' || line.type === 'end').map(line => `<p>${esc(describe(line, rival).text)}</p>`).join('');
+  const tally = `<section class="tally"><h2>${esc(rival)}'s choices</h2><ul>${tallyRows(tallyJev(lines), rival).map(row => `<li>${esc(row)}</li>`).join('')}</ul></section>`;
   const levels = [...new Set(lines.flatMap(line => 'level' in line ? [line.level] : []))].sort((a, b) => a - b);
   const sections = levels.map(level => {
     const own = lines.filter(line => 'level' in line && line.level === level);
@@ -101,7 +102,7 @@ async function showMatch(matchId: string) {
       <p class="muted">${calls.length} calls to ${esc(rival)}${missed ? `, ${missed} not answered in time to play` : ''}. <label><input type="checkbox" class="show-calls"> Show every call, with the board it was sent</label></p>
       <table class="events hide-calls"><tbody>${rows}</tbody></table></section>`;
   }).join('');
-  root.innerHTML = `<p><a href="?">← All matches</a></p><h1>Match ${esc(matchId)}</h1>${header}${sections}`;
+  root.innerHTML = `<p><a href="?">← All matches</a></p><h1>Match ${esc(matchId)}</h1>${header}${tally}${sections}`;
   root.querySelectorAll<HTMLElement>('figure.chart').forEach(hover);
   root.querySelectorAll<HTMLInputElement>('.show-calls').forEach(box => box.addEventListener('change', () => box.closest('section')!.querySelector('table')!.classList.toggle('hide-calls', !box.checked)));
 }
