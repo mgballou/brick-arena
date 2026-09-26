@@ -1,308 +1,310 @@
 # Data collection: what players do, what Jev does
 
 Status: design, no code. Written 26 September 2026 for Matthew, who asked for
-it on the same day: *"I want to know what people do, what jev does, and be able
-to do something with the data later on."*
+it that day: *"I want to know what people do, what jev does, and be able to do
+something with the data later on."* Revised the same afternoon after his
+answers: *"Seems like this is a tailor made use case for supabase"*, *"Post hog
+too … like the key services that people use for this, not rolling our own"*,
+and *"especially at this level which will likely be free."*
+
+So: two standard services, both on their free plans, and only the glue built
+here.
+
+## The plan in one table
+
+| Data | Goes to | Why there |
+| --- | --- | --- |
+| Everything about the player: sessions, device, key inputs, pauses and quits, levels reached, balls lost, results | **PostHog** | Funnels, retention, session length and dashboards are what it is built for. |
+| One light event per Jev choice (question, choice, answer time, outcome), and a per-level summary | **PostHog** | "How often does Jev aim?" becomes a chart with no SQL. |
+| The match record: every Jev call **with the board it was sent**, every launch and lost ball, the clear over time, each level's result | **Supabase** | Structured rows to query with SQL, join and export. PostHog is not a place to keep 0.3 KB board snapshots or replay a match. |
+| Who may look | PostHog's and Supabase's own sign-ins | Both dashboards already have accounts, two-factor sign-in and export. |
+
+What this drops from the first version of this spec, since a service already
+does it: the custom event envelope and collector, the hand-built backstage
+pages and charts, the custom export endpoint, and the home-made admin door.
 
 ## Where things stand
 
-PR #5 (`ba-match-telemetry`) keeps one NDJSON file per match, in the format of
-`packages/server/src/record.ts` (version 1). The file holds every launch, lost
-ball, once-a-second clear, and Jev call with the board it was sent and its
-choice. `tallyJev` counts the calls; `pnpm match` and `/matches.html` read the
-files, and since 26 September only the admin can (`ADMIN_SECRET`, HTTP Basic,
-`packages/server/src/admin.ts`).
+PR #5 (`ba-match-telemetry`) writes one NDJSON file per match from the browser
+through `POST /api/matches` (format `packages/server/src/record.ts`, version 1),
+reads it back with `pnpm match` and `/matches.html`, and lets only the holder
+of `ADMIN_SECRET` read it. It fixed a loss: Chrome allows a page 64 KiB of
+`keepalive` bodies over its life, so every record used to stop about a minute
+in. A full stand-in match now records all 644 calls.
 
-What it lacks, measured or read on 26 September:
+Nothing is live yet: no live-Jev match has been recorded, so the volumes below
+rest on one measured stand-in match and an assumed 100 matches a month.
 
-- **Nothing about the player beyond the board.** No session, no device, no
-  input, by design (CLAUDE.md: *"never add who played it"*). This spec changes
-  that rule, so decision 2 below is Matthew's.
-- **No store you can query.** Files on a disk Render's free plan wipes on every
-  sleep. Every question means reading every file.
-- **Writes were lossy.** Chrome gives a page 64 KiB of `keepalive` request
-  bodies over its whole life. The browser sent every write with `keepalive`,
-  so each match's record stopped about a minute in: 104 of 610 calls in one
-  stand-in match. PR #5 now sends plain POSTs and keeps `keepalive` for the
-  closing beacon, and the next match kept all 644 calls. Retries and
-  de-duplication still don't exist.
-- **One version, no envelope.** Lines carry `type` but no session, sequence,
-  build or schema version beyond the `start` line's `v`.
+## Measured sizes
 
-## Principles
+From the full stand-in match of 26 September (`20260926-150157-fw8ap7`, five
+levels, 6 min 43 s):
 
-1. Record the game, and the person only as a random device id. No name, email,
-   address, full user agent or free text, ever.
-2. Every event carries one envelope, versioned, so a reader years from now can
-   parse it without the code that wrote it.
-3. The browser may retry any write; the server must make that safe.
-4. Raw events are the source of truth. Analytics are queries over them, and
-   any summary can be rebuilt.
-5. Debug and stand-in play is flagged, never mixed into Jev's numbers.
+| Line type | Lines | Bytes each |
+| --- | --- | --- |
+| Jev call (`jev`) | 644 | 499, of which the board is 329 |
+| Clear once a second (`progress`) | 378 | 170 |
+| Launch, lost ball, level, level end, start, end | 31 | 50–220 |
+| **Whole match** | **1,053** | **389 KB** |
 
-## Event schema, version 2
+## PostHog: players, and Jev's choices in brief
 
-### Envelope
+### Events
 
-Every event is one JSON object:
+Autocapture off, so only these count against the free allowance. Names are
+`snake_case`; every event carries `app: "brick-arena"`, `build` (git SHA),
+`schema: 1`, and `match_id` while a match plays.
 
-```json
-{
-  "v": 2,
-  "app": "brick-arena",
-  "session": "s_01J8Z3K4QW7",
-  "seq": 41,
-  "type": "jev.answer",
-  "ms": 53104,
-  "match": "20260926-145844-vokmtn",
-  "build": "5deb2c9",
-  "data": { "call": 17, "question": "target", "outcome": "answered", "choice": "aim", "clientMs": 412 }
-}
-```
-
-| Field | Meaning |
+| Event | Properties |
 | --- | --- |
-| `v` | Schema version. Readers switch on it; writers never change a version's meaning. |
-| `app` | Which app wrote it. Lets several apps share one store (see *Shared layer*). |
-| `session` | Random id made when the page loads. One tab, one visit. |
-| `seq` | 0, 1, 2… per session. With `app` and `session`, it is the event's key, so a retried write is a no-op. |
-| `type` | `area.verb`, from the list below. |
-| `ms` | Milliseconds since the session began, by the page's clock. |
-| `match` | The match id, while one is playing. |
-| `build` | Git SHA the page was built from. |
-| `data` | The type's own fields. |
+| `session_started` | `viewport`, `pointer` (`fine`/`coarse`), `tuning`, `debug` (browser and OS come from PostHog itself) |
+| `title_shown` | `jev_online`, `probe_ms` |
+| `rules_opened` | — |
+| `match_started` | `seed`, `tuning`, `opponent` (`live`/`stand-in`) |
+| `level_started` | `level`, `name` |
+| `ball_lost` | `level`, `side`, `x`, `seconds_in`, `life_lost` |
+| `paused`, `resumed` | `level`, `seconds_in` |
+| `jev_decision` | `level`, `question`, `choice`, `outcome`, `answer_ms`, `lead_ticks` |
+| `level_ended` | `level`, `winner`, `you_percent`, `jev_percent`, `jev_aim_share` |
+| `match_ended` | `reason` (`final`/`down`/`left`), `you`, `jev`, `levels_won` |
 
-The server adds `received_at` (its own clock) and nothing else. It never
-stores the IP address.
+PostHog takes custom properties of any count, with nested objects, up to 1 MB
+an event (posthog.com/docs/data/ingestion-warnings, read 26 September 2026).
+Board state stays out of it on purpose.
 
-### Player events
+Inputs are recorded as the events above, not as every key press: the paddle's
+path is already in the match record, and each press would multiply the count
+by hundreds.
 
-| Type | `data` | Why |
-| --- | --- | --- |
-| `session.start` | `device`: `{ viewport: [w, h], dpr, pointer: "fine"\|"coarse", browser: "Chrome 154", os: "macOS", lang, reducedMotion }`; `deviceId`; `returning` (seen before); `referrerHost`; `tuning`; `debug` | Who can play, on what, and whether they come back. `browser` and `os` are family and major version only. |
-| `session.visibility` | `{ hidden: bool }` | Idle time is not play time. |
-| `session.end` | `{ reason: "pagehide"\|"title"\|"down" }` | Session length and how it ended. |
-| `title.shown` | `{ probeMs, jevOnline }` | Who saw the game down, and how slow Jev's first answer was. |
-| `rules.open`, `rules.close`, `sound.mute` | `{}` | Whether anyone reads the scoring panel. |
-| `match.start` | `{ seed, tuning, opponent: "live"\|"stand-in", levels }` | |
-| `level.start` | `{ level, name }` | |
-| `input.move` | `{ frame, dir: "left"\|"right"\|"stop", paddleX }` | Key edges only, never every frame: a held key is two events. |
-| `input.launch` | `{ frame, x }` | |
-| `input.pause`, `input.resume`, `input.quit` | `{ frame, level }` | Where people stop. |
-| `ball.launch` | `{ level, frame, side, x, first }` | As v1 `launch`. |
-| `ball.lost` | `{ level, frame, side, x, lifeLost, livesLeft }` | As v1 `lost`. |
-| `level.progress` | `{ level, frame, human, jev }` | Once a second, as v1 `progress`. |
-| `level.end` | `{ level, frame, winner, human, jev }` | As v1 `levelEnd`. |
-| `match.end` | `{ reason: "final"\|"down"\|"left", human, jev }` | As v1 `end`. |
+### Setup
 
-### Jev events
+- PostHog Cloud **EU** (Frankfurt), one project.
+- `posthog-js` in the page: `autocapture: false`, `person_profiles: 'never'`
+  (no person profiles, every event anonymous), IP capture off in project
+  settings, `respect_dnt: true`.
+- Persistence: `'memory'` keeps nothing in the browser, so each visit is a new
+  anonymous visitor. Counting **returning** players needs `localStorage`
+  persistence (decision 1).
+- Session replay: allowed on the free plan, but the board is drawn on a canvas,
+  and whether replay captures it is not verified. Try it on one session before
+  counting on it (decision 3).
+- Stand-in and debug play is not sent at all (decision 4).
 
-v1 writes one line per call once the answer is back. v2 splits it so a call
-that never returns still shows, and adds what the choice led to.
+### The first four questions, as PostHog insights
 
-| Type | `data` | Why |
-| --- | --- | --- |
-| `jev.call` | `{ call, level, frame, tick, lead, question, options, state }` | `call` counts from 1 in the session. `state` is the board as sent, as v1's `SentState`. |
-| `jev.answer` | `{ call, question, outcome, choice, clientMs, serverMs, upstreamMs, answeredBy, tokens: { input, output } }` | `serverMs` and `upstreamMs` come from the proxy in a response header; `tokens` from the reply's `usage`, when Jev sends it. |
-| `jev.result` | `{ call, caught, frames, bricksBroken, points, ballLost }` | Written at the next paddle touch or lost ball: did this choice keep the ball, and what did it break? |
+No code, only saved insights on one dashboard:
 
-The proxy also logs `proxy.call` rows on the server (`{ session, status,
-upstreamMs, cap: "ok"\|"visitor"\|"total" }`) so a call the browser never
-reports, because the tab closed, still counts.
+1. **How often does Jev aim?** Trend of `jev_decision` where
+   `question = target`, broken down by `choice`, by level and by `build`.
+2. **Where do players lose balls?** `ball_lost` where `side = human`,
+   broken down by `level`, with `x` and `seconds_in` as histograms.
+3. **How long do sessions last, and where do people stop?** Session length
+   from PostHog's own sessions, and a funnel `session_started` →
+   `match_started` → `level_started (level 1…5)` → `match_ended`.
+4. **How fast does Jev answer, and what does late cost?** `answer_ms`
+   percentiles, and the share of `outcome` not `answered`.
 
-### Size
+Anything deeper goes to HogQL, PostHog's SQL (posthog.com/docs/hogql, read
+26 September 2026; its SQL API is free during public beta, later pricing not
+stated).
 
-Measured 26 September: a full five-level stand-in match wrote 389 KB of v1
-lines, 644 of them Jev calls, about 0.6 KB a call with the board it was sent.
-Player input and the `jev.result` rows might bring a match to about 0.5 MB. At
-100 matches a month that is about 50 MB a month of raw JSON; Postgres `jsonb`
-with its indexes takes somewhat more.
-
-### From version 1
-
-Each v1 line maps to one v2 type (`launch` → `ball.launch`, `jev` →
-`jev.call` plus `jev.answer`, and so on). A one-off import reads the v1 files,
-makes one session per match, and uses the line number as `seq`.
-
-## Writing events
-
-- The browser queues events and POSTs them to `/api/events` every 5 s, as
-  NDJSON, one request at a time.
-- A write that fails is sent again with backoff (1 s, 2 s, 4 s … up to 60 s),
-  with a 10 s timeout on each try, so a request that never settles can't hold
-  up the rest.
-- Only the closing write goes by `sendBeacon`, since Chrome's 64 KiB budget
-  counts over the page's life.
-- The server inserts with `on conflict (app, session, seq) do nothing`, so a
-  retry that already landed changes nothing.
-- The limits PR #5 set stay: bytes per write, per session and in total, and a
-  session id dated near the server's clock.
-
-## Where it is stored
-
-Prices read 26 September 2026 from each vendor's own pricing page.
-
-| Option | Monthly cost at 50–100 MB a month | Catch | Source |
-| --- | --- | --- | --- |
-| **Render Postgres, Basic-256mb** | **$6**, 1 GB included, $0.30 per GB after | Paid from day one. Point-in-time recovery 3 days on a Hobby workspace. Free Postgres expires after 30 days. | render.com/pricing, render.com/docs/free |
-| Neon (hosted Postgres) | $0 on Free; Launch plan bills $0.35 per GB-month and $0.106 per compute-hour, about $1–2 here (our estimate) | Free caps storage at 0.5 GB per project, full in 5 to 10 months; compute sleeps after 5 minutes idle. | neon.com/pricing |
-| Supabase (hosted Postgres) | $0 on Free; Pro $25 | Free caps the database at 500 MB and pauses a project after a week idle. | supabase.com/pricing |
-| Turso (SQLite over HTTP) | $0 on Free (5 GB); Developer $4.99 | A second SQL dialect and a vendor SDK; weaker for ad hoc analytics. | turso.tech/pricing |
-| Files on a Render disk | $7.25: Starter instance $7 plus 1 GB disk $0.25 | The web service must leave the free plan. A disk turns off zero-downtime deploys. Files answer no query; every chart reads every file. | render.com/pricing, render.com/docs/disks |
-
-**Recommendation: Render Postgres Basic-256mb, $6 a month.** It lives in the
-dashboard that already runs the game, the web service stays on the free plan,
-1 GB holds well over a year at this rate, and it is plain Postgres, so every
-query and export tool works. One database can hold several apps' events (the
-`app` column), so the $6 buys the shared store too.
-
-If paying before there are players is premature, start on **Neon Free** with
-the same schema and move by `pg_dump` when it nears 0.5 GB, about ten months
-in at this rate. Don't use Render's
-free Postgres: it is deleted after 30 days.
+## Supabase: the match record as rows
 
 ### Tables
 
 ```sql
-create table sessions (
-  app         text not null,
-  session     text not null,
-  device_id   text,
+create table matches (
+  id          text primary key,      -- 20260926-150157-fw8ap7
+  app         text not null default 'brick-arena',
   started_at  timestamptz not null,
   ended_at    timestamptz,
-  device      jsonb,
-  debug       boolean not null default false,
-  build       text,
-  primary key (app, session)
+  seed        integer not null,
+  tuning      text not null,
+  opponent    text not null,         -- live | stand-in
+  end_reason  text,                  -- final | down | left
+  score_you   integer,
+  score_jev   integer,
+  jev_tally   jsonb,                 -- tallyJev, kept after pruning
+  build       text
 );
 
-create table events (
-  app          text not null,
-  session      text not null,
-  seq          integer not null,
-  v            smallint not null,
-  type         text not null,
-  match        text,
-  ms           integer not null,
-  received_at  timestamptz not null default now(),
-  data         jsonb not null,
-  primary key (app, session, seq)
+create table jev_calls (
+  match_id    text not null references matches on delete cascade,
+  n           integer not null,      -- order within the match
+  level       smallint not null,
+  frame       integer not null,
+  lead        smallint not null,
+  question    text not null,
+  options     jsonb not null,
+  choice      text,
+  outcome     text not null,
+  answer_ms   integer not null,
+  state       jsonb not null,        -- the board sent
+  primary key (match_id, n)
 );
-create index events_type_time on events (app, type, received_at);
-create index events_match on events (app, match) where match is not null;
+
+create table match_events (          -- launch, lost ball, level start and end
+  match_id    text not null references matches on delete cascade,
+  n           integer not null,
+  type        text not null,
+  level       smallint,
+  frame       integer,
+  data        jsonb not null,
+  primary key (match_id, n)
+);
+
+create table level_progress (        -- the clear once a second, one row a level
+  match_id    text not null references matches on delete cascade,
+  level       smallint not null,
+  samples     jsonb not null,        -- [[frame, you%, jev%], …]
+  primary key (match_id, level)
+);
 ```
 
-`sessions` is kept up to date from `session.start` and `session.end` as they
-arrive, so the backstage lists sessions without scanning events.
+The version lives in `supabase/migrations/` in this repo, one SQL file a
+change. Row-level security is on for every table with **no policies**, so the
+public key can read and write nothing.
 
-## The backstage and its door
+### Who writes: the game server, with the secret key
 
-Today's door is HTTP Basic with one secret, checked on the server with a
-constant-time compare. Four honest options:
+The browser keeps sending its lines to the game server (`POST /api/matches`,
+as today). The server checks them as it does now (known line types, size per
+write, per match and in total), then inserts rows with the Supabase **secret**
+key, held on Render like `JEV_API_KEY`.
 
-| Option | Work | Good | Bad |
+Why not let the browser insert straight into Supabase with the publishable key
+under an insert-only policy:
+
+- **Safer.** The publishable key is public by design (supabase.com/docs/guides/api/api-keys,
+  read 26 September 2026: *"Safe to expose online"*). With an insert policy,
+  anyone who opens the page can write any row, of any size, any number of
+  times. Postgres constraints can't express "a real match, in order, under
+  4 MB." The server already can, and does.
+- **Simpler.** The browser's path exists and is tested; only the storage
+  behind it changes. No policies to get right, and the `on conflict` and
+  `return=representation` interplay with RLS isn't documented on
+  supabase.com (not stated in the RLS guide, read 26 September 2026).
+- Secret keys are refused from browsers anyway: *"Supabase matches on the
+  `User-Agent` header and returns HTTP 401"* (same page).
+
+### Reading it
+
+- **Supabase Studio** is the admin view, from day one: Table Editor to browse,
+  SQL Editor for questions PostHog can't answer (for example, every board Jev
+  saw before choosing `landing`), and CSV download.
+- `pnpm match <id>` keeps printing one match's timeline and tally, reading
+  Supabase with the secret key from Matthew's machine.
+- `/matches.html`, `GET /api/matches` and `ADMIN_SECRET` from PR #5 retire once
+  Supabase holds the records; the write route stays.
+
+### Keeping it and getting it out
+
+- **90 days** of full rows. A weekly job then deletes `jev_calls`,
+  `match_events` and `level_progress` for older matches, which by then are in
+  a monthly export. `matches`, with its tally, stays for good. PostHog keeps
+  each `jev_decision` for its own retention.
+- **Monthly export** before pruning: `pnpm export --month 2026-10` writes one
+  gzipped NDJSON file per month, the same lines as record version 1, to a place
+  Matthew keeps (decision 5). The Free plan includes **no backups**
+  (supabase.com/pricing, read 26 September 2026), so this file is the backup.
+- The export loads into DuckDB (`read_json_auto`), pandas, or back into
+  Postgres with `copy`.
+
+## Staying free: the numbers
+
+Assumes 100 matches and about 150 sessions a month, and 1.4× the measured
+bytes for Postgres row and index overhead (an estimate).
+
+| Limit (free plan) | Expected per month | Share | What would push it over |
 | --- | --- | --- | --- |
-| **A. HTTP Basic, one secret** (built) | Done | No dependency; the CLI uses the same secret. | No logout, no lockout, one shared password. |
-| **B. Login form and a signed cookie** | About 2 h | Logout, expiry, a failure throttle; the secret still never reaches the client. | Cookie code to own: `HttpOnly`, `Secure`, `SameSite=Strict`, HMAC. |
-| C. GitHub sign-in, one allowed login | About 3 h plus an OAuth app | No password to keep; easy to add a second person. | Callback URLs per host; one more outside service. |
-| D. Accounts and roles | Days | Several admins with different rights. | Far more than one person needs. |
+| PostHog events: 1,000,000 (posthog.com/pricing) | 644 `jev_decision` + ~35 other per match, + 3 per session ≈ **68,000** | 7% | About 1,450 matches a month. Without `jev_decision` (per-level summary only), about 25,000. |
+| PostHog replays: 5,000 (posthog.com/pricing) | ≤150 sessions | 3% | 5,000 sessions a month. |
+| PostHog projects: 1 per free org (posthog.com/docs/settings/projects) | 1 | — | A second app in its own project. |
+| Supabase database: 500 MB (supabase.com/pricing) | 100 × 0.55 MB = 55 MB of new rows; with 90 days of full rows, **about 170 MB** held once steady | 34% | About 300 matches a month at 90 days; about 900 at 30 days. |
+| Supabase egress: 5 GB | Studio reads and one ~55 MB export | ~2% | Heavy dashboards reading Supabase directly. |
+| Supabase projects: 2 active per org | 1 | — | A third app with its own project. |
 
-`dread-majesty-backstage` (read 26 September, not changed) is Laravel with
-Filament: an email and password login at `/admin/login`, sessions in the
-database for 120 minutes. Every row in `users` gets in, since
-`canAccessPanel()` returns `true` (`app/Models/User.php:43-46`), and login
-attempts aren't throttled (`config/auth.php:28`). It is option D's machinery
-used as option B, and its stack (PHP) shares no code with this one.
+Held steady means: three months of full rows (3 × 55 MB) plus about 1 KB of
+`matches` per match kept for good.
 
-**Recommendation:** keep A, and add a throttle on failed attempts (say 10 a
-minute per address, held in memory, never written). Move to B when the
-backstage gains anything that writes or deletes; move to C if a second person
-needs in or the shared collector below is built.
+**Where paid would start.** PostHog bills past 1,000,000 events a month, at
+about $0.00005 an event at first; that price comes from third-party summaries
+of its pricing page and wants a check on posthog.com/pricing before anyone
+relies on it. A billing limit can stop ingestion at any dollar amount
+(posthog.com/docs/billing/limits-alerts). Supabase Pro is $25 a month: no
+pausing, 8 GB of database, seven days of daily backups, spend cap on by default
+(supabase.com/pricing). It would start when either the 500 MB or the pause below
+starts to cost data.
 
-## What Matthew sees first
+## The catch: Supabase pauses idle free projects
 
-Four questions, each one page in the backstage and one SQL query:
+- **Trigger.** *"A Free plan project is considered inactive if it does not
+  receive sufficient user database activity over the past week"*
+  (supabase.com/docs/guides/platform/free-project-pausing, read 26 September
+  2026). The page does not say which activity counts, or how much. The game's
+  inserts are database activity, so a week with matches should keep it awake,
+  but that is inference, not a documented rule.
+- **What a pause does.** Writes fail until Matthew presses **Resume project**
+  in the dashboard; the page describes no automatic restore. The error a
+  paused project returns is not documented. After 90 days
+  paused the one-click restore is gone and the data must be moved to a new
+  project by hand
+  (supabase.com/docs/guides/troubleshooting/restore-project-after-90-days-pause).
+- **What it costs here.** Play never depends on Supabase, so the game keeps
+  working. The server logs each refused write and keeps up to one match's
+  rows in memory to retry, so a brief outage loses nothing. A pause lasts until
+  Matthew resumes the project, so matches played meanwhile lose their records;
+  PostHog still has their events.
+- **Keeping it awake.** A weekly scheduled job (a GitHub Actions cron) runs one
+  real insert through the API. Common practice, but since "sufficient" isn't
+  defined, the job also checks the project answers and fails loudly if not, so
+  Matthew hears about a pause the same week.
 
-1. **How often does Jev aim?** Share of target catches by choice (`aim`,
-   `landing`, the two angles), per match and per level, live Jev apart from
-   the stand-in, by `build`, so a prompt change shows as a step.
-2. **Where do players lose balls?** A histogram of `ball.lost.x` per level,
-   and seconds into the level, you against Jev.
-3. **How long do sessions last, and where do people stop?** Median and 90th
-   percentile session length (visible time only), matches per session, and
-   the level where `input.quit` or `match.end` `left` happens.
-4. **How fast does Jev answer, and what does a late answer cost?** Median and
-   90th percentile `clientMs` and `upstreamMs`, the share `stale` or
-   `timeout`, and how often `jev.result.ballLost` follows a late answer
-   compared with an on-time one.
+## Privacy, with two vendors
 
-Example, question 1:
-
-```sql
-select data->>'choice' as choice, count(*),
-       round(100.0 * count(*) / sum(count(*)) over (), 1) as percent
-from events e
-join sessions s using (app, session)
-where e.app = 'brick-arena' and e.type = 'jev.answer' and not s.debug
-  and e.data->>'question' = 'target'
-  and e.data->>'outcome' in ('answered', 'stale')
-group by 1 order by 2 desc;
-```
-
-## Getting the raw data out
-
-- `GET /api/admin/export?app=brick-arena&from=2026-10-01&to=2026-11-01`,
-  behind the same door, streams NDJSON: one event a line, the v2 envelope
-  plus `received_at`.
-- `pnpm export --from <url> --since 2026-10-01 > events.ndjson` wraps it.
-- NDJSON is the long-term format. DuckDB reads it straight
-  (`select * from read_json_auto('events.ndjson')`), as do pandas and Postgres
-  `copy`.
-- `pg_dump` from Render for whole-database backups, monthly, kept off Render.
-
-## Privacy
+Data now leaves to PostHog (EU) and Supabase (region: decision 2), both
+holding it on Matthew's behalf. The notice names them.
 
 Don't collect:
 
-- IP addresses. The Jev cap uses them in memory per UTC day; they are never
-  written to the store or a log line with game data.
-- The full user agent. Browser and OS family with the major version only.
-- Names, emails, accounts, free text, or anything a player types.
-- Fingerprints: no canvas, font or audio probing. No third-party analytics
-  script.
+- IP addresses. PostHog's IP capture is off; the game server writes to Supabase
+  without them. The Jev cap still reads the address in memory per UTC day and
+  never writes it.
+- Names, emails, accounts, free text. The game has no text input.
+- Fingerprints. No person profiles in PostHog; no device id unless decision 1
+  says yes.
+- Stand-in and debug play (decision 4).
 
 Do:
 
-- Keep `deviceId` random, in `localStorage`, linked to nothing. It still may
-  count as personal data in the EU and UK, so treat it as such.
-- Say so on the title screen in one line (*"This game records how each match
-  plays and a random id for this browser, never who you are."*) with a link to
-  a short page that repeats this list.
-- Keep raw events 12 months, then delete them nightly. Keep debug and stand-in
-  sessions 30 days. Summaries built from them may stay.
-- Delete a device's events on request, by the id the privacy page shows.
+- One line on the title screen: *"This game records how each match plays,
+  using PostHog and Supabase, and never who you are."* with a link to a short
+  page repeating this list (decision 6 for wording and opt-out).
+- Honor Do Not Track (`respect_dnt: true`).
+- Keep: PostHog events for its free retention (one year for events, per
+  third-party summaries of its pricing page; confirm there); Supabase full rows
+  90 days, summaries for good; monthly exports as long as Matthew keeps them.
 
-## A shared layer for other apps
+## Serving his other apps
 
-None of Matthew's apps has this, and `dread-majesty-backstage` is PHP, so the
-shared part must be a contract first and code second.
+| Piece | Shared how | Free-plan fit |
+| --- | --- | --- |
+| Supabase project | One project for all apps, an `app` column on each app's tables | 2 active free projects per org, so one shared project leaves a spare. 500 MB is shared too. |
+| PostHog project | One project for all apps, every event carries `app` | 1 project per free org, and PostHog has no cross-project view anyway. The 1,000,000 events are shared. |
+| Sign-in | Matthew's own PostHog and Supabase accounts | Nothing to build per app. |
+| Server-side writer | Each app's server writes with the secret key | PostHog and Supabase both have server libraries for Node; `dread-majesty-backstage` is Laravel, so it would use their PHP routes (not checked here). |
+| Keep-awake job, monthly export, notice text | Copied per app, or one job across all apps' tables | — |
 
-Shared:
+Per app: its event names, its tables and its dashboard.
 
-- The **envelope** (`v`, `app`, `session`, `seq`, `type`, `ms`, `build`,
-  `data`) and the two **tables**, keyed by `app`.
-- The **ingest contract**: `POST /api/events`, NDJSON, idempotent on
-  `(app, session, seq)`, with the same size limits.
-- The **door** (A now, C later) and the **export** endpoint and its NDJSON.
-- The **retention** job and the **privacy** rules above.
+## Rules this changes in CLAUDE.md
 
-Per app: the event types and their `data`, and the backstage's question pages.
-
-Two ways to share it (decision 5): a small **collector** service on Render
-that every app posts to (one database, one backstage, CORS allowing each app's
-origin), or a **library** each app embeds (a TypeScript package here, a PHP
-port for Laravel apps) writing to the one database. The collector is less code
-across two languages; the library has no extra service to keep up.
+- *"Do not add model SDKs, network calls …"* — the page gains `posthog-js` and
+  the server gains Supabase writes. The engine stays pure; the rule should say
+  so and allow these two.
+- *"It holds the game only; never add who played it."* — still true of the
+  Supabase record. If decision 1 allows a device id, the rule changes for
+  PostHog.
 
 ## Build plan
 
@@ -310,34 +312,34 @@ Each row is under three hours.
 
 | # | Work | Hours |
 | --- | --- | --- |
-| 1 | Envelope v2 types and validator (`packages/server/src/events.ts`) with tests; v1 → v2 mapping. | 2 |
-| 2 | Browser `EventLog`: session id, device id, `seq`, retries with backoff and timeout, beacon at close. Replaces `MatchLog`. | 2.5 |
-| 3 | Postgres store: schema file, insert on conflict, `DATABASE_URL`; NDJSON files when unset, for dev and tests. | 2.5 |
-| 4 | Player events: `session.*`, `title.shown`, `input.*` edges, visibility. | 2 |
-| 5 | Jev events: `jev.call`/`jev.answer` split, `jev.result`, proxy timing header and `proxy.call` rows. | 2.5 |
-| 6 | Door: failure throttle on option A (or option B, if chosen). | 1–2 |
-| 7 | Backstage pages for questions 1 and 2. | 2.5 |
-| 8 | Backstage pages for questions 3 and 4. | 2.5 |
-| 9 | Export endpoint and `pnpm export`. | 1.5 |
-| 10 | Retention job, privacy line on the title screen, privacy page. | 1.5 |
-| 11 | Import the v1 match files. | 1 |
-| 12 | Matthew's step: create the database on Render, set `DATABASE_URL` and `ADMIN_SECRET`. | 0.5 |
+| 1 | Matthew: create the Supabase project (Free, region per decision 2) and the PostHog project (EU); put `SUPABASE_URL`, `SUPABASE_SECRET_KEY` on Render and the PostHog project key in the page build. | 0.5 |
+| 2 | `supabase/migrations/` with the four tables and RLS on, no policies. | 1 |
+| 3 | Server: write each match's lines as rows with the secret key, behind the checks PR #5 has; retry buffer; log refused writes. | 2.5 |
+| 4 | Weekly GitHub Actions job: keep-awake insert, pause check, 90-day prune. | 2 |
+| 5 | `pnpm match` and `pnpm export` read Supabase; monthly export file. | 2.5 |
+| 6 | `posthog-js` in the page with the privacy settings above; player events at the points `main.tsx` already marks. | 2.5 |
+| 7 | `jev_decision` and per-level summary events. | 1 |
+| 8 | PostHog dashboard: the four insights, saved. No code. | 1.5 |
+| 9 | Title-screen line and privacy page; retire `/matches.html`, `GET /api/matches` and `ADMIN_SECRET`; update CLAUDE.md. | 1.5 |
+
+About 15 hours.
 
 ## Decisions only Matthew can make
 
-1. **Storage:** Render Postgres Basic-256mb at $6 a month now, or Neon Free
-   until it nears 0.5 GB, then move?
-2. **Device id:** may the game keep a random id per browser to count returning
-   players? It reverses CLAUDE.md's *"never add who played it"*.
-3. **Door:** keep HTTP Basic with a throttle, or build the login form (B) or
-   GitHub sign-in (C) now?
-4. **Retention:** 12 months of raw events and 30 days of debug play, or other
-   lengths?
-5. **Shared layer:** one collector service for all apps, or a library each app
-   embeds?
-6. **Notice:** the title-screen line as written, and should players get an
-   opt-out?
-7. **Stand-in data:** store debug and stand-in sessions (flagged, 30 days) or
-   drop them at the door?
-8. **Backstage host:** stay at `/matches.html` on the game's own host, or move
-   to its own address (needed if the collector serves several apps)?
+The first version's storage, door and shared-layer questions are settled
+above: Supabase Free for the record, PostHog Free for players, the vendors' own
+sign-ins, one project each for all apps.
+
+1. **Returning players.** Let PostHog keep an anonymous id in the browser to
+   count returning players, or keep nothing (memory only) and give that number
+   up?
+2. **Supabase region.** EU, to match PostHog, or the region the Render
+   service runs in?
+3. **Session replay.** Try it (free up to 5,000 a month), knowing the canvas
+   may not record?
+4. **Stand-in and debug play.** Drop it from both services (proposed), or keep
+   it flagged?
+5. **Where monthly exports live.** Matthew's disk, a private repo, or cloud
+   storage?
+6. **Notice.** The title-screen line as written, and should players get an
+   opt-out beyond Do Not Track?
