@@ -143,13 +143,43 @@ describe('a match record', () => {
     expect(readdirSync(store.dir).every(name => /^\d{8}-\d{6}-[a-z0-9]{6}\.ndjson$/.test(name))).toBe(true);
   });
 
-  it('stops taking lines at its size limits', () => {
-    const small = createMatchStore(mkdtempSync(join(tmpdir(), 'brick-arena-small-')), { maxTotalBytes: 400, maxMatchBytes: 300 });
-    const a = newMatchId(new Date('2026-09-26T10:00:00Z')), b = newMatchId(new Date('2026-09-26T11:00:00Z'));
-    expect(small.append(a, [start(a) as MatchLine])).toBe('ok');
+  it('takes a new match only if its id names a start near now', async () => {
+    const ahead = newMatchId(new Date(Date.now() + 2 * 24 * 3600 * 1000));
+    expect((await post(ahead, [start(ahead)])).status).toBe(409);
+    expect(store.read(ahead)).toBeNull();
+  });
+
+  it('survives a write cut off mid-body', async () => {
+    const id = newMatchId();
+    const { request } = await import('node:http');
+    await new Promise<void>(done => {
+      const req = request(`${base}${MATCHES_PATH}/${id}`, { method: 'POST', headers: { 'content-length': '1000' } });
+      req.on('error', () => done());
+      req.write(JSON.stringify(start(id)).slice(0, 20));
+      setTimeout(() => { req.destroy(); done(); }, 50);
+    });
+    await new Promise(done => setTimeout(done, 50));
+    expect((await fetch(`${base}/healthz`)).status).toBe(200);
+  });
+
+  it('stops taking lines at its size limits, across matches', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'brick-arena-small-'));
+    const clock = () => Date.parse('2026-09-26T10:30:00Z');
+    const small = createMatchStore(dir, { maxTotalBytes: 700, maxMatchBytes: 400 }, clock);
+    const a = newMatchId(new Date('2026-09-26T10:00:00Z')), b = newMatchId(new Date('2026-09-26T10:10:00Z')), c = newMatchId(new Date('2026-09-26T10:20:00Z'));
     const level = { type: 'level', level: 0, name: 'x'.repeat(100) } as MatchLine;
+    expect(small.append(a, [start(a) as MatchLine])).toBe('ok');
     expect(small.append(a, [level])).toBe('ok');
     expect(small.append(a, [level])).toBe('match-full');
-    expect(small.append(b, [start(b) as MatchLine, level])).toBe('full');
+    expect(small.append(b, [start(b) as MatchLine])).toBe('ok');
+    // The total binds a match that is already open, not just a new one.
+    expect(small.append(b, [level])).toBe('ok');
+    expect(small.append(b, [level])).toBe('full');
+    expect(small.append(c, [start(c) as MatchLine])).toBe('full');
+    // A store opened on the same directory reads the same sizes and summaries.
+    const again = createMatchStore(dir, { maxTotalBytes: 700, maxMatchBytes: 400 }, clock);
+    expect(again.append(b, [level])).toBe('full');
+    expect(again.list().map(match => match.id)).toEqual([b, a]);
+    expect(again.list()).toEqual(small.list());
   });
 });

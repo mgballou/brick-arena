@@ -143,9 +143,10 @@ and to its `envVars`:
 
 Merge to `main`, and Render moves the service to Starter and mounts the disk. Set
 `MATCHES_DIR` only together with the disk: without one, the server can't make
-`/var/data` and won't start. The server takes no new match once its records
-pass 500 MB, about 1000 matches, and no more lines for a match past 4 MB, so
-1 GB is room enough.
+`/var/data` and won't start. The server writes nothing more once its records
+reach 500 MB, about 1000 matches, and no more for one match past 4 MB, so
+1 GB is room enough. It refuses a match whose id is dated more than an hour
+from its own clock, so no record can hold the top of the list.
 
 ## Trying the hosted build locally
 

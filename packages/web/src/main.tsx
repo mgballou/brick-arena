@@ -81,7 +81,7 @@ function snapshot(match: Match): Hud {
 }
 
 // The match is over, finished or not: its last line goes to the server now.
-function endRecord(match: Match, reason: 'final' | 'down') {
+function endRecord(match: Match, reason: 'final' | 'down' | 'left') {
   if (!match.log || match.log.done) return;
   match.log.end(reason, match.human.score, match.jev.score);
   void match.log.flush();
@@ -164,6 +164,7 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     sound.current.wake();
     const result = await checkJev();
     if (!result.ok || phaseRef.current !== 'title') return;
+    endRecord(game.current, 'left');
     game.current = newMatch(result.answeredBy);
     game.current.log = new MatchLog({ seed: SEED, tuning: TUNING_NAME, opponent: result.answeredBy, debug: DEBUG });
     startLevel(0);
@@ -176,7 +177,8 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     match.results.push({ level: match.level, winner, human: match.human.levelScore, jev: match.jev.levelScore, humanPercent: percentCleared(match.human.state), jevPercent: percentCleared(match.jev.state), humanCleared: human.clearedAt !== null, jevCleared: jev.clearedAt !== null });
     if (match.log) {
       const at = { level: match.level, frame: match.frame };
-      match.log.write({ type: 'progress', ...at, human: sideTotal(match.human.state, match.human.score), jev: sideTotal(match.jev.state, match.jev.score) });
+      // On a whole second the tick has just written this progress line.
+      if (match.frame % ARENA.ticksPerSecond !== 0) match.log.write({ type: 'progress', ...at, human: sideTotal(match.human.state, match.human.score), jev: sideTotal(match.jev.state, match.jev.score) });
       match.log.write({ type: 'levelEnd', ...at, winner, human: { ...sideTotal(match.human.state, match.human.score), cleared: human.clearedAt !== null }, jev: { ...sideTotal(match.jev.state, match.jev.score), cleared: jev.clearedAt !== null } });
       void match.log.flush();
     }
@@ -548,7 +550,7 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
             <p className="lede small">The match waits for Jev. It never goes on without it.</p>
             <div className="row">
               <button className="primary" onClick={() => void retryJev()}>{probe === 'checking' ? 'Checking…' : 'Retry'}</button>
-              <button onClick={() => setPhase('title')}>Quit</button>
+              <button onClick={() => { endRecord(game.current, 'left'); setPhase('title'); }}>Quit</button>
             </div>
           </Overlay>
         )}
