@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client';
 import { applyDecision, askForDecision, levelNames, type BoardState } from '../../engine/src/index';
 import {
-  ARENA, arenaBoard, arenaStep, boardAhead, bounced, firstServe, levelOver, levelScore, levelWinner, livesLeft, percentCleared, POINTS, serveTick, sideStatus,
+  ARENA, arenaBoard, arenaStep, boardAhead, bounced, firstServe, isTuningName, levelOver, levelScore, levelWinner, livesLeft, percentCleared, POINTS, serveTick, sideStatus, TUNINGS,
   type ArenaEvents, type LevelSide, type Serve, type SideStatus,
 } from '../../engine/src/arena';
 import { burst, reducedMotion, Sound, stepParticles } from './feedback';
@@ -13,6 +13,10 @@ import { brickColor, drawBoard, PALETTE, POWER_UPS, type View } from './render';
 import './style.css';
 
 const SEED = 20260919;
+// `?tuning=angled` or `?tuning=one-hit` plays a tuning from docs/tunings.md;
+// anything else plays the standard game.
+const TUNING_NAME = (() => { const name = new URLSearchParams(typeof location === 'undefined' ? '' : location.search).get('tuning'); return isTuningName(name) ? name : 'standard'; })();
+const TUNING = TUNINGS[TUNING_NAME];
 const TICK_MS = 1000 / ARENA.ticksPerSecond;
 // No live Jev, no game. An offline answer pauses the match at once; so do this
 // many timeouts in a row, since a board with no answers is not Jev playing.
@@ -46,7 +50,7 @@ const blankStats = (): JevStats => ({ calls: 0, answered: 0, timeouts: 0, errors
 function newSide(who: Who, level: number, score = 0): Side {
   return {
     who,
-    state: arenaBoard(SEED, level),
+    state: arenaBoard(SEED, level, TUNING),
     serving: true,
     serve: firstServe(),
     score,
@@ -216,7 +220,7 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     // the first. Asking about the board on screen cost the stand-in, at live
     // Jev's 728 ms, every ball on every level (`pnpm fair`).
     const leadTicks = Math.ceil((median(stats.ms) ?? probeMs.current) / TICK_MS);
-    void askJev(askForDecision(boardAhead(match.jev.state, leadTicks))).then(answer => {
+    void askJev(askForDecision(boardAhead(match.jev.state, leadTicks, TUNING))).then(answer => {
       if (game.current !== match || match.gen !== gen) return;
       stats.pending = false;
       if (!answer.ok && answer.kind === 'down') { onDown(answer.down); return; }
@@ -262,7 +266,7 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
       return;
     }
     const before = side.state;
-    const { state, events } = arenaStep(before);
+    const { state, events } = arenaStep(before, TUNING);
     side.state = state;
     feel(side, before, events);
     if (events.lifeLost) side.serving = true;
@@ -390,7 +394,7 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
       read: () => {
         const match = game.current;
         const side = (s: Side) => ({ ...snapshot(match)[s.who], paddle: s.state.paddleX + s.state.paddleWidth / 2, paddleWidth: s.state.paddleWidth, balls: s.state.balls.map(b => ({ x: b.x, y: b.y, vx: b.vx, vy: b.vy })), powerUps: s.state.powerUps.map(p => ({ x: p.x, y: p.y, kind: p.kind })), bricksLeft: s.state.bricks.filter(b => !b.unbreakable && b.durability > 0).length });
-        return { phase: phaseRef.current, debug: match.debug, opponent: match.opponent, level: match.level, seconds: secondsLeft(match), human: side(match.human), jev: side(match.jev), stats: match.stats, results: match.results };
+        return { phase: phaseRef.current, debug: match.debug, opponent: match.opponent, tuning: TUNING_NAME, level: match.level, seconds: secondsLeft(match), human: side(match.human), jev: side(match.jev), stats: match.stats, results: match.results };
       },
     };
   }, []);
@@ -408,9 +412,11 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
 
   return (
     <div className={`app${DEBUG ? ' debug' : ''}`}>
-      {DEBUG && (
+      {(DEBUG || TUNING_NAME !== 'standard') && (
         <div className="debug-banner" role="status">
-          DEBUG · {debugOpponent === 'live' ? 'live Jev' : debugOpponent === 'stand-in' ? 'stand-in' : 'stand-in allowed'}
+          {DEBUG && `DEBUG · ${debugOpponent === 'live' ? 'live Jev' : debugOpponent === 'stand-in' ? 'stand-in' : 'stand-in allowed'}`}
+          {DEBUG && TUNING_NAME !== 'standard' && ' · '}
+          {TUNING_NAME !== 'standard' && `TUNING · ${TUNING_NAME}`}
         </div>
       )}
       <header className="hud">
