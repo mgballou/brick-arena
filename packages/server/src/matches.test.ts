@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readdirSync } from 'node:fs';
+import { mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -12,6 +12,7 @@ import { createCap } from '../../jev/src/cap';
 import { startStandIn } from '../../jev/src/stand-in-server';
 import { fromResponse, JEV_PATH, toRequest, type SystemOneResponse } from '../../jev/src/wire';
 import { jevLine, lostLines, MatchLog, sideTotal, type Sender } from '../../web/src/match-log';
+import { adminHeader } from './admin';
 import { createMatchStore, type MatchStore } from './matches';
 import { MATCHES_PATH, newMatchId, parseRecord, tallyJev, tallyLine, tallyRows, timeline, type MatchLine, type MatchSummary } from './record';
 import { hostedApp } from './serve';
@@ -22,12 +23,14 @@ let standIn: { url: string; close: () => Promise<void> };
 let server: Server;
 let base: string;
 let store: MatchStore;
+const ADMIN = 'test-admin-secret-not-real';
 
 beforeAll(async () => {
   const dist = mkdtempSync(join(tmpdir(), 'brick-arena-hosted-'));
+  writeFileSync(join(dist, 'matches.html'), '<!doctype html><main id="matches"></main>');
   store = createMatchStore(mkdtempSync(join(tmpdir(), 'brick-arena-matches-')));
   standIn = await startStandIn({ port: 0, ms: 1 });
-  server = createServer(hostedApp({ dist, proxy: { link: { baseUrl: standIn.url, model: 'jev-test', key: 'test-key-not-real' }, keyFrom: 'a test', debug: true, cap: createCap({ perVisitor: 10_000, total: 10_000 }), log: () => {} }, matches: store }));
+  server = createServer(hostedApp({ dist, proxy: { link: { baseUrl: standIn.url, model: 'jev-test', key: 'test-key-not-real' }, keyFrom: 'a test', debug: true, cap: createCap({ perVisitor: 10_000, total: 10_000 }), log: () => {} }, matches: store, admin: ADMIN }));
   await new Promise<void>(done => server.listen(0, '127.0.0.1', done));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 });
@@ -37,6 +40,8 @@ afterAll(async () => {
 });
 
 const toServer: Sender = async (id, body) => (await fetch(`${base}${MATCHES_PATH}/${id}`, { method: 'POST', body })).ok;
+// Every read is the admin's, as the backstage page and `pnpm match --from` make it.
+const read = (path: string, secret = ADMIN) => fetch(`${base}${path}`, { headers: { authorization: adminHeader(secret) } });
 const post = (id: string, lines: unknown[]) => fetch(`${base}${MATCHES_PATH}/${id}`, { method: 'POST', body: lines.map(line => typeof line === 'string' ? line : JSON.stringify(line)).join('\n') });
 const start = (id: string) => ({ type: 'start', v: 1, id, at: new Date().toISOString(), seed: 1, tuning: 'standard', opponent: 'stand-in', debug: true });
 
@@ -88,7 +93,7 @@ async function scriptedMatch(frames: number): Promise<string> {
 describe('a match record', () => {
   it('is written as a scripted match plays, and the reader prints it', async () => {
     const id = await scriptedMatch(40 * ARENA.ticksPerSecond);
-    const lines = parseRecord(await (await fetch(`${base}${MATCHES_PATH}/${id}`)).text());
+    const lines = parseRecord(await (await read(`${MATCHES_PATH}/${id}`)).text());
     const types = lines.map(line => line.type);
     expect(types[0]).toBe('start');
     expect(types.at(-1)).toBe('end');
@@ -130,12 +135,38 @@ describe('a match record', () => {
     expect(list).toMatch(new RegExp(`^${id}  stand-in \\(debug\\), standard  levels: `, 'm'));
     expect(list.split('\n').find(row => row.startsWith(id))).toContain(`stand-in ${tallyLine(tally)}`);
 
-    const listed = await (await fetch(`${base}${MATCHES_PATH}`)).json() as { matches: MatchSummary[] };
+    const listed = await (await read(MATCHES_PATH)).json() as { matches: MatchSummary[] };
     const summary = listed.matches.find(match => match.id === id)!;
     expect(summary.end).toMatchObject({ reason: 'final' });
     expect(summary.ballsLost.human).toBe(lines.filter(line => line.type === 'lost' && line.side === 'human').length);
     expect(summary.jev).toEqual(tally);
   }, 60_000);
+
+  it('shows nothing to anyone but the admin: no list, no record, no page', async () => {
+    const id = newMatchId();
+    expect((await post(id, [start(id), { type: 'level', level: 0, name: 'x' }])).status).toBe(200);
+    const asked = [
+      () => fetch(`${base}${MATCHES_PATH}`),
+      () => fetch(`${base}${MATCHES_PATH}/${id}`),
+      () => fetch(`${base}/matches.html`),
+      () => read(MATCHES_PATH, 'wrong-secret'),
+      () => read(`${MATCHES_PATH}/${id}`, 'wrong-secret'),
+      () => read('/matches.html', 'wrong-secret'),
+      () => fetch(`${base}${MATCHES_PATH}/${id}`, { headers: { authorization: `Bearer ${ADMIN}` } }),
+    ];
+    for (const ask of asked) {
+      const response = await ask();
+      expect(response.status).toBe(401);
+      expect(response.headers.get('www-authenticate')).toMatch(/^Basic /);
+      const body = await response.text();
+      expect(body).not.toContain(id);
+      expect(body).not.toContain('"type"');
+    }
+    // The game still writes without signing in, and the admin reads it all.
+    expect((await read(MATCHES_PATH)).status).toBe(200);
+    expect(await (await read(`${MATCHES_PATH}/${id}`)).text()).toContain(id);
+    expect(await (await read('/matches.html')).text()).toContain('id="matches"');
+  });
 
   it('opens with start, takes one start, and takes only lines it knows', async () => {
     const id = newMatchId();

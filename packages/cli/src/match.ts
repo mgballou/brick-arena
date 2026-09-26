@@ -1,4 +1,5 @@
 import { parseArgs } from 'node:util';
+import { adminHeader, adminSecretFromEnv } from '../../server/src/admin.ts';
 import { MATCHES_DEFAULTS, storeFromEnv } from '../../server/src/matches.ts';
 import { MATCHES_PATH, parseRecord, tallyJev, tallyLine, tallyRows, timeline, type MatchSummary } from '../../server/src/record.ts';
 
@@ -7,7 +8,7 @@ import { MATCHES_PATH, parseRecord, tallyJev, tallyLine, tallyRows, timeline, ty
 //   pnpm match                          the recent matches in var/matches (or MATCHES_DIR)
 //   pnpm match <id>                     one match, line by line, then Jev's tally
 //   pnpm match <id> --progress --state  with the clear once a second, and each board Jev was sent
-//   pnpm match --from https://brick-arena.onrender.com [<id>]   the hosted server's
+//   ADMIN_SECRET=... pnpm match --from https://brick-arena.onrender.com [<id>]   the hosted server's, as its admin
 const { values, positionals } = parseArgs({
   allowPositionals: true,
   options: {
@@ -17,8 +18,11 @@ const { values, positionals } = parseArgs({
   },
 });
 
+const admin = adminSecretFromEnv(process.env);
+
 async function fetchText(url: string): Promise<string> {
-  const response = await fetch(url, { signal: AbortSignal.timeout(90_000) });
+  const response = await fetch(url, { headers: admin ? { authorization: adminHeader(admin) } : {}, signal: AbortSignal.timeout(90_000) });
+  if (response.status === 401 || response.status === 404 && !admin) throw new Error(`${url} answered ${response.status}: only the admin reads match records. Set ADMIN_SECRET to the server's.`);
   if (!response.ok) throw new Error(`${url} answered ${response.status}: ${(await response.text()).slice(0, 200)}`);
   return response.text();
 }

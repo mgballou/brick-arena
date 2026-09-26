@@ -49,7 +49,15 @@ Each match of the web game leaves a record on the server: the browser builds
 the lines (`packages/web/src/match-log.ts`), `packages/server/src/matches.ts`
 appends them to one NDJSON file per match in `MATCHES_DIR`, and `pnpm match`
 and `/matches.html` read them. The format is `packages/server/src/record.ts`.
-It holds the game only; never add who played it.
+It holds the game only; never add who played it. Only the admin reads a
+record: every route that serves one calls `refuseUnlessAdmin` in
+`packages/server/src/admin.ts` against `ADMIN_SECRET`, and no secret reaches
+the client.
+
+A record can stop short. Measured 26 September against the stand-in: one POST
+from `MatchLog` never settled in Chrome, and since writes go one at a time,
+nothing after it was sent. The file held 104 of 610 calls and no `end` line.
+Check for the `end` line before trusting a record's tally.
 
 The web game's rules live in `packages/engine/src/arena.ts`, over `step`.
 Change `createBoard` or `step` and the recorded fixtures in `docs/` must be
