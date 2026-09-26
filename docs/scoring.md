@@ -14,6 +14,9 @@ performance means.
 
 - **A level goes to the first board to break every breakable brick.** That
   clear ends the level for both boards.
+- **Both boards start together.** A 3 s countdown opens each level, and both
+  first balls launch the tick it ends; pressing Space early does nothing. The
+  90 s clock starts then.
 - **If nobody clears,** the level ends when the 90 s clock runs out, or when
   both boards are out of balls. The larger share cleared then takes it.
 - **The share cleared** is the level's breakable hit points broken, as a

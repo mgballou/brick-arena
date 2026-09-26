@@ -31,7 +31,7 @@ server secret, so you need none there. [docs/deploy.md](docs/deploy.md) sets it 
 
 ## How a match works
 
-- Left and Right move your paddle; Space or Up serves; P pauses; H shows how scoring works; M mutes.
+- A countdown opens each level and launches both first balls at once. Left and Right move your paddle; after a lost ball, Space or Up serves; P pauses; H shows how scoring works; M mutes.
 - Each level runs 90 seconds with three balls a side. The first to clear it takes it; otherwise the larger share cleared does. A level scores 10 per percent cleared plus 10 per second left at a clear, so the score leader is the one winning. A lost ball costs only the serve. The higher total after level 5 wins. [docs/scoring.md](docs/scoring.md) defines it, and Jev's prompt states it.
 - The page checks Jev before it shows a board. When the forwarder says Jev can't answer (no key; an auth, credit or rate refusal; a TypeSafe error or timeout; a stand-in outside debug mode; or the day's cap spent), the page says the game is down and shows no board, then or mid-match. The reason goes to the server log only. Three timeouts in a row, or losing the game server, pause the match with a Retry, and it never goes on without Jev.
 - Who answered comes from the reply, never the URL: a reply marked `answered_by: "stand-in"` is the stand-in, and one without the mark is live Jev. The proxy and the browser both refuse the stand-in outside debug mode.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ARENA, arenaBoard, arenaStep, boardAhead, bounced, clearBonus, holdServe, isTuningName, launch, levelOver, levelScore, levelWinner, livesLeft, percentCleared, POINTS, sideStatus, TUNINGS, type Tuning } from './arena';
+import { ARENA, arenaBoard, arenaStep, boardAhead, bounced, clearBonus, firstServe, holdServe, isTuningName, launch, levelOver, levelScore, levelWinner, livesLeft, percentCleared, POINTS, serveTick, sideStatus, TUNINGS, type Tuning } from './arena';
 import { aimShot, applyDecision, askForDecision, createBoard, openHitPoints, PADDLE_Y, type BoardState } from './index';
 
 describe('arena board', () => {
@@ -72,6 +72,51 @@ describe('serving', () => {
     const left = launch(holdServe(applyDecision(arenaBoard(1, 0), { kind: 'target', x: 0 })));
     expect(left.balls[0].vy).toBeLessThan(0);
     expect(left.balls[0].vx).toBeGreaterThan(0);
+  });
+
+  it('launches both first balls on the tick the countdown ends, whoever presses first', () => {
+    let human = { state: arenaBoard(1, 0), serve: firstServe(), launched: false };
+    let jev = { state: arenaBoard(1, 0), serve: firstServe(), launched: false };
+    const rest = PADDLE_Y - human.state.balls[0].radius - 1;
+    expect(ARENA.countdownTicks).toBeGreaterThan(ARENA.serveTicks);
+    for (let countdown = ARENA.countdownTicks - 1; countdown > 0; countdown--) {
+      human = serveTick(human.state, human.serve, { who: 'human', countdown, pressed: true });
+      jev = serveTick(jev.state, jev.serve, { who: 'jev', countdown, pressed: false });
+      for (const side of [human, jev]) {
+        expect(side.launched).toBe(false);
+        expect(side.state.tick).toBe(0);
+        expect(side.state.balls[0]).toMatchObject({ x: side.state.paddleX + side.state.paddleWidth / 2, y: rest });
+      }
+    }
+    human = serveTick(human.state, human.serve, { who: 'human', countdown: 0, pressed: false });
+    jev = serveTick(jev.state, jev.serve, { who: 'jev', countdown: 0, pressed: false });
+    expect([human.launched, jev.launched]).toEqual([true, true]);
+    expect(human.state.balls[0].vy).toBeLessThan(0);
+    expect(jev.state.balls[0].vy).toBeLessThan(0);
+  });
+
+  it('after a lost ball, waits for that side: Space for you, serveTicks for Jev', () => {
+    const lose = (who: 'human' | 'jev') => {
+      const first = serveTick(arenaBoard(1, 0), firstServe(), { who, countdown: 0, pressed: false });
+      first.state.balls[0] = { ...first.state.balls[0], y: first.state.height + 19, vy: 3 };
+      const { state, events } = arenaStep(first.state);
+      expect(events.lifeLost).toBe(true);
+      return { state, serve: first.serve, launched: false };
+    };
+
+    let human = lose('human');
+    for (let i = 0; i < ARENA.countdownTicks * 2; i++) {
+      human = serveTick(human.state, human.serve, { who: 'human', countdown: 0, pressed: false });
+      expect(human.launched).toBe(false);
+    }
+    expect(serveTick(human.state, human.serve, { who: 'human', countdown: 0, pressed: true }).launched).toBe(true);
+
+    let jev = lose('jev');
+    for (let i = 1; i < ARENA.serveTicks; i++) {
+      jev = serveTick(jev.state, jev.serve, { who: 'jev', countdown: 0, pressed: false });
+      expect(jev.launched).toBe(false);
+    }
+    expect(serveTick(jev.state, jev.serve, { who: 'jev', countdown: 0, pressed: false }).launched).toBe(true);
   });
 });
 

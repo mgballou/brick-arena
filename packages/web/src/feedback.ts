@@ -45,6 +45,7 @@ export class Sound {
     this.play(notes.map((freq, i) => ({ freq, type: 'triangle' as const, ms: 110, gain: 0.09, delay: i * 70 })), pan);
   }
   lose(pan: number) { this.play([{ freq: 330, to: 90, type: 'sawtooth', ms: 380, gain: 0.07 }], pan); }
+  count() { this.play([{ freq: 440, type: 'triangle', ms: 80, gain: 0.07 }]); }
   serve(pan: number) { this.play([{ freq: 660, type: 'triangle', ms: 60, gain: 0.08 }], pan); }
   fanfare(win: boolean) {
     const notes = win ? [523, 659, 784, 1047] : [440, 392, 349, 262];

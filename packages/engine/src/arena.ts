@@ -9,7 +9,10 @@ export const ARENA = {
   askEvery: 30,
   levelSeconds: 90,
   ticksPerSecond: 60,
-  // After a lost ball, Jev serves this many ticks later; you serve on Space.
+  // A level's first balls launch together when this countdown runs out, so
+  // neither side can serve first. After a lost ball, Jev serves this many
+  // ticks later; you serve on Space.
+  countdownTicks: 180,
   serveTicks: 45,
   paddleWidth: 120,
   paddleSpeed: 7,
@@ -93,6 +96,26 @@ export function launch(state: BoardState): BoardState {
   ball.vx = ball.x < next.width / 2 ? 2.2 : -2.2;
   ball.vy = -2.6;
   return next;
+}
+
+// Where a side stands with the ball it holds: `first` until the level's first
+// launch, and the ticks it has waited to serve since a lost ball.
+export type Serve = { first: boolean; waited: number };
+export const firstServe = (): Serve => ({ first: true, waited: 0 });
+
+// One tick of a side holding its ball. The first ball goes on the tick the
+// shared countdown reaches 0, and a press before then does nothing. After a
+// lost ball the side serves its own: you on a press, Jev `serveTicks` later.
+export function serveTick(
+  state: BoardState,
+  serve: Serve,
+  input: { who: 'human' | 'jev'; countdown: number; pressed: boolean },
+): { state: BoardState; serve: Serve; launched: boolean } {
+  const held = holdServe(state);
+  const waited = serve.first ? 0 : serve.waited + 1;
+  const go = serve.first ? input.countdown <= 0 : input.who === 'human' ? input.pressed : waited >= ARENA.serveTicks;
+  if (!go) return { state: held, serve: { first: serve.first, waited }, launched: false };
+  return { state: launch(held), serve: { first: false, waited: 0 }, launched: true };
 }
 
 export function livesLeft(state: BoardState) {

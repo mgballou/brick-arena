@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client';
 import { applyDecision, askForDecision, levelNames, type BoardState } from '../../engine/src/index';
 import {
-  ARENA, arenaBoard, arenaStep, boardAhead, bounced, holdServe, isTuningName, launch, levelOver, levelScore, levelWinner, livesLeft, percentCleared, POINTS, sideStatus, TUNINGS,
-  type ArenaEvents, type LevelSide, type SideStatus,
+  ARENA, arenaBoard, arenaStep, boardAhead, bounced, firstServe, isTuningName, levelOver, levelScore, levelWinner, livesLeft, percentCleared, POINTS, serveTick, sideStatus, TUNINGS,
+  type ArenaEvents, type LevelSide, type Serve, type SideStatus,
 } from '../../engine/src/arena';
 import { burst, reducedMotion, Sound, stepParticles } from './feedback';
 import type { AnsweredBy, Down } from '../../jev/src/wire';
@@ -29,7 +29,7 @@ type Side = {
   who: Who;
   state: BoardState;
   serving: boolean;
-  serveWait: number;
+  serve: Serve;
   score: number;
   levelScore: number;
   clearedAt: number | null;
@@ -41,7 +41,9 @@ type LevelResult = { level: number; winner: 'human' | 'jev' | 'tie'; human: numb
 
 // `opponent` is who answered the check before the match, and `debug` whether
 // the stand-in was allowed. Both travel with every read of the match.
-type Match = { level: number; frame: number; gen: number; human: Side; jev: Side; stats: JevStats; results: LevelResult[]; offlineReason: string; opponent: AnsweredBy; debug: boolean };
+// `countdown` is the ticks left before both first balls launch; the level
+// clock, `frame`, starts when it runs out.
+type Match = { level: number; frame: number; countdown: number; gen: number; human: Side; jev: Side; stats: JevStats; results: LevelResult[]; offlineReason: string; opponent: AnsweredBy; debug: boolean };
 
 const blankStats = (): JevStats => ({ calls: 0, answered: 0, timeouts: 0, errors: 0, missedStreak: 0, lastChoice: '', lastMs: null, ms: [], pending: false, answeredBy: { live: 0, 'stand-in': 0 } });
 
@@ -50,7 +52,7 @@ function newSide(who: Who, level: number, score = 0): Side {
     who,
     state: arenaBoard(SEED, level, TUNING),
     serving: true,
-    serveWait: 0,
+    serve: firstServe(),
     score,
     levelScore: 0,
     clearedAt: null,
@@ -59,7 +61,7 @@ function newSide(who: Who, level: number, score = 0): Side {
 }
 
 function newMatch(opponent: AnsweredBy = 'live'): Match {
-  return { level: 0, frame: 0, gen: 0, human: newSide('human', 0), jev: newSide('jev', 0), stats: blankStats(), results: [], offlineReason: '', opponent, debug: DEBUG };
+  return { level: 0, frame: 0, countdown: ARENA.countdownTicks, gen: 0, human: newSide('human', 0), jev: newSide('jev', 0), stats: blankStats(), results: [], offlineReason: '', opponent, debug: DEBUG };
 }
 
 const levelSide = (side: Side): LevelSide => ({ status: sideStatus(side.state), clearedAt: side.clearedAt, levelScore: side.levelScore });
@@ -135,6 +137,7 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     const match = game.current;
     match.level = level;
     match.frame = 0;
+    match.countdown = ARENA.countdownTicks;
     match.gen++;
     match.stats.pending = false;
     match.human = newSide('human', level, match.human.score);
@@ -251,15 +254,15 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
       side.state = applyDecision(side.state, { kind: 'target', x });
     }
     if (side.serving) {
-      side.state = holdServe(side.state);
-      const go = side.who === 'human' ? keys.current.launch : ++side.serveWait >= ARENA.serveTicks;
-      if (go) {
-        side.state = launch(side.state);
+      const pressed = side.who === 'human' && keys.current.launch;
+      if (side.who === 'human') keys.current.launch = false;
+      const served = serveTick(side.state, side.serve, { who: side.who, countdown: match.countdown, pressed });
+      side.state = served.state;
+      side.serve = served.serve;
+      if (served.launched) {
         side.serving = false;
-        side.serveWait = 0;
         sound.current.serve(side.who === 'human' ? -0.6 : 0.6);
       }
-      if (side.who === 'human') keys.current.launch = false;
       return;
     }
     const before = side.state;
@@ -280,7 +283,10 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
 
   const tickGame = useCallback(() => {
     const match = game.current;
-    match.frame++;
+    if (match.countdown > 0) {
+      if (match.countdown % ARENA.ticksPerSecond === 0) sound.current.count();
+      match.countdown--;
+    } else match.frame++;
     tickSide(match, match.human);
     tickSide(match, match.jev);
     if (levelOver(levelSide(match.human), levelSide(match.jev), secondsLeft(match))) endLevel();
@@ -313,8 +319,15 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
         const status = sideStatus(side.state);
         const v = side.view;
         const live = phaseRef.current === 'playing';
+        const counting = side.serving && side.serve.first;
         v.dim = status !== 'playing';
         // Board captions speak only during play; the screens say the rest.
+        // Both boards count down the same first launch.
+        if (counting) {
+          v.banner = live ? String(Math.ceil(match.countdown / ARENA.ticksPerSecond)) : null;
+          v.sub = live ? (side.who === 'human' ? '← → to aim · both balls launch at once' : 'launches with you') : null;
+          continue;
+        }
         v.banner = !live ? null : status === 'cleared' ? 'CLEARED' : status === 'out' ? 'OUT OF BALLS' : side.serving ? (side.who === 'human' ? 'SPACE TO LAUNCH' : 'JEV SERVES') : null;
         v.sub = !live ? null : status === 'out' ? 'waiting for the other board' : side.serving && side.who === 'human' ? '← → to aim · Space or ↑ to launch' : null;
       }
