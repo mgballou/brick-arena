@@ -220,3 +220,18 @@ button:focus-visible { outline: 2px solid var(--jev); outline-offset: 3px; }
 
 /* Debug mode says so for as long as it runs. */
 .debug-banner { position: fixed; top: 0; left: 50%; transform: translateX(-50%); z-index: 50; padding: 4px 14px; border-radius: 0 0 10px 10px; background: #facc15; color: #1a1400; font: 700 12px/1.4 var(--mono); letter-spacing: 0.04em; pointer-events: none; }
+
+/* Jev is down: the whole page, in place of the boards. */
+.down-page { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+.card.down { width: min(600px, 100%); padding: 40px 36px 34px; gap: 16px; }
+.card.down .banner { color: var(--warn); }
+.card.down .lede.used-up { color: var(--ink); font-weight: 600; padding: 8px 14px; border: 1px solid rgba(251, 113, 133, 0.4); border-radius: 10px; background: rgba(251, 113, 133, 0.06); }
+.wall { display: flex; gap: 6px; margin: 6px 0 4px; }
+.wall i { width: 44px; height: 16px; border-radius: 4px; opacity: 0.8; }
+.wall i.gone { background: transparent !important; outline: 1.5px dashed var(--line); outline-offset: -1.5px; }
+@media (max-width: 560px) {
+  .card.down { padding: 30px 20px 26px; }
+  .card.down .banner { font-size: 28px; }
+  .wall { gap: 4px; }
+  .wall i { width: 30px; height: 12px; }
+}

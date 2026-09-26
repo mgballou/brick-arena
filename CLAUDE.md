@@ -24,6 +24,15 @@ the web bundle. To test without it, run `pnpm jev:stub` and start `pnpm dev`
 with `VITE_DEBUG=1` and `JEV_KEY_FILE` pointing at a dummy file (see the
 README). Never call live Jev from a test.
 
+The hosted page is the one place the key is not that file: there it is the
+host's `JEV_API_KEY` secret, read by `linkFromEnv` in `key.ts` and nowhere else
+(`docs/deploy.md`). `packages/jev/src/proxy.ts` is the one forwarder; the dev
+server and `packages/server` both mount it at `JEV_PATH`. When Jev can't answer,
+or the day's cap in `cap.ts` is spent, it sends `DOWN_STATUS` with a `Down`
+reason and logs the upstream detail; the browser then shows the down page and
+mounts no board. `bundle.test.ts` builds the client and fails if it holds a key
+or names a TypeSafe host.
+
 No live Jev, no game. The stand-in plays only in debug mode (`VITE_DEBUG=1`),
 which says so on screen and in the match record. `refusal` in
 `packages/jev/src/wire.ts` is the one gate; the proxy and the browser both

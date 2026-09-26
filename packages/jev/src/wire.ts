@@ -28,6 +28,25 @@ export function refusal(by: AnsweredBy, debug: boolean): string | null {
   return 'A stand-in answered, not Jev. It plays only in debug mode: start the dev server with VITE_DEBUG=1.';
 }
 
+// The route the browser calls, same origin, on the dev server and the hosted
+// one alike. Everything the key touches stays behind it.
+export const JEV_PATH = '/api/jev';
+
+// When Jev can't answer, the forwarder says so with one status and one of
+// these, and the browser shows the down page in place of the board.
+// `unreachable`: TypeSafe refused (auth, credits, rate) or failed or timed out.
+// `used-up`: the day's cap on Jev calls is spent. The upstream detail stays in
+// the server log.
+export const DOWN_STATUS = 503;
+export type Down = 'unreachable' | 'used-up';
+export type DownReply = { ok: false; down: Down; answeredBy?: AnsweredBy };
+
+export function downOf(status: number, body: unknown): Down | null {
+  if (status !== DOWN_STATUS || typeof body !== 'object' || body === null) return null;
+  const down = (body as { down?: unknown }).down;
+  return down === 'unreachable' || down === 'used-up' ? down : null;
+}
+
 // The four `target` options, in the order targetOptions builds them.
 export const targetKeys = ['landing', 'aim', 'angle-left', 'angle-right'] as const;
 

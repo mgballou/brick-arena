@@ -1,35 +1,44 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { Cap } from './cap.ts';
 import type { JevLink } from './key.ts';
-import { answeredBy, refusal, type AnsweredBy } from './wire.ts';
+import { answeredBy, DOWN_STATUS, refusal, type AnsweredBy, type Down, type DownReply } from './wire.ts';
 
-// The dev server's side of /api/jev (see vite.config.ts). The key arrives in
-// `link` and is added as a header on the way out and nothing else: it never
-// enters the environment, never reaches a log line, and never reaches the
-// browser. An upstream failure is reported back by status alone, so no response
-// body that might quote the request can travel onward either.
+// The one Jev forwarder behind /api/jev. The dev server (vite.config.ts) and
+// the hosted server (packages/server/src/serve.ts) both mount jevMiddleware;
+// they differ only in where `link` comes from. The key is added as a header on
+// the way out and nothing else: it never reaches a log line or the browser.
+// When Jev can't answer, the browser gets DOWN_STATUS and a `down` reason and
+// nothing more; the upstream detail goes to the server log alone.
 const UPSTREAM_TIMEOUT_MS = 8000;
+// An ask is one board and a few options, a few KB. Far past that is not the game.
+const MAX_ASK_BYTES = 256 * 1024;
 
+// `offline` is the upstream detail, for the server log only.
 export type Outcome = { ok: true; body: string; answeredBy: AnsweredBy } | { ok: false; offline: string; answeredBy?: AnsweredBy };
 export type Health = { ok: true; ms: number; answeredBy: AnsweredBy } | { ok: false; offline: string; answeredBy?: AnsweredBy };
-export type ProxyOptions = { link: JevLink; keyFile: string; debug: boolean; timeoutMs?: number };
+// `keyFrom` names where the key came from, for the log. `cap` limits calls per
+// visitor and per day (cap.ts). `log` receives the upstream detail.
+export type ProxyOptions = { link: JevLink; keyFrom: string; debug: boolean; timeoutMs?: number; cap?: Cap; log?: (line: string) => void };
 
 // One call upstream. A stand-in's answer is refused here unless in debug mode.
 export async function askUpstream(options: ProxyOptions, request: unknown): Promise<Outcome> {
   const { link } = options;
-  if (!link.key) return { ok: false, offline: `No key in ${options.keyFile}.` };
+  if (!link.key) return { ok: false, offline: `No key in ${options.keyFrom}.` };
+  const timeoutMs = options.timeoutMs ?? UPSTREAM_TIMEOUT_MS;
   let body: string;
   try {
     const upstream = await fetch(`${link.baseUrl}/v1/systemone`, {
       method: 'POST',
       headers: { authorization: `Bearer ${link.key}`, 'content-type': 'application/json' },
       body: JSON.stringify(request),
-      signal: AbortSignal.timeout(options.timeoutMs ?? UPSTREAM_TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     body = await upstream.text();
-    if (!upstream.ok) return { ok: false, offline: `Jev answered ${upstream.status}.` };
+    if (!upstream.ok) return { ok: false, offline: `Jev answered ${upstream.status}: ${body.slice(0, 500)}` };
   } catch (error) {
     const timedOut = error instanceof Error && error.name === 'TimeoutError';
-    return { ok: false, offline: timedOut ? 'Jev did not answer in time.' : 'Jev could not be reached.' };
+    const cause = error instanceof Error ? String((error.cause as { code?: string } | undefined)?.code ?? error.message) : String(error);
+    return { ok: false, offline: timedOut ? `Jev did not answer in ${timeoutMs} ms.` : `Jev could not be reached: ${cause}` };
   }
   let by: AnsweredBy;
   try {
@@ -49,28 +58,70 @@ export async function checkHealth(options: ProxyOptions): Promise<Health> {
   return outcome.ok ? { ok: true, ms: Date.now() - started, answeredBy: outcome.answeredBy } : outcome;
 }
 
+// Who is asking, for the cap. Behind the host's proxy that is the first
+// X-Forwarded-For address; a client can forge it, so the daily total is the
+// ceiling that holds.
+export function visitorOf(req: IncomingMessage): string {
+  const forwarded = req.headers['x-forwarded-for'];
+  const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(',')[0]?.trim();
+  return first || req.socket.remoteAddress || 'unknown';
+}
+
+async function readAsk(req: IncomingMessage): Promise<Record<string, unknown> | 'too-big' | null> {
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += (chunk as Buffer).length;
+    if (size > MAX_ASK_BYTES) return 'too-big';
+    chunks.push(chunk as Buffer);
+  }
+  try {
+    const ask = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+    return typeof ask === 'object' && ask !== null && !Array.isArray(ask) ? ask : null;
+  } catch {
+    return null;
+  }
+}
+
 export function jevMiddleware(options: ProxyOptions) {
+  const log = options.log ?? ((line: string) => console.error(`[jev] ${line}`));
   return async (req: IncomingMessage, res: ServerResponse) => {
     const send = (status: number, body: unknown) => {
       res.statusCode = status;
       res.setHeader('content-type', 'application/json');
+      res.setHeader('cache-control', 'no-store');
       res.end(JSON.stringify(body));
     };
-    if (req.method === 'GET') return send(200, await checkHealth(options));
-    if (req.method !== 'POST') return send(405, { offline: 'Ask Jev with POST or GET.' });
+    const down = (why: Down, detail: string, by?: AnsweredBy) => {
+      log(`down (${why}): ${detail}`);
+      const reply: DownReply = by ? { ok: false, down: why, answeredBy: by } : { ok: false, down: why };
+      send(DOWN_STATUS, reply);
+    };
+    if (req.method !== 'GET' && req.method !== 'POST') return send(405, { ok: false, error: 'Ask Jev with POST or GET.' });
 
-    const chunks: Buffer[] = [];
-    for await (const chunk of req) chunks.push(chunk as Buffer);
-    let request: Record<string, unknown>;
-    try {
-      request = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-    } catch {
-      return send(400, { offline: 'That ask was not JSON.' });
+    let ask: Record<string, unknown> | null = null;
+    if (req.method === 'POST') {
+      const read = await readAsk(req);
+      if (read === 'too-big') return send(413, { ok: false, error: 'That ask is too large.' });
+      if (!read) return send(400, { ok: false, error: 'That ask was not JSON.' });
+      ask = read;
     }
-    const outcome = await askUpstream(options, { ...request, model: options.link.model });
-    if (!outcome.ok) return send(502, outcome);
+
+    const taken = options.cap?.take(visitorOf(req)) ?? 'ok';
+    if (taken !== 'ok') {
+      const limits = options.cap!.limits;
+      return down('used-up', taken === 'visitor' ? `a visitor reached ${limits.perVisitor} calls today` : `the day's ${limits.total} calls are spent`);
+    }
+
+    if (!ask) {
+      const health = await checkHealth(options);
+      return health.ok ? send(200, health) : down('unreachable', health.offline, health.answeredBy);
+    }
+    const outcome = await askUpstream(options, { ...ask, model: options.link.model });
+    if (!outcome.ok) return down('unreachable', outcome.offline, outcome.answeredBy);
     res.statusCode = 200;
     res.setHeader('content-type', 'application/json');
+    res.setHeader('cache-control', 'no-store');
     res.end(outcome.body);
   };
 }

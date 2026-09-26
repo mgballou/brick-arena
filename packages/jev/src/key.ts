@@ -36,6 +36,17 @@ export function parseKeyFile(text: string): JevLink {
   };
 }
 
+// The hosted page's link (docs/deploy.md). There the key is a secret set on the
+// host, JEV_API_KEY, and this is the one place that reads it. Locally the key
+// stays in ~/.jev-key and never enters the environment.
+export function linkFromEnv(env: Record<string, string | undefined>): JevLink {
+  return {
+    baseUrl: (env.JEV_BASE_URL || JEV_DEFAULTS.baseUrl).replace(/\/+$/, ''),
+    model: env.JEV_MODEL || JEV_DEFAULTS.model,
+    key: env.JEV_API_KEY?.trim() ?? '',
+  };
+}
+
 // Reads the key file once. A missing file yields an empty key, which callers
 // report as "Jev is offline" rather than failing.
 export function readJevLink(path: string = JEV_DEFAULTS.keyFile): JevLink {
