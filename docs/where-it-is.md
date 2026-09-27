@@ -74,7 +74,7 @@ Jev used to lose balls that a player on the keys kept: it was asked about the
 board on screen, and its answer landed a few hundred ms later. It is now asked
 about the board as it will stand when the answer lands. Measured 24 September
 with `pnpm fair`: seed 20260919, five levels of 90 s, the stand-in answering in
-728 ms (the one live Jev call, 22 September), a keys player reacting in 200 ms.
+728 ms (the first live Jev call, 22 September), a keys player reacting in 200 ms.
 
 | Jev board | Balls lost | Bricks | Held still |
 |---|---|---|---|
