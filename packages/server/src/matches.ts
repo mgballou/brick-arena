@@ -42,9 +42,13 @@ export type MatchStore = {
 // so no one can date a match ahead and hold the top of the list.
 const ID_SKEW_MS = 60 * 60 * 1000;
 
+// Lines the store has taken, stamped, for whatever else keeps the record
+// (rows.ts, which writes them to Supabase).
+export type Written = (id: string, lines: MatchLine[]) => void;
+
 // Each match's size and summary are read once, when the store opens, and kept
 // up to date as lines arrive, so a write or the list never reads the files.
-export function createMatchStore(dir: string, limits: StoreLimits = MATCHES_DEFAULTS, now: () => number = Date.now): MatchStore {
+export function createMatchStore(dir: string, limits: StoreLimits = MATCHES_DEFAULTS, now: () => number = Date.now, written?: Written): MatchStore {
   const root = resolve(dir);
   mkdirSync(root, { recursive: true });
   const fileOf = (id: string) => join(root, `${id}.ndjson`);
@@ -78,6 +82,7 @@ export function createMatchStore(dir: string, limits: StoreLimits = MATCHES_DEFA
       entry.bytes += bytes;
       if (entry.summary) for (const line of stamped) foldSummary(entry.summary, line);
       matches.set(id, entry);
+      written?.(id, stamped);
       return 'ok';
     },
     read(id) {
@@ -91,8 +96,8 @@ export function createMatchStore(dir: string, limits: StoreLimits = MATCHES_DEFA
 }
 
 // MATCHES_DIR names the directory; unset, it is var/matches in the checkout.
-export function storeFromEnv(env: Record<string, string | undefined>): MatchStore {
-  return createMatchStore(env.MATCHES_DIR?.trim() || MATCHES_DEFAULTS.dir);
+export function storeFromEnv(env: Record<string, string | undefined>, written?: Written): MatchStore {
+  return createMatchStore(env.MATCHES_DIR?.trim() || MATCHES_DEFAULTS.dir, MATCHES_DEFAULTS, Date.now, written);
 }
 
 async function readBody(req: IncomingMessage, max: number): Promise<string | null> {

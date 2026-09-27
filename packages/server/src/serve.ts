@@ -8,12 +8,16 @@ import { jevMiddleware, type ProxyOptions } from '../../jev/src/proxy.ts';
 import { JEV_PATH } from '../../jev/src/wire.ts';
 import { adminSecretFromEnv, BACKSTAGE_PAGE, refuseUnlessAdmin } from './admin.ts';
 import { MATCHES_PATH, matchesMiddleware, storeFromEnv, type MatchStore } from './matches.ts';
+import { createRowWriter } from './rows.ts';
+import { clientFromEnv } from './supabase.ts';
 
 // The hosted page (docs/deploy.md): the static build in dist/, plus the same
 // Jev forwarder the dev server mounts, at the same path. The key is the host's
 // JEV_API_KEY secret. There is no debug mode here, so the stand-in never plays.
 // Each match's record goes to MATCHES_DIR (matches.ts), and only the admin,
-// with ADMIN_SECRET, reads them back (admin.ts).
+// with ADMIN_SECRET, reads them back (admin.ts). With SUPABASE_WRITES=1 each
+// live match also goes to Supabase as rows (rows.ts), with SUPABASE_URL and
+// the SUPABASE_SECRET_KEY secret.
 //
 //   pnpm build && JEV_API_KEY=... ADMIN_SECRET=... node packages/server/src/serve.ts
 
@@ -74,12 +78,16 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const cap = capFromEnv(process.env);
   const dist = fileURLToPath(new URL('../../../dist', import.meta.url));
   const port = Number(process.env.PORT) || 8080;
-  const matches = storeFromEnv(process.env);
+  const rows = clientFromEnv(process.env, line => console.error(`[supabase] ${line}`));
+  // Render names the commit it built; elsewhere the build goes unnamed.
+  const writer = rows && createRowWriter(rows, { build: process.env.RENDER_GIT_COMMIT?.trim() || null });
+  const matches = storeFromEnv(process.env, writer?.take);
   const admin = adminSecretFromEnv(process.env);
   if (link.key) console.log(`[jev] ${link.model} at ${link.baseUrl}, key from the JEV_API_KEY secret`);
   else console.error('[jev] no JEV_API_KEY secret, so every visitor sees the down page');
   console.log(`[jev] cap: ${cap.limits.perVisitor} calls per visitor and ${cap.limits.total} in all, per UTC day`);
   console.log(`[matches] records in ${matches.dir}; ${admin ? 'the admin reads them with ADMIN_SECRET' : 'no ADMIN_SECRET, so no one reads them'}`);
+  console.log(`[supabase] ${writer ? 'each live match is written as rows' : 'no rows written to Supabase'}`);
   createServer(hostedApp({ dist, proxy: { link, keyFrom: 'the JEV_API_KEY secret', debug: false, cap }, matches, admin }))
     .listen(port, () => console.log(`Brick Arena on port ${port}`));
 }
