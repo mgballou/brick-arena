@@ -3,7 +3,7 @@ import { applyDecision, askForDecision, createBoard, step, type Ask, type BoardS
 // The board runs at 60 ticks a second and asks every 30 ticks (500 ms), the
 // cadence packages/cli/src/session.ts and the web viewer already use.
 export const TICK_MS = 1000 / 60;
-export const ASK_EVERY = 30;
+const ASK_EVERY = 30;
 
 export type RaceCall = {
   askedAt: number;

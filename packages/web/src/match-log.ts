@@ -18,7 +18,7 @@ const round = (value: unknown): unknown => {
 };
 
 // The board as Jev was sent it, with the bricks as one character each.
-export function sentState(ask: Ask): SentState {
+function sentState(ask: Ask): SentState {
   const { bricks: _, ...rest } = toRequest(ask, 'jev').state as Record<string, unknown>;
   const bricks = ask.state.bricks.map(brick => brick.unbreakable ? '#' : String(Math.min(9, brick.durability))).join('');
   return { ...(round(rest) as Record<string, unknown>), bricks };
