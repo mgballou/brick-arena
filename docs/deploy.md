@@ -41,9 +41,14 @@ paid instance type stays awake.
 4. **Deploy.** Choose **Apply**. Render runs `render.yaml`'s `buildCommand`
    (`NODE_ENV=development npx --yes pnpm@11 install --frozen-lockfile && npx --yes pnpm@11 build`)
    and then its `startCommand`, `node packages/server/src/serve.ts`.
-5. **Check.** Open the service URL (`https://brick-arena.onrender.com`, or
-   the name Render gives it). The title screen should say *Jev is online*.
-   `/healthz` answers `ok` without calling Jev.
+5. **Check.** Run `pnpm smoke:site https://brick-arena.onrender.com` (or
+   the name Render gives it). It checks that `/healthz` answers `ok` without
+   calling Jev, that `/privacy.html` answers, and, in headless Chromium, that
+   the title screen says *Jev is online* and shows the data notice, whose
+   Privacy link opens the privacy page. It exits 1 if any check fails. The
+   title screen's check is one call to Jev, as any visitor's is; PostHog drops
+   an automated browser's events, and the run starts no match. It needs
+   Chromium once: `pnpm exec playwright install chromium`.
 
 After that, every push to `main` deploys again. To deploy by hand, use
 **Manual Deploy** in the dashboard, or the Render CLI:
