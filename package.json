@@ -2,7 +2,9 @@
   "name": "brick-arena",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@11.18.0",
+  "engines": {"node":"24.x"},
   "scripts": {"dev":"vite","build":"tsc -b && vite build","start":"node packages/server/src/serve.ts","test":"vitest run","test:db":"vitest run --config vitest.db.config.ts","db:up":"docker compose -f supabase/local/compose.yml up -d --wait","db:down":"docker compose -f supabase/local/compose.yml down","session":"tsx packages/cli/src/session.ts","compare":"tsx packages/cli/src/compare.ts","jev":"tsx packages/cli/src/jev-race.ts","smoke":"tsx packages/cli/src/smoke.ts","jev:stub":"tsx packages/cli/src/jev-stub.ts","fair":"tsx packages/cli/src/fair.ts","objective":"tsx packages/cli/src/objective.ts","tunings":"tsx packages/cli/src/tunings.ts","match":"tsx packages/cli/src/match.ts","export":"tsx packages/cli/src/export.ts","weekly":"tsx packages/cli/src/weekly.ts","e2e":"playwright test","smoke:site":"tsx packages/cli/src/smoke-site.ts"},
-  "dependencies": {"@vitejs/plugin-react":"latest","posthog-js":"latest","vite":"latest","react":"latest","react-dom":"latest"},
-  "devDependencies": {"@playwright/test":"1.63.0","@types/node":"latest","@types/react":"latest","@types/react-dom":"latest","tsx":"latest","typescript":"latest","vitest":"latest"}
+  "dependencies": {"@vitejs/plugin-react":"6.1.1","posthog-js":"1.434.14","vite":"8.3.1","react":"19.3.0","react-dom":"19.3.0"},
+  "devDependencies": {"@playwright/test":"1.63.0","@types/node":"26.6.3","@types/react":"19.3.0","@types/react-dom":"19.3.0","tsx":"4.23.15","typescript":"7.0.2","vitest":"5.0.2"}
 }
