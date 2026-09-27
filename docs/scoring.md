@@ -134,7 +134,7 @@ browser, against `pnpm jev:stub` at a 406 ms median, the stand-in cleared level
 
 These are scripted rules, not Jev. The prompt now tells Jev the objective and
 offers it the aimed catch; whether it takes it, and whether it beats a person
-with it, the next match against live Jev will show. That match is the real test.
+with it, only a match against live Jev shows. *Keeping the ball* has the first.
 
 To run it again: `pnpm objective` (`--seeds`, `--ms`, `--jitter` to change).
 

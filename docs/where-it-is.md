@@ -8,28 +8,32 @@ and no key field.
 ## Play it
 
 ```sh
-pnpm --dir ~/projects/brick-arena dev
+pnpm dev
 ```
 
-Open http://localhost:5173/ and press Enter. Start checks the link to Jev
-first. No live Jev means no match: the title screen says Jev isn't reachable
-and why. A stand-in answering counts as no Jev unless the server started with
+Run it from the repo root, open http://localhost:5173/ and press Enter.
+Start checks the link to Jev first. No live Jev means no match: when Jev can't
+answer, the forwarder sends 503 and the page shows *The game is down right
+now* with no board, and the reason goes to the server log only. The title
+screen names a reason only when the game server itself fails to answer. A
+stand-in answering counts as no Jev unless the server started with
 `VITE_DEBUG=1`, and then a `DEBUG · stand-in` banner stays on screen
-(`docs/screens/2026-09-24/no-jev-*.png`, `debug-*.png`). Mid-match, one failed
-call or three timeouts in a row pause the match until Retry finds Jev again.
+(`docs/screens/2026-09-24/no-jev-*.png`, `debug-*.png`). Mid-match, a `down`
+reply ends the match on the down page, and a bad answer is skipped. Losing the
+game server, or `MISSED_AFTER` timeouts in a row (`main.tsx`), pauses the
+match until Retry finds Jev again.
 
 ## The key
 
 The dev server reads the TypeSafe key from `~/.jev-key` once, when it starts,
 and adds it to each call it forwards to `https://api.typesafe.ai/v1/systemone`
-with model `jev-latest`. The browser only ever calls `/api/jev`.
+with model `jev-latest`. The browser reaches Jev only through `/api/jev`.
 
-**Not yet confirmed against live Jev.** The permission guard refused the one
-real call made on 24 September, and a web search of TypeSafe's docs, so the
-endpoint and model come from the earlier web client. One command settles it:
+A live call on 22 September confirmed the endpoint and model: HTTP 200 in
+728 ms, choice `landing` (`8089bb9`). To check the link again:
 
 ```sh
-pnpm --dir ~/projects/brick-arena smoke
+pnpm smoke
 ```
 
 It prints the status, the latency and Jev's choice. If TypeSafe wants another
@@ -40,8 +44,8 @@ restart `pnpm dev`.
 
 This run predates debug mode; today it would need `VITE_DEBUG=1`.
 The full five levels ran through Playwright on 24 September against
-`pnpm jev:stub`, a local stand-in that always picks `landing` after 250 to
-550 ms. They did not run against live Jev. The stand-in took three levels and
+`pnpm jev:stub`, a local stand-in that then always picked `landing`, after
+250 to 550 ms. It plays `clearFast` now (`packages/jev/src/stand-in.ts`). They did not run against live Jev. The stand-in took three levels and
 a scripted human took two, but the human won on total, 7,110 to 5,885. Nobody
 cleared a level inside the clock:
 
@@ -80,7 +84,8 @@ with `pnpm fair`: seed 20260919, five levels of 90 s, the stand-in answering in
 | Holds its board until the answer lands | 2 | 30 | 300.7 of 450 s |
 
 Answering at once, the stand-in still loses 3: those come from its own choices
-(it chases every power-up), not from latency. Holding the board comes closer on
+(it then chased every power-up), not from latency. `clearFast` now goes
+for a power-up only when it clears faster and keeps the ball. Holding the board comes closer on
 the count only because Jev's board stands still two thirds of the time. It
 loses balls faster per second played than asking ahead does, and it breaks
 fewer bricks. So asking ahead stays.
