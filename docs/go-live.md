@@ -69,6 +69,193 @@ Blueprint. After the stack merges there are four, not the two that
 
 29. In a PR, put the service URL in the README's *Play it* line, which now reads `` `<hosted URL — filled in after the deploy>` `` (`README.md`, line 26).
 
+## Before the repo goes public
+
+An audit of every branch on `origin`, the GitHub PR refs and the top of the
+stack (`ba-notice-and-opt-out` at `6ae7d73`), on 27 September 2026. On that
+day `gh repo view mgballou/brick-arena` read `PRIVATE`. Each finding is marked
+**he decides** (a history rewrite, a branch deletion or the visibility) or
+**a row fixes** (a change to files or a PR body, for `ba-clean-for-show` once
+the stack merges).
+
+### Secrets: none found
+
+- `gitleaks git --log-opts=--remotes=origin` scanned 54 commits (58 with the
+  four merges) on all 13 branches: no leaks.
+- The literal content of `~/.jev-key` appears 0 times in `git log --all -p`.
+- `JEV_API_KEY=` appears 18 times in history, each time with `dummy`, `...`
+  or `<key>`, never a real key.
+- The PR refs (`refs/pull/1..11/head`) hold no commit that the branches do
+  not also hold, so the scan covers them too.
+- The repo has no Actions secrets yet, so none of its 66 Actions runs could
+  log one; the latest *Supabase weekly* run shows `SUPABASE_SECRET_KEY`
+  empty. Actions logs go public with the repo.
+
+### History
+
+1. **he decides — one AI-attribution trailer on `main`.** `e561ac1`
+   (*Open each level with a countdown…*, 25 September) ends with
+   `Co-Authored-By: Claude Opus 5.5`. It sits on `main` and on all ten `ba-*`
+   branches. Rewriting it means a force-push of `main` and a rebase of the
+   whole stack. Even then `refs/pull/2/head` keeps it: PR #2 carried it, and
+   only GitHub Support can remove a PR ref.
+2. **he decides — a second trailer on a merged branch.** `f827457`
+   (*Present the project as a study of how Jev plays*, 26 September) has the
+   same trailer. It lives only on `ba-readme-studies-jev`, since #3 was
+   squashed into `1fb18a4`, which has none. Deleting the branch hides it from
+   the branch list; `refs/pull/3/head` still holds it.
+3. **he decides — five 19–22 MB copies of `docs/session.ndjson`.** They are
+   the five largest blobs in history. History is 113 MB raw and 8 MB packed,
+   so a clone stays small, and no blob comes near GitHub's 50 MB warning. Removing them is a rewrite of every branch.
+
+   | Blob | Size | File | Added in | At the tip of |
+   | --- | --- | --- | --- | --- |
+   | `a3b997d535` | 22.2 MB | `docs/session.ndjson` | `f459803` | the seven stack branches #4–#10 |
+   | `be78369c0b` | 21.8 MB | `docs/session.ndjson` | `c186c7c` | `wip/brick-rebuild` only |
+   | `c065904ca3` | 20.5 MB | `docs/session.ndjson` | `56761b3` | `main`, `ba-go-live`, `ba-launch-countdown`, `ba-readme-studies-jev` |
+   | `8dcd4a670e` | 20.3 MB | `docs/session.ndjson` | `e17ff26` | none; in the history of `main` and every `ba-*` branch |
+   | `fd6ffccd89` | 19.4 MB | `docs/session.ndjson` | `10a2fd8` | `feat/suite-green`; in the history of every branch |
+   | `ec2821937f` | 0.8 MB | `docs/jev-calls.synthetic.ndjson` | `c186c7c` | `wip/brick-rebuild` only |
+   | `0b5b13e98a` | 0.6 MB | `docs/screens/2026-09-27/privacy-390.png` | `6ae7d73` | `ba-notice-and-opt-out` only |
+   | `06eb518a18` | 0.4 MB | `docs/jev-calls.synthetic.ndjson` | `56761b3` | `main`, `ba-go-live`, `ba-launch-countdown`, `ba-readme-studies-jev` |
+   | `552d4149a7` | 0.3 MB | `docs/jev-calls.synthetic.ndjson` | `f459803` | the seven stack branches #4–#10 |
+   | `5ab7f3027e` | 0.3 MB | `docs/jev-calls.synthetic.ndjson` | `e17ff26` | none; in the history of `main` and every `ba-*` branch |
+
+4. **he decides — who the commits name.** 53 commits carry
+   `matthewbuiltthat@gmail.com` as author and committer. Two carry a second
+   GitHub account's noreply address, `autonomousjupiter`: `ee2df72` on
+   `feat/suite-green` and `275fd16`, this branch's first commit. Three are
+   GitHub web merges. All of it goes public with the repo; changing any of it
+   is a rewrite.
+5. **he decides — four branches outside the stack.**
+   - `ba-launch-countdown`: merged as #2, nothing beyond `main`.
+   - `ba-readme-studies-jev`: merged by squash as #3; its one commit is
+     `f827457` (item 2).
+   - `feat/suite-green`: one commit beyond `main` (`ee2df72`, 20 September),
+     never a PR.
+   - `wip/brick-rebuild`: two commits beyond `main` (last 23 September), never
+     a PR, with its own 21.8 MB `session.ndjson`.
+6. **he decides — the visibility.** Make it public only after the items above
+   are settled, since a rewrite after that point cannot recall what forks and
+   clones already hold.
+
+### Files and PR text
+
+7. **a row fixes — PR #1's body ends with the *Generated with Claude Code*
+   footer.** No other PR body or comment has one. Editing the body removes it
+   from the page, but GitHub shows the earlier text to anyone who opens the
+   body's *edited* menu.
+8. **a row fixes — `CLAUDE.md` and `AGENTS.md` name the private desk.**
+   `CLAUDE.md:109–112` and `AGENTS.md:14–17` send agents to `/herdr` and
+   `/asking-laila` and name Matthew and Laila. Neither skill exists outside
+   this machine.
+9. **a row fixes — `docs/where-it-is.md` hard-codes a home path.** Lines 11
+   and 32 run `pnpm --dir ~/projects/brick-arena …`.
+
+### Dead code
+
+`npx --yes knip` in a clean clone of `6ae7d73`, with no knip config, reported
+33 items. Read one by one against the code, none is a file or function that
+nothing uses.
+
+10. **a row fixes — 27 exports that no other file imports.** Each symbol is
+    used in its own file, so only the `export` keyword can go:
+    - Values: `KEEP_DAYS` (`cli/src/upkeep.ts:10`), `targetOptions`
+      (`engine/src/index.ts:217`), `visitorOf` (`jev/src/proxy.ts:64`),
+      `ASK_EVERY` (`jev/src/race.ts:6`), `ADMIN_REALM` and `isAdmin`
+      (`server/src/admin.ts:12`, `:34`), `ROWS_DEFAULTS`
+      (`server/src/rows.ts:19`), `filterParams` (`server/src/supabase.ts:109`),
+      `SCHEMA` and `forgetId` (`web/src/analytics.ts:13`, `:75`), `doNotTrack`
+      (`web/src/consent.ts:49`), `DEADLINE_MS` (`web/src/jev.ts:7`),
+      `sentState` (`web/src/match-log.ts:21`).
+    - Types: `Divergence` (`engine/src/replay.ts:5`), `Take`
+      (`jev/src/cap.ts:10`), `RaceCall` (`jev/src/race.ts:8`),
+      `ChoiceQuestion` and `ChoiceAnswer` (`jev/src/wire.ts:6`, `:10`),
+      `Refused` (`server/src/matches.ts:33`), `LineType`, `TargetKey` and
+      `Row` (`server/src/record.ts:50`, `:98`, `:174`), `Refusal`,
+      `UpsertResult`, `Where`, `SelectResult` and `RemoveResult`
+      (`server/src/supabase.ts:24–33`).
+
+    Paths are under `packages/`. `docs/scoring.md` names `targetOptions` in
+    prose, so it may be worth keeping.
+11. **a row fixes — knip does not know `matches.html` is an entry.** It calls
+    `packages/web/src/matches.ts` unused, and with it `levelTitle`, `clockOf`
+    and `describe` in `server/src/record.ts`. `matches.html:10` loads the file
+    and `vite.config.ts:71` builds it. A `knip.json` naming the three HTML
+    entries would silence four false reports. The other two false reports are
+    `psql`, the system client that `supabase.test.ts` calls, and
+    `standInChoice = clearFast` in `jev/src/stand-in.ts:40`, an alias both
+    names of which are imported.
+
+### Stale docs
+
+`README.md`, `CLAUDE.md`, `AGENTS.md`, `docs/*.md` and `docs/specs/*.md` at
+`6ae7d73`, read against the code. The README, the routes, the env var names
+and the numbers all hold. Every line below but 13 is **a row fixes**. Lines marked
+*check* are likely stale but rest on a dated measurement or a reading.
+
+12. `docs/where-it-is.md:27` — *"Not yet confirmed against live Jev. The
+    permission guard refused the one real call made on 24 September"* — false.
+    `8089bb9` (22 September) records a live call: *HTTP 200, 728ms, choice
+    "landing"*. The same file (`:73`) and `docs/scoring.md:118` cite it, and
+    `docs/scoring.md:143` has a match against live Jev on 25 September.
+13. `docs/where-it-is.md:41` — *"This run predates debug mode"* — still true.
+    The run (`386d238`) came before debug mode (`fb2d2e7`), which now exists
+    (`DEBUG` in `web/src/jev.ts`, `refusal` in `jev/src/wire.ts`). Not a
+    finding.
+14. `docs/where-it-is.md:43` — *"a local stand-in that always picks
+    `landing`"* — the stand-in plays `clearFast` now
+    (`jev/src/stand-in.ts:40`); `alwaysLanding` is the old rule. The 250 to
+    550 ms still holds.
+15. `docs/where-it-is.md:15–16` — *"the title screen says Jev isn't reachable
+    and why"* — when Jev can't answer, the forwarder sends 503 and the browser
+    shows the down page, *The game is down right now*; the reason goes to the
+    server log only (`jev/src/proxy.ts`). The title screen's line shows only
+    when the game server itself fails (`probeJev` in `web/src/jev.ts`).
+16. `docs/where-it-is.md:18–19` — *"one failed call or three timeouts in a
+    row pause the match until Retry"* — a `down` reply now ends the match on
+    the down page (`web/src/main.tsx:276`) and a bad answer is ignored. Only
+    `offline` or three misses (`MISSED_AFTER`) pause with Retry.
+17. `docs/where-it-is.md:25` — *"The browser only ever calls `/api/jev`"* —
+    *check*: it also posts to `/api/matches` (`web/src/match-log.ts`) and, when
+    built with `VITE_POSTHOG=1`, to PostHog. True if it means Jev calls only.
+18. `docs/where-it-is.md:82–83` — *"(it chases every power-up)"* — *check*:
+    `clearFast` now chases only the extra ball or the piercing ball, and only
+    when `keepsBall` is not false.
+19. `docs/brick-collisions.md:54` — *"The Human clears level 1 at tick 3348"* —
+    false. All 10 games in `docs/session.ndjson` end `time-limit`, and
+    `CLAUDE.md:92–94` says `pnpm session` records no level cleared.
+20. `docs/brick-collisions.md:58–59` — *"the replay test takes the level the
+    Human clears"* — `replay.test.ts` uses `rowsFor('Human', 0)`, a level
+    with no clear.
+21. `docs/brick-collisions.md:60–62` — *"The synthetic Jev recording moved to
+    seed 20260962, level 1"* — `SYNTHETIC` in `jev/src/synthetic.ts` is seed
+    20260919, level 0, as `README.md:116` says.
+22. `docs/tunings.md:112–114` — *"No tuning touches that rule"* (the
+    stand-in's lost balls come from chasing power-ups) — *check*: `clearFast`
+    changed on 26 September (`f459803`), and `docs/scoring.md:147–159` has lost
+    balls at 728 ms falling from 461 to 63.
+23. `docs/scoring.md:135–137` — *"the next match against live Jev will show"* —
+    *check*: `:143` of the same file records that match, on 25 September.
+24. `docs/deploy.md:24`, `:33` and `:38` — *"This branch merged to `main`"*,
+    *"the two values marked `sync: false`"* (`render.yaml` has four), and a
+    build command without `NODE_ENV=development` and `--yes`. The first two
+    are already under *Fixes the stack needs*.
+25. `docs/specs/data-collection.md:3` — *"Status: design, no code."* — built
+    since: `server/src/supabase.ts`, `server/src/rows.ts`,
+    `web/src/analytics.ts`, `web/src/consent.ts`, `supabase/migrations/` and
+    `.github/workflows/supabase-weekly.yml`.
+26. `docs/specs/data-collection.md:92–93` — *"with `VITE_DEBUG=1` the page
+    loads no PostHog and sends no match lines"* — half false. PostHog stays
+    off in debug, but `web/src/main.tsx:190` builds a `MatchLog` whenever the
+    player has not opted out, debug or not, and the server writes it to
+    `MATCHES_DIR`. Only the Supabase row writer skips a debug match
+    (`server/src/rows.ts`). Decision 4 says debug play is not sent, so the
+    code is what should change.
+27. `docs/specs/data-collection.md:364–372` — *"Rules this changes in
+    CLAUDE.md"* — *check*: a proposal that `CLAUDE.md:16–34` and `:70–76` now
+    carry, so it reads as still to do.
+
 ## What the dry run found
 
 Both runs used Node 24.21.0 and ran `render.yaml`'s `buildCommand` as written,
