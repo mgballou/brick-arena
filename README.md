@@ -18,10 +18,10 @@ Jev plays the right, one closed question at a time, over the network.</p>
 
 <br />
 
-<img src="docs/screens/2026-09-24/scoring-02-playing.png" alt="Level 1 in progress: your board on the left, the opponent's on the right, the score and clock above them." />
+<img src="docs/screens/2026-09-27/readme-playing.png" alt="Level 1 in progress on a dark page: your board on the left, the opponent's on the right, the score and clock above them." />
 
 Level 1, *Multi-hit rows*, in debug mode: the right-hand board is the local stand-in, not Jev,
-and the yellow banner says so. Live Jev draws the same screen with its name on that board.
+and the banner says so. Against live Jev the same screen names Jev on that board.
 
 **Play it: `<hosted URL — filled in after the deploy>`**
 
@@ -164,6 +164,7 @@ aims every catch at the densest bricks (`clearFast` in `packages/jev/src/stand-i
 
 ```sh
 npm run jev:stub &
+until curl -s -o /dev/null --max-time 1 http://127.0.0.1:18787/; do sleep 0.2; done
 printf 'dummy\n' > /tmp/dummy-key
 VITE_DEBUG=1 JEV_KEY_FILE=/tmp/dummy-key JEV_BASE_URL=http://127.0.0.1:18787 npm run dev
 ```
@@ -171,6 +172,25 @@ VITE_DEBUG=1 JEV_KEY_FILE=/tmp/dummy-key JEV_BASE_URL=http://127.0.0.1:18787 npm
 The screen shows a `DEBUG · stand-in` banner and names the right-hand board Stand-in. Outside
 debug mode, the forwarder and the page both refuse a stand-in's reply. Who answered comes from
 the reply's mark, never the URL.
+
+## The data it collects
+
+How each match plays, never who played it. The title screen says so in one line, with a link
+to the [privacy page](privacy.html) and an **Opt out** beside it; Do Not Track counts as
+opting out.
+
+- **Player events**, sent to PostHog when the page is built with `VITE_POSTHOG=1`: matches,
+  levels, lost balls, pauses and Jev's choices, with screen size and input type. PostHog's
+  random anonymous id stays in the browser's local storage and is never identified.
+- **The match record**, sent to the game server: every Jev call with the board it was sent,
+  every launch and lost ball, both boards' clear over time and each level's result. The
+  server keeps it as a file in `MATCHES_DIR`, and as rows in Supabase with
+  `SUPABASE_WRITES=1`. Only the admin reads it, with the server's `ADMIN_SECRET`.
+- **Never**: an IP address, a name, an account, a fingerprint or a screen recording. Debug
+  play and stand-in matches reach neither PostHog nor Supabase.
+
+[docs/specs/data-collection.md](docs/specs/data-collection.md) has the design, and
+[docs/deploy.md](docs/deploy.md#match-records) says where each piece lives.
 
 ## How it is built
 
@@ -190,6 +210,15 @@ recorded sessions in `docs/`, checks the forwarder and the cap, and builds the p
 if the bundle holds a key or names a TypeSafe host. No test calls live Jev. The Jev tests
 replay `docs/jev-calls.synthetic.ndjson`, which is **synthetic**: written by hand from the
 documented reply shape, not captured from a call.
+
+```sh
+npm test            # the engine, Jev, server and page tests; none calls live Jev or Supabase
+npm run build       # typecheck (tsc -b), then the production build in dist/
+npx --yes knip      # unused files, exports and dependencies; it should report nothing
+```
+
+CI installs from the lockfile with pnpm, then runs the tests and `tsc -b` on every push and
+pull request.
 
 | Command | What it does |
 |---|---|
