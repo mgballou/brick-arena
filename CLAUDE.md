@@ -27,7 +27,8 @@ unasked.
 The page's one addition is `posthog-js`, loaded only by
 `packages/web/src/analytics.ts` and only when the build sets `VITE_POSTHOG=1`,
 `VITE_POSTHOG_KEY` and `VITE_POSTHOG_HOST`; unset, the bundle holds none of it
-(`bundle.test.ts`). Debug play, stand-in matches and Do Not Track send nothing.
+(`bundle.test.ts`). Debug play, stand-in matches, Do Not Track and an opted-out
+browser send nothing.
 PostHog keeps a random anonymous id in `localStorage`; never call `identify`,
 and never put that id in the match record. No analytics import belongs in the
 engine. Tests use the in-memory stub and never call live PostHog.
@@ -66,8 +67,14 @@ Each match of the web game leaves a record on the server: the browser builds
 the lines (`packages/web/src/match-log.ts`), `packages/server/src/matches.ts`
 appends them to one NDJSON file per match in `MATCHES_DIR`, and `pnpm match`
 and `/matches.html` read them. The format is `packages/server/src/record.ts`.
-It holds the game only; never add who played it. Only the admin reads a
-record: every route that serves one calls `refuseUnlessAdmin` in
+It holds the game only; never add who played it. The one thing kept about a
+player is PostHog's anonymous id: random, kept in the browser, never
+identified, and never in the match record. The title screen says so in one
+line, links `privacy.html` and offers the opt-out beside it. `consent.ts` is
+the one gate, remembered in `localStorage` and closed by Do Not Track too;
+the events and the match lines both ask it before they send. Change what is
+collected, where or for how long, and change `privacy.html` with it. Only the
+admin reads a record: every route that serves one calls `refuseUnlessAdmin` in
 `packages/server/src/admin.ts` against `ADMIN_SECRET`, and no secret reaches
 the client.
 

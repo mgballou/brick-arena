@@ -50,9 +50,17 @@ describe('the built client', () => {
   });
 
   // No PostHog project exists yet, so the flag stays off and the page loads
-  // none of it (analytics.ts).
+  // none of it (analytics.ts). The notice names PostHog in words, so this
+  // looks for strings only posthog-js's own code holds.
   it('holds no PostHog with the flag off', () => {
-    expect([...shipped].filter(([, text]) => /posthog/i.test(text)).map(([name]) => name)).toEqual([]);
+    const code = /posthog-js|__ph_opt_in_out_|i\.posthog\.com/;
+    expect([...shipped].filter(([, text]) => code.test(text)).map(([name]) => name)).toEqual([]);
+  });
+
+  it('ships the privacy page as plain HTML, with no script', () => {
+    const page = shipped.get('privacy.html');
+    expect(page).toContain('never who you are');
+    expect(page).not.toMatch(/<script/i);
   });
 
   it('names no TypeSafe host', () => {
