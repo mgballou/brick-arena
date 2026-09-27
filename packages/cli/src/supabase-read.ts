@@ -133,6 +133,8 @@ export async function exportMonth(client: TableClient, options: { month: string;
   const gzip = createGzip();
   const file = createWriteStream(part);
   const done = once(file, 'finish');
+  // Awaited below; this only stops a write error from going unhandled meanwhile.
+  done.catch(() => {});
   gzip.pipe(file);
   const result: ExportResult = { path, matches: matches.length, lines: 0, pruned: [] };
   try {
