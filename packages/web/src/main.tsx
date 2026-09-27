@@ -688,11 +688,12 @@ function Overlay({ children, compact }: { children: ReactNode; compact?: boolean
 
 // The title screen's notice (docs/specs/data-collection.md, "Privacy"), with
 // the one-click opt-out beside it and, once opted out, the way back in.
-// Enter on either button stays with the button and never starts a match.
+// Enter or Space on either button presses the button and never starts a
+// match; every other key still reaches the game.
 export function Notice({ consent }: { consent: Consent }) {
   const [choice, setChoice] = useState(consent.choice);
   useEffect(() => consent.onChange(() => setChoice(consent.choice)), [consent]);
-  const keep = (event: { stopPropagation(): void }) => event.stopPropagation();
+  const keep = (event: { key: string; stopPropagation(): void }) => { if (event.key === 'Enter' || event.key === ' ') event.stopPropagation(); };
   const privacy = <a href={PRIVACY_PAGE}>Privacy</a>;
   if (choice === 'dnt') return <p className="notice">Do Not Track is on, so this browser records nothing. {privacy}</p>;
   if (choice === 'opted-out') return <p className="notice">You opted out: this browser records nothing. {privacy} · <button className="text" onKeyDown={keep} onClick={() => consent.optIn()}>Opt back in</button></p>;
