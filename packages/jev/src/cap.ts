@@ -7,7 +7,7 @@ export const CAP_DEFAULTS = { perVisitor: 5000, total: 50000 } as const;
 
 export type CapLimits = { perVisitor: number; total: number };
 // `visitor` and `total` name the limit a refused call hit.
-export type Take = 'ok' | 'visitor' | 'total';
+type Take = 'ok' | 'visitor' | 'total';
 export type Cap = { limits: CapLimits; take: (visitor: string) => Take };
 
 const utcDay = () => new Date().toISOString().slice(0, 10);

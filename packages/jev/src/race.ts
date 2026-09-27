@@ -5,7 +5,7 @@ import { applyDecision, askForDecision, createBoard, step, type Ask, type BoardS
 export const TICK_MS = 1000 / 60;
 const ASK_EVERY = 30;
 
-export type RaceCall = {
+type RaceCall = {
   askedAt: number;
   question: Ask['question'];
   ms: number;

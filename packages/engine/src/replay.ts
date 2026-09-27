@@ -2,7 +2,7 @@ import { applyDecision, askForDecision, createBoard, step, type Ask, type BoardS
 
 export type RecordedSessionRow = DecisionRecord & { player: string; level: number };
 
-export type Divergence = {
+type Divergence = {
   tick: number;
   state: BoardState;
   recorded: Decision;

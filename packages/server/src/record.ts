@@ -47,7 +47,7 @@ export type MatchLine =
   // board. `left`: the page closed or went back to the title mid-match.
   | { type: 'end'; at: string; reason: 'final' | 'down' | 'left'; human: number; jev: number };
 
-export type LineType = MatchLine['type'];
+type LineType = MatchLine['type'];
 const LINE_TYPES: ReadonlySet<string> = new Set<LineType>(['start', 'level', 'launch', 'lost', 'progress', 'jev', 'levelEnd', 'end']);
 
 // A match id is its UTC start and six random letters, so names sort by time:
@@ -95,7 +95,7 @@ export type MatchSummary = {
 // late for its level (`stale`) still counts: it is what Jev picked. `target`
 // counts the four catches of `targetKeys`; `aim` is the aimed catch and
 // `landing` the safe one (docs/scoring.md).
-export type TargetKey = typeof targetKeys[number];
+type TargetKey = typeof targetKeys[number];
 export type JevTally = {
   calls: number;
   answered: number;
@@ -171,7 +171,7 @@ export function summarize(lines: MatchLine[]): MatchSummary | null {
 
 // Each line as one row a person reads: the CLI prints these and the page
 // lists them. `time` is the level clock, `m:ss.s`.
-export type Row = { level: number | null; time: string; side: RecordSide | null; text: string };
+type Row = { level: number | null; time: string; side: RecordSide | null; text: string };
 
 const WHO: Record<RecordSide, string> = { human: 'You', jev: 'Jev' };
 export const levelTitle = (level: number) => `Level ${level + 1}, ${levelNames[level] ?? '?'}`;
