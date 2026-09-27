@@ -47,13 +47,14 @@ harder to squash than one PR:
 8. #12 `ba-clean-for-show`: base to `main`, merge `main` (below: `ba-notice-and-opt-out`), squash.
 9. #13 `ba-readme-film`: base to `main`, merge `main` (below: `ba-clean-for-show`), squash.
 10. #14 `ba-supabase-proven-locally`: base to `main`, merge `main` (below: `ba-readme-film`), squash.
-11. #11 `ba-go-live`, this list's own PR: squash it last; it is based on `main` and merges over the stack with no conflict.
-12. Check that CI passes on `main` (GitHub → Actions → `ci.yml`).
+11. #15 `ba-browser-smoke`: base to `main`, merge `main` (below: `ba-supabase-proven-locally`), squash.
+12. #11 `ba-go-live`, this list's own PR: squash it last; it is based on `main` and merges over the stack with no conflict.
+13. Check that CI passes on `main` (GitHub → Actions → `ci.yml`).
 
 ### Render
 
-13. Sign up at <https://dashboard.render.com> with GitHub, and give Render's GitHub app access to the private `brick-arena` repo (Render dashboard; GitHub → Settings → Applications).
-14. Choose **New → Blueprint**, pick `brick-arena`, keep branch `main` (Render dashboard; reads `render.yaml`).
+14. Sign up at <https://dashboard.render.com> with GitHub, and give Render's GitHub app access to the private `brick-arena` repo (Render dashboard; GitHub → Settings → Applications).
+15. Choose **New → Blueprint**, pick `brick-arena`, keep branch `main` (Render dashboard; reads `render.yaml`).
 
 ### Secrets
 
@@ -61,34 +62,34 @@ Render asks for every `sync: false` value in `render.yaml` when it creates the
 Blueprint. After the stack merges there are four, not the two that
 `docs/deploy.md` step 3 names.
 
-15. `JEV_API_KEY`: paste the token in `~/.jev-key`, the value only (Render's Blueprint form).
-16. `ADMIN_SECRET`: paste the output of `openssl rand -base64 24`, and keep a copy in your password manager (Render's Blueprint form).
-17. `SUPABASE_URL` and `SUPABASE_SECRET_KEY`: leave them empty for now; writes stay off without `SUPABASE_WRITES=1`. If Render refuses an empty value, do steps 20 and 21 first and paste the real ones (Render's Blueprint form). The dry run could not test this form.
-18. Choose **Apply**, and watch the build log end in `✓ built` (Render → brick-arena → Events).
-19. Open `/healthz` and see `ok`; open `/` and see *Jev is online* on the title screen, with the data notice and its Privacy link (service URL).
-20. Decide whether match records on disk must last. On the free plan they vanish when the service sleeps, 15 minutes after the last visit. Keeping them means `plan: starter`, a 1 GB disk and `MATCHES_DIR` in `render.yaml`, about $7.25 a month (`docs/deploy.md`, *Where they live, and why a disk*). Once Supabase holds the rows, free is enough.
+16. `JEV_API_KEY`: paste the token in `~/.jev-key`, the value only (Render's Blueprint form).
+17. `ADMIN_SECRET`: paste the output of `openssl rand -base64 24`, and keep a copy in your password manager (Render's Blueprint form).
+18. `SUPABASE_URL` and `SUPABASE_SECRET_KEY`: leave them empty for now; writes stay off without `SUPABASE_WRITES=1`. If Render refuses an empty value, do steps 21 and 22 first and paste the real ones (Render's Blueprint form). The dry run could not test this form.
+19. Choose **Apply**, and watch the build log end in `✓ built` (Render → brick-arena → Events).
+20. Run `pnpm smoke:site https://brick-arena.onrender.com` and see `every check passed`: `/healthz` answers `ok`, and `/` shows *Jev is online* on the title screen, with the data notice and its Privacy link (terminal; it needs `pnpm exec playwright install chromium` once).
+21. Decide whether match records on disk must last. On the free plan they vanish when the service sleeps, 15 minutes after the last visit. Keeping them means `plan: starter`, a 1 GB disk and `MATCHES_DIR` in `render.yaml`, about $7.25 a month (`docs/deploy.md`, *Where they live, and why a disk*). Once Supabase holds the rows, free is enough.
 
 ### Supabase
 
-21. Create the project: Free plan, region West US (Oregon), `us-west-2` (Supabase dashboard).
-22. Run `supabase/migrations/20260927000000_match_record.sql`, then `20260927020000_keep_awake.sql`, in the SQL Editor (Supabase dashboard).
-23. On the service set `SUPABASE_URL`, `SUPABASE_SECRET_KEY` and `SUPABASE_WRITES=1`; saving redeploys (Render → brick-arena → Environment).
-24. Add the same `SUPABASE_URL` and `SUPABASE_SECRET_KEY` as repository secrets (GitHub → Settings → Secrets and variables → Actions).
-25. Run *Supabase weekly* by hand and see all three steps pass (GitHub → Actions → `supabase-weekly.yml` → **Run workflow**).
-26. Play one match against live Jev and see its row in `matches` (Supabase → Table Editor).
+22. Create the project: Free plan, region West US (Oregon), `us-west-2` (Supabase dashboard).
+23. Run `supabase/migrations/20260927000000_match_record.sql`, then `20260927020000_keep_awake.sql`, in the SQL Editor (Supabase dashboard).
+24. On the service set `SUPABASE_URL`, `SUPABASE_SECRET_KEY` and `SUPABASE_WRITES=1`; saving redeploys (Render → brick-arena → Environment).
+25. Add the same `SUPABASE_URL` and `SUPABASE_SECRET_KEY` as repository secrets (GitHub → Settings → Secrets and variables → Actions).
+26. Run *Supabase weekly* by hand and see all three steps pass (GitHub → Actions → `supabase-weekly.yml` → **Run workflow**).
+27. Play one match against live Jev and see its row in `matches` (Supabase → Table Editor).
 
 ### PostHog
 
-27. Create the project on US Cloud, the spec's plan (<https://us.posthog.com>).
-28. Turn IP capture off (PostHog → Project settings).
-29. On the service set `VITE_POSTHOG_KEY` (`phc_…`), `VITE_POSTHOG_HOST=https://us.i.posthog.com` and `VITE_POSTHOG=1` (Render → brick-arena → Environment).
-30. Run **Manual Deploy → Deploy latest commit**, since the page reads the three `VITE_` values when it is built (Render dashboard).
-31. Play one match and see its events arrive (PostHog → Activity).
-32. In a PR, replace the two *pending* lines in `privacy.html` with the real PostHog region and Supabase state, and state PostHog's free-plan event retention (`privacy.html`).
+28. Create the project on US Cloud, the spec's plan (<https://us.posthog.com>).
+29. Turn IP capture off (PostHog → Project settings).
+30. On the service set `VITE_POSTHOG_KEY` (`phc_…`), `VITE_POSTHOG_HOST=https://us.i.posthog.com` and `VITE_POSTHOG=1` (Render → brick-arena → Environment).
+31. Run **Manual Deploy → Deploy latest commit**, since the page reads the three `VITE_` values when it is built (Render dashboard).
+32. Play one match and see its events arrive (PostHog → Activity).
+33. In a PR, replace the two *pending* lines in `privacy.html` with the real PostHog region and Supabase state, and state PostHog's free-plan event retention (`privacy.html`).
 
 ### Play it
 
-33. In a PR, put the service URL in the README's *Play it* line, which now reads `` `<hosted URL — filled in after the deploy>` `` (`README.md`, line 30 once #13 merges).
+34. In a PR, put the service URL in the README's *Play it* line, which now reads `` `<hosted URL — filled in after the deploy>` `` (`README.md`, line 30 once #13 merges).
 
 ## Before the repo goes public
 
@@ -308,7 +309,7 @@ the hosted server has no debug mode, which is right.
 - **Two new start-up log lines**, `[matches] …` and `[supabase] …`, which say
   where records go and whether rows are written.
 - **One new outside job**: `.github/workflows/supabase-weekly.yml`, which needs
-  the two GitHub secrets in step 24.
+  the two GitHub secrets in step 25.
 
 ### Fixes the stack needs, for its own branches
 
@@ -334,7 +335,7 @@ These belong in the stack's files, not this branch.
   store; Render downloads all 62 packages, and `npx --yes pnpm@11` needs the
   network at build time.
 - Whether Render's Blueprint form accepts an empty `sync: false` value
-  (step 17).
+  (step 18).
 - The online title screen. With no live Jev, both runs show only the down
   page, which carries no data notice and no Privacy link; the notice renders
   on the online title screen (`notice.test.tsx`).
