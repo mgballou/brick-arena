@@ -23,14 +23,14 @@ services:
       # /api/matches). Render asks for it too; unset, no one reads them.
       - key: ADMIN_SECRET
         sync: false
-      # Jev calls allowed per visitor, and in all, per UTC day. A full match
-      # is at most about 900 calls.
       # Supabase, for match records as rows. Writes stay off until
       # SUPABASE_WRITES=1 is set in the dashboard (docs/deploy.md).
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SECRET_KEY
         sync: false
+      # Jev calls allowed per visitor, and in all, per UTC day. A full match
+      # is at most about 900 calls.
       - key: JEV_CALLS_PER_VISITOR_PER_DAY
         value: "5000"
       - key: JEV_CALLS_PER_DAY

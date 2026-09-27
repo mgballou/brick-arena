@@ -21,7 +21,7 @@ paid instance type stays awake.
 
 - A Render account, signed in with GitHub, with access to the `brick-arena` repo.
 - Your TypeSafe key: the token in `~/.jev-key` (the value only, not a `NAME=` prefix).
-- This branch merged to `main`. `render.yaml` deploys `main`.
+- The work you want live merged to `main`. `render.yaml` deploys `main`.
 
 ## Steps
 
@@ -30,13 +30,17 @@ paid instance type stays awake.
 2. **Blueprint.** In the dashboard choose **New → Blueprint**, pick
    `brick-arena`, and keep branch `main`. Render reads `render.yaml` and lists
    one service, `brick-arena`, on the free plan.
-3. **Secrets.** Render asks for the two values marked `sync: false`. For
-   `JEV_API_KEY`, paste the TypeSafe key. For `ADMIN_SECRET`, paste a long
-   random password you keep (`openssl rand -base64 24`); it opens the match
-   records. Neither goes anywhere else: not the repo, not the page, not a log.
-4. **Deploy.** Choose **Apply**. Render runs the build
-   (`npx pnpm@11 install --frozen-lockfile && npx pnpm@11 build`) and then
-   `node packages/server/src/serve.ts`.
+3. **Secrets.** Render asks for every value `render.yaml` marks
+   `sync: false`. For `JEV_API_KEY`, paste the TypeSafe key. For
+   `ADMIN_SECRET`, paste a long random password you keep
+   (`openssl rand -base64 24`); it opens the match records. Leave
+   `SUPABASE_URL` and `SUPABASE_SECRET_KEY` empty until the Supabase project
+   exists: writes stay off without `SUPABASE_WRITES=1` (*Match records in
+   Supabase*). None of these goes anywhere else: not the repo, not the page,
+   not a log.
+4. **Deploy.** Choose **Apply**. Render runs `render.yaml`'s `buildCommand`
+   (`NODE_ENV=development npx --yes pnpm@11 install --frozen-lockfile && npx --yes pnpm@11 build`)
+   and then its `startCommand`, `node packages/server/src/serve.ts`.
 5. **Check.** Open the service URL (`https://brick-arena.onrender.com`, or
    the name Render gives it). The title screen should say *Jev is online*.
    `/healthz` answers `ok` without calling Jev.
@@ -252,5 +256,6 @@ since the hosted server has no debug mode:
 ```sh
 pnpm build
 pnpm jev:stub &
+until curl -s -o /dev/null --max-time 1 http://127.0.0.1:18787/; do sleep 0.2; done
 JEV_API_KEY=dummy JEV_BASE_URL=http://127.0.0.1:18787 PORT=8080 pnpm start
 ```
