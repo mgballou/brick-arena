@@ -1,6 +1,7 @@
 import { percentCleared, livesLeft } from '../../engine/src/arena';
 import type { Ask, BoardState } from '../../engine/src/index';
 import { toRequest } from '../../jev/src/wire';
+import type { Consent } from './consent';
 import { MATCHES_PATH, newMatchId, RECORD_VERSION, type JevOutcome, type MatchLine, type RecordSide, type SentState, type SideTotal } from '../../server/src/record';
 
 // The browser's half of the match record (packages/server/src/record.ts): the
@@ -53,6 +54,12 @@ export const sendToServer: Sender = async (id, body, last) => {
     return false;
   }
 };
+
+// Sends only while the player records (consent.ts). A write held back counts
+// as refused, so a log whose player opts out sends nothing more.
+export function whileRecording(consent: Pick<Consent, 'recording'>, send: Sender = sendToServer): Sender {
+  return (id, body, last) => consent.recording ? send(id, body, last) : Promise.resolve(false);
+}
 
 export class MatchLog {
   readonly id: string;

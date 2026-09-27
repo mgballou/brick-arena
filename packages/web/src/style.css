@@ -155,6 +155,9 @@ body {
 .lede { margin: 0; color: #c9ccdb; line-height: 1.5; max-width: 50ch; }
 .lede.small { font-size: 13px; color: var(--muted); }
 .keys { margin: 0; font: 12px var(--mono); color: var(--muted); }
+.notice { margin: 0; max-width: 50ch; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.notice a { color: var(--ink); }
+.notice button.text { padding: 0; }
 
 .legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px; font-size: 13px; color: #c9ccdb; }
 .legend li { display: flex; align-items: center; gap: 7px; }

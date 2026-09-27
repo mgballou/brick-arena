@@ -1,12 +1,14 @@
 import type { PostHog, PostHogConfig } from 'posthog-js';
 import type { AnsweredBy } from '../../jev/src/wire';
 import type { JevOutcome } from '../../server/src/record';
+import { browserStore, pageConsent, type Consent } from './consent';
 
 // What players do, and each Jev choice in brief, as PostHog events
 // (docs/specs/data-collection.md). The page talks to a Client; posthog-js is
 // one only when the build sets VITE_POSTHOG=1, VITE_POSTHOG_KEY and
 // VITE_POSTHOG_HOST. Otherwise the page keeps its events in memory and sends
-// nothing. Debug play, stand-in matches and Do Not Track send nothing at all.
+// nothing. Debug play, stand-in matches, Do Not Track and the title screen's
+// opt-out (consent.ts) send nothing at all.
 // Analytics never touches play: a client that fails is dropped.
 export const SCHEMA = 1;
 
@@ -31,8 +33,9 @@ type Given = { [E in keyof Events]: E extends 'level_ended' ? Omit<Events[E], 'j
 
 export type Sent = { event: string; properties: Record<string, unknown> };
 
-// The seam over PostHog: the page and the tests hold one of these.
-export type Client = { capture(event: string, properties: Record<string, unknown>): void };
+// The seam over PostHog: the page and the tests hold one of these. The
+// tracker tells it when the player opts out or back in.
+export type Client = { capture(event: string, properties: Record<string, unknown>): void; optOut?(): void; optIn?(): void };
 
 // The stand-in for PostHog until its project exists: it keeps the latest
 // events and sends none.
@@ -66,29 +69,57 @@ export const POSTHOG_SETTINGS = {
 export type PostHogLink = { key: string; host: string };
 export type LoadPostHog = () => Promise<{ default: PostHog }>;
 
-// posthog-js, loaded when first needed. Events wait for it in order; if it
-// fails to load, they are dropped from then on.
-export function posthogClient(link: PostHogLink, load: LoadPostHog): Client {
-  let posthog: PostHog | null = null;
-  let failed = false;
-  const waiting: Sent[] = [];
-  void load().then(({ default: loaded }) => {
-    loaded.init(link.key, { api_host: link.host, ...POSTHOG_SETTINGS });
-    posthog = loaded;
-    for (const { event, properties } of waiting.splice(0)) loaded.capture(event, properties);
-  }, () => { failed = true; waiting.length = 0; });
-  return {
-    capture(event, properties) {
-      if (posthog) posthog.capture(event, properties);
-      else if (!failed) waiting.push({ event, properties });
-    },
-  };
+// With `persistence: 'localStorage'`, posthog-js keeps the anonymous id under
+// `ph_<project key>_…`. Removing those keys ends the id.
+export type IdStore = Pick<Storage, 'length' | 'key' | 'removeItem'>;
+export function forgetId(link: PostHogLink, store: IdStore | null) {
+  try {
+    if (!store) return;
+    const kept = Array.from({ length: store.length }, (_, i) => store.key(i)).filter((key): key is string => !!key?.startsWith(`ph_${link.key}_`));
+    for (const key of kept) store.removeItem(key);
+  } catch { /* storage refused; nothing was kept */ }
 }
 
-export function doNotTrack(): boolean {
-  if (typeof navigator === 'undefined' || typeof window === 'undefined') return false;
-  const flags = [navigator.doNotTrack, (window as { doNotTrack?: string }).doNotTrack, (navigator as { msDoNotTrack?: string }).msDoNotTrack];
-  return flags.some(flag => flag === '1' || flag === 'yes');
+// posthog-js, loaded on the first event, so a browser that has opted out
+// never loads it. Events wait for it in order; if it fails to load, they are
+// dropped from then on. Opting out ends the anonymous id: PostHog resets it
+// and opts out if it is loaded, and otherwise its stored copy is removed.
+export function posthogClient(link: PostHogLink, load: LoadPostHog, store: IdStore | null = browserStore()): Client {
+  let posthog: PostHog | null = null;
+  let loading = false;
+  let failed = false;
+  let on = true;
+  const waiting: Sent[] = [];
+  const stop = (loaded: PostHog) => { loaded.reset(true); loaded.opt_out_capturing(); };
+  const start = () => {
+    loading = true;
+    void load().then(({ default: loaded }) => {
+      loaded.init(link.key, { api_host: link.host, ...POSTHOG_SETTINGS });
+      posthog = loaded;
+      // An opt-out on an earlier visit stays in PostHog's own storage.
+      if (!on) stop(loaded);
+      else if (loaded.has_opted_out_capturing()) loaded.opt_in_capturing({ captureEventName: false });
+      for (const { event, properties } of waiting.splice(0)) loaded.capture(event, properties);
+    }, () => { failed = true; waiting.length = 0; });
+  };
+  return {
+    capture(event, properties) {
+      if (!on || failed) return;
+      if (posthog) return posthog.capture(event, properties);
+      waiting.push({ event, properties });
+      if (!loading) start();
+    },
+    optOut() {
+      on = false;
+      waiting.length = 0;
+      if (posthog) stop(posthog);
+      else forgetId(link, store);
+    },
+    optIn() {
+      on = true;
+      posthog?.opt_in_capturing({ captureEventName: false });
+    },
+  };
 }
 
 // Who hears the page's events: nobody in debug or under Do Not Track, PostHog
@@ -102,11 +133,14 @@ export function clientFor({ debug, dnt, link, load }: { debug: boolean; dnt: boo
 type InMatch = { id: string; live: boolean; targets: Map<number, { answered: number; aim: number }> };
 
 // Adds what every event carries (`app`, `build`, `schema`, and `match_id`
-// while a match plays), and sends nothing for a match the stand-in plays.
+// while a match plays), and sends nothing for a match the stand-in plays or
+// while the player has opted out.
 export class Tracker {
   private match: InMatch | null = null;
 
-  constructor(readonly client: Client | null, private readonly build: string | null) {}
+  constructor(readonly client: Client | null, private readonly build: string | null, private readonly consent: Pick<Consent, 'recording' | 'onChange'> | null = null) {
+    consent?.onChange(recording => recording ? client?.optIn?.() : client?.optOut?.());
+  }
 
   startMatch(id: string, opponent: AnsweredBy, properties: Events['match_started']) {
     this.match = { id, live: opponent === 'live', targets: new Map() };
@@ -130,7 +164,7 @@ export class Tracker {
       properties = { ...given, jev_aim_share: tally ? Math.round(tally.aim / tally.answered * 100) / 100 : null };
     }
     if (event === 'match_ended') this.match = null;
-    if (!this.client || (match && !match.live)) return;
+    if (!this.client || (this.consent && !this.consent.recording) || (match && !match.live)) return;
     this.client.capture(event, { app: 'brick-arena', build: this.build, schema: SCHEMA, ...(match ? { match_id: match.id } : {}), ...properties });
   }
 }
@@ -142,7 +176,7 @@ const LINK: PostHogLink | null = import.meta.env.VITE_POSTHOG === '1' && import.
   ? { key: import.meta.env.VITE_POSTHOG_KEY, host: import.meta.env.VITE_POSTHOG_HOST }
   : null;
 
-export function pageTracker(debug: boolean): Tracker {
+export function pageTracker(debug: boolean, consent: Consent = pageConsent): Tracker {
   const load: LoadPostHog | undefined = LINK ? () => import('posthog-js') : undefined;
-  return new Tracker(clientFor({ debug, dnt: doNotTrack(), link: LINK, load }), __BUILD__);
+  return new Tracker(clientFor({ debug, dnt: consent.dnt, link: LINK, load }), __BUILD__, consent);
 }
