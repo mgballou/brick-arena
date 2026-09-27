@@ -22,7 +22,7 @@ export const test = base.extend<{ shot: (name: string) => Promise<void> }, { sta
   shot: async ({ page }, use, testInfo) => {
     await use(async name => {
       const path = testInfo.outputPath(`${name}.png`);
-      await page.screenshot({ path });
+      await page.screenshot({ path, animations: 'disabled' });
       await testInfo.attach(name, { path, contentType: 'image/png' });
     });
   },
