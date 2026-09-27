@@ -4,13 +4,13 @@ import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { askForDecision, createBoard } from '../../engine/src/index';
+import { askForDecision, createBoard, type Ask } from '../../engine/src/index';
 import { CAP_DEFAULTS, capFromEnv, createCap } from './cap';
 import { linkFromEnv } from './key';
 import { askUpstream, checkHealth, jevMiddleware, type ProxyOptions } from './proxy';
 import { startStandIn } from './stand-in-server';
 import { httpTransport, readRecording, recordingTransport } from './transport';
-import { answeredBy, DOWN_STATUS, refusal, toRequest, type SystemOneRequest } from './wire';
+import { answeredBy, askRefusal, DOWN_STATUS, healthRequest, refusal, toRequest, type SystemOneRequest } from './wire';
 
 // Every call here goes to the local stand-in or to a port nothing listens on.
 // None reaches live Jev, and no key but this dummy one is read.
@@ -114,7 +114,7 @@ describe('askUpstream', () => {
   it('names a reply that is not JSON', async () => {
     const server = createServer((_, res) => res.end('<html>'));
     await new Promise<void>(done => server.listen(0, '127.0.0.1', done));
-    const outcome = await askUpstream(options(`http://127.0.0.1:${(server.address() as AddressInfo).port}`, true), {});
+    const outcome = await askUpstream(options(`http://127.0.0.1:${(server.address() as AddressInfo).port}`, true), healthRequest('jev-test'));
     expect(outcome).toEqual({ ok: false, offline: 'Jev answered with something that is not JSON.' });
     server.close();
   });
@@ -294,6 +294,14 @@ describe('only the game asks', () => {
       expect(seen).toEqual([{ ...request, model: 'jev-test' }]);
     });
   }
+
+  it('passes every ask in the recorded session and the synthetic recording', () => {
+    const session = readFileSync('docs/session.ndjson', 'utf8').trim().split('\n').map(line => (JSON.parse(line) as { ask: Ask }).ask);
+    const recorded = readRecording('docs/jev-calls.synthetic.ndjson').map(record => record.request);
+    expect(new Set(session.map(ask => ask.question))).toEqual(new Set(['target', 'chase']));
+    const refusals = [...session.map(ask => askRefusal(toRequest(ask, 'jev'), 'jev')), ...recorded.map(request => askRefusal(request, request.model))];
+    expect(refusals.filter(Boolean)).toEqual([]);
+  });
 
   it("forwards the check before a match", async () => {
     const { url, seen, close } = await serve();
