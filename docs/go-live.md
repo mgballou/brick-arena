@@ -13,26 +13,46 @@ service by that name yet.
 
 ### Merge the stack
 
-The PRs are stacked, each based on the one before. The repo has
-*Automatically delete head branches* off, so GitHub will not move a PR's base
-to `main` when the PR under it merges. Merging #5 before you move its base
-would merge it into #4's branch, not `main`. Use **Create a merge commit**, not
-squash: a squash gives each later PR a history that no longer matches `main`,
-and its diff fills with commits `main` already has.
+Squash each PR, from the bottom, in this order. Three things make a stack
+harder to squash than one PR:
 
-1. Merge #4 `ba-jev-keeps-its-balls` into `main` (GitHub, PR #4: **Ready for review**, then **Create a merge commit**).
-2. On #5 `ba-match-telemetry`, change the base to `main` (**Edit** beside the title), then merge it.
-3. On #6 `ba-data-collection-spec`, change the base to `main`, then merge it.
-4. On #7 `ba-supabase-writes`, change the base to `main`, then merge it.
-5. On #8 `ba-posthog-events`, change the base to `main`, then merge it.
-6. On #9 `ba-keep-awake-and-export`, change the base to `main`, then merge it.
-7. On #10 `ba-notice-and-opt-out`, change the base to `main`, then merge it.
-8. Check that CI passes on `main` (GitHub → Actions → `ci.yml`).
+- The repo has *Automatically delete head branches* off, so GitHub will not
+  move a PR's base to `main` when the PR under it merges. Change it by hand
+  (**Edit** beside the title).
+- After a squash, the next branch still holds the commits squashed into
+  `main`, and from #7 up its later edits to the same lines conflict with them.
+  Each branch already holds everything below it, so bring it up to date with a
+  merge that keeps its own files, and only once the check prints `same`, since
+  `-s ours` drops anything else on `main`:
+
+  ```sh
+  git fetch origin
+  git diff --quiet origin/main origin/<branch below> && echo same
+  git switch <branch> && git pull && git merge -s ours origin/main -m 'Take main after the squash of the PR below' && git push
+  ```
+
+- The squash message lists every commit in the PR, which now reaches back to
+  #4. Keep this PR's own, which
+  `git log --no-merges --format='* %s' origin/<branch below>..origin/<branch>`
+  prints, and delete the rest and any `Co-Authored-By:` or *Generated with
+  Claude Code* line.
+
+1. #4 `ba-jev-keeps-its-balls`: **Squash and merge** into `main`; it already holds `main`.
+2. #5 `ba-match-telemetry`: base to `main`, merge `main` as above (below: `ba-jev-keeps-its-balls`), squash.
+3. #6 `ba-data-collection-spec`: base to `main`, merge `main` (below: `ba-match-telemetry`), squash.
+4. #7 `ba-supabase-writes`: base to `main`, merge `main` (below: `ba-data-collection-spec`), squash.
+5. #8 `ba-posthog-events`: base to `main`, merge `main` (below: `ba-supabase-writes`), squash.
+6. #9 `ba-keep-awake-and-export`: base to `main`, merge `main` (below: `ba-posthog-events`), squash.
+7. #10 `ba-notice-and-opt-out`: base to `main`, merge `main` (below: `ba-keep-awake-and-export`), squash.
+8. #12 `ba-clean-for-show`: base to `main`, merge `main` (below: `ba-notice-and-opt-out`), squash.
+9. #13 `ba-readme-film`: base to `main`, merge `main` (below: `ba-clean-for-show`), squash.
+10. #11 `ba-go-live`, this list's own PR: squash it last; it is based on `main` and merges over the stack with no conflict.
+11. Check that CI passes on `main` (GitHub → Actions → `ci.yml`).
 
 ### Render
 
-9. Sign up at <https://dashboard.render.com> with GitHub, and give Render's GitHub app access to the private `brick-arena` repo (Render dashboard; GitHub → Settings → Applications).
-10. Choose **New → Blueprint**, pick `brick-arena`, keep branch `main` (Render dashboard; reads `render.yaml`).
+12. Sign up at <https://dashboard.render.com> with GitHub, and give Render's GitHub app access to the private `brick-arena` repo (Render dashboard; GitHub → Settings → Applications).
+13. Choose **New → Blueprint**, pick `brick-arena`, keep branch `main` (Render dashboard; reads `render.yaml`).
 
 ### Secrets
 
@@ -40,34 +60,34 @@ Render asks for every `sync: false` value in `render.yaml` when it creates the
 Blueprint. After the stack merges there are four, not the two that
 `docs/deploy.md` step 3 names.
 
-11. `JEV_API_KEY`: paste the token in `~/.jev-key`, the value only (Render's Blueprint form).
-12. `ADMIN_SECRET`: paste the output of `openssl rand -base64 24`, and keep a copy in your password manager (Render's Blueprint form).
-13. `SUPABASE_URL` and `SUPABASE_SECRET_KEY`: leave them empty for now; writes stay off without `SUPABASE_WRITES=1`. If Render refuses an empty value, do steps 17 and 18 first and paste the real ones (Render's Blueprint form). The dry run could not test this form.
-14. Choose **Apply**, and watch the build log end in `✓ built` (Render → brick-arena → Events).
-15. Open `/healthz` and see `ok`; open `/` and see *Jev is online* on the title screen, with the data notice and its Privacy link (service URL).
-16. Decide whether match records on disk must last. On the free plan they vanish when the service sleeps, 15 minutes after the last visit. Keeping them means `plan: starter`, a 1 GB disk and `MATCHES_DIR` in `render.yaml`, about $7.25 a month (`docs/deploy.md`, *Where they live, and why a disk*). Once Supabase holds the rows, free is enough.
+14. `JEV_API_KEY`: paste the token in `~/.jev-key`, the value only (Render's Blueprint form).
+15. `ADMIN_SECRET`: paste the output of `openssl rand -base64 24`, and keep a copy in your password manager (Render's Blueprint form).
+16. `SUPABASE_URL` and `SUPABASE_SECRET_KEY`: leave them empty for now; writes stay off without `SUPABASE_WRITES=1`. If Render refuses an empty value, do steps 20 and 21 first and paste the real ones (Render's Blueprint form). The dry run could not test this form.
+17. Choose **Apply**, and watch the build log end in `✓ built` (Render → brick-arena → Events).
+18. Open `/healthz` and see `ok`; open `/` and see *Jev is online* on the title screen, with the data notice and its Privacy link (service URL).
+19. Decide whether match records on disk must last. On the free plan they vanish when the service sleeps, 15 minutes after the last visit. Keeping them means `plan: starter`, a 1 GB disk and `MATCHES_DIR` in `render.yaml`, about $7.25 a month (`docs/deploy.md`, *Where they live, and why a disk*). Once Supabase holds the rows, free is enough.
 
 ### Supabase
 
-17. Create the project: Free plan, region West US (Oregon), `us-west-2` (Supabase dashboard).
-18. Run `supabase/migrations/20260927000000_match_record.sql`, then `20260927020000_keep_awake.sql`, in the SQL Editor (Supabase dashboard).
-19. On the service set `SUPABASE_URL`, `SUPABASE_SECRET_KEY` and `SUPABASE_WRITES=1`; saving redeploys (Render → brick-arena → Environment).
-20. Add the same `SUPABASE_URL` and `SUPABASE_SECRET_KEY` as repository secrets (GitHub → Settings → Secrets and variables → Actions).
-21. Run *Supabase weekly* by hand and see all three steps pass (GitHub → Actions → `supabase-weekly.yml` → **Run workflow**).
-22. Play one match against live Jev and see its row in `matches` (Supabase → Table Editor).
+20. Create the project: Free plan, region West US (Oregon), `us-west-2` (Supabase dashboard).
+21. Run `supabase/migrations/20260927000000_match_record.sql`, then `20260927020000_keep_awake.sql`, in the SQL Editor (Supabase dashboard).
+22. On the service set `SUPABASE_URL`, `SUPABASE_SECRET_KEY` and `SUPABASE_WRITES=1`; saving redeploys (Render → brick-arena → Environment).
+23. Add the same `SUPABASE_URL` and `SUPABASE_SECRET_KEY` as repository secrets (GitHub → Settings → Secrets and variables → Actions).
+24. Run *Supabase weekly* by hand and see all three steps pass (GitHub → Actions → `supabase-weekly.yml` → **Run workflow**).
+25. Play one match against live Jev and see its row in `matches` (Supabase → Table Editor).
 
 ### PostHog
 
-23. Create the project on US Cloud, the spec's plan (<https://us.posthog.com>).
-24. Turn IP capture off (PostHog → Project settings).
-25. On the service set `VITE_POSTHOG_KEY` (`phc_…`), `VITE_POSTHOG_HOST=https://us.i.posthog.com` and `VITE_POSTHOG=1` (Render → brick-arena → Environment).
-26. Run **Manual Deploy → Deploy latest commit**, since the page reads the three `VITE_` values when it is built (Render dashboard).
-27. Play one match and see its events arrive (PostHog → Activity).
-28. In a PR, replace the two *pending* lines in `privacy.html` with the real PostHog region and Supabase state, and state PostHog's free-plan event retention (`privacy.html`).
+26. Create the project on US Cloud, the spec's plan (<https://us.posthog.com>).
+27. Turn IP capture off (PostHog → Project settings).
+28. On the service set `VITE_POSTHOG_KEY` (`phc_…`), `VITE_POSTHOG_HOST=https://us.i.posthog.com` and `VITE_POSTHOG=1` (Render → brick-arena → Environment).
+29. Run **Manual Deploy → Deploy latest commit**, since the page reads the three `VITE_` values when it is built (Render dashboard).
+30. Play one match and see its events arrive (PostHog → Activity).
+31. In a PR, replace the two *pending* lines in `privacy.html` with the real PostHog region and Supabase state, and state PostHog's free-plan event retention (`privacy.html`).
 
 ### Play it
 
-29. In a PR, put the service URL in the README's *Play it* line, which now reads `` `<hosted URL — filled in after the deploy>` `` (`README.md`, line 26).
+32. In a PR, put the service URL in the README's *Play it* line, which now reads `` `<hosted URL — filled in after the deploy>` `` (`README.md`, line 30 once #13 merges).
 
 ## Before the repo goes public
 
@@ -95,7 +115,7 @@ the stack merges).
 
 1. **he decides — one AI-attribution trailer on `main`.** `e561ac1`
    (*Open each level with a countdown…*, 25 September) ends with
-   `Co-Authored-By: Claude Opus 5.5`. It sits on `main` and on all ten `ba-*`
+   `Co-Authored-By: Claude Opus 5.5`. It sits on `main` and on every `ba-*`
    branches. Rewriting it means a force-push of `main` and a rebase of the
    whole stack. Even then `refs/pull/2/head` keeps it: PR #2 carried it, and
    only GitHub Support can remove a PR ref.
@@ -146,11 +166,11 @@ the stack merges).
    from the page, but GitHub shows the earlier text to anyone who opens the
    body's *edited* menu.
 8. **a row fixes — `CLAUDE.md` and `AGENTS.md` name the private desk.**
-   `CLAUDE.md:109–112` and `AGENTS.md:14–17` send agents to `/herdr` and
-   `/asking-laila` and name Matthew and Laila. Neither skill exists outside
-   this machine.
+   `CLAUDE.md:109–112` and `AGENTS.md:14–17` send agents to two skills that
+   exist only on this machine, and name the people behind them. #12 removes
+   the paragraph.
 9. **a row fixes — `docs/where-it-is.md` hard-codes a home path.** Lines 11
-   and 32 run `pnpm --dir ~/projects/brick-arena …`.
+   and 32 run `pnpm --dir` on a path under the home directory. #12 removes it.
 
 ### Dead code
 
@@ -287,7 +307,7 @@ the hosted server has no debug mode, which is right.
 - **Two new start-up log lines**, `[matches] …` and `[supabase] …`, which say
   where records go and whether rows are written.
 - **One new outside job**: `.github/workflows/supabase-weekly.yml`, which needs
-  the two GitHub secrets in step 20.
+  the two GitHub secrets in step 23.
 
 ### Fixes the stack needs, for its own branches
 
@@ -313,7 +333,7 @@ These belong in the stack's files, not this branch.
   store; Render downloads all 62 packages, and `npx --yes pnpm@11` needs the
   network at build time.
 - Whether Render's Blueprint form accepts an empty `sync: false` value
-  (step 13).
+  (step 16).
 - The online title screen. With no live Jev, both runs show only the down
   page, which carries no data notice and no Privacy link; the notice renders
   on the online title screen (`notice.test.tsx`).
