@@ -115,7 +115,7 @@ spread, most seeds play the same game.
 | 421 ± 150 ms | landing | 7 of 250 | 329 | 30 |
 | | aim | 91 of 250 | 436 | 215 (5 ties) |
 
-728 ms is the one live Jev call (22 September); 421 ms is the stand-in's median
+728 ms is the first live Jev call (22 September); 421 ms is the stand-in's median
 in the browser. By level, at 728 ms:
 
 | Level | landing cleared | aim cleared | aim median clear | aim's share cleared at 90 s, mean |
