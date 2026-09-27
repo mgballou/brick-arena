@@ -23,6 +23,7 @@ beforeAll(async () => {
   const saved = { ...process.env };
   // Vitest runs with NODE_ENV=test, which would build React's development copy.
   Object.assign(process.env, { NODE_ENV: 'production', JEV_API_KEY: DUMMY_KEY, TYPESAFE_API_KEY: DUMMY_KEY });
+  for (const name of ['VITE_POSTHOG', 'VITE_POSTHOG_KEY', 'VITE_POSTHOG_HOST']) delete process.env[name];
   try {
     await build({ root, mode: 'production', configFile: join(root, 'vite.config.ts'), logLevel: 'silent', build: { outDir, emptyOutDir: true } });
   } finally {
@@ -46,6 +47,12 @@ describe('the built client', () => {
     const names = ['SUPABASE_SECRET_KEY', 'sb_secret_', '/rest/v1/'];
     const named = [...shipped].flatMap(([name, text]) => names.filter(word => text.includes(word)).map(word => `${name} names ${word}`));
     expect(named).toEqual([]);
+  });
+
+  // No PostHog project exists yet, so the flag stays off and the page loads
+  // none of it (analytics.ts).
+  it('holds no PostHog with the flag off', () => {
+    expect([...shipped].filter(([, text]) => /posthog/i.test(text)).map(([name]) => name)).toEqual([]);
   });
 
   it('names no TypeSafe host', () => {
