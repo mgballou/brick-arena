@@ -7,6 +7,7 @@ import {
 } from '../../engine/src/arena';
 import { burst, reducedMotion, Sound, stepParticles } from './feedback';
 import type { AnsweredBy, Down } from '../../jev/src/wire';
+import { MemoryClient, pageTracker } from './analytics';
 import { Checking, DownPage } from './down';
 import { askJev, DEBUG, probeJev, type Probe } from './jev';
 import { FLUSH_MS, jevLine, lostLines, MatchLog, sideTotal } from './match-log';
@@ -22,6 +23,8 @@ const TICK_MS = 1000 / ARENA.ticksPerSecond;
 // No live Jev, no game. An offline answer pauses the match at once; so do this
 // many timeouts in a row, since a board with no answers is not Jev playing.
 const MISSED_AFTER = 3;
+// The page's PostHog events (analytics.ts). Debug play sends none.
+const analytics = pageTracker(DEBUG);
 
 type Phase = 'title' | 'banner' | 'playing' | 'paused' | 'offline' | 'levelEnd' | 'final';
 type Who = 'human' | 'jev';
@@ -71,6 +74,7 @@ const secondsLeft = (match: Match) => ARENA.levelSeconds - match.frame / ARENA.t
 const median = (values: number[]) => values.length ? [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)] : null;
 const clock = (seconds: number) => { const s = Math.max(0, Math.ceil(seconds)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 const title = (name: string) => name[0].toUpperCase() + name.slice(1);
+const secondsIn = (match: Match) => Math.round(match.frame / ARENA.ticksPerSecond * 10) / 10;
 
 type SideHud = { score: number; levelScore: number; percent: number; lives: number; status: SideStatus; serving: boolean };
 type Hud = { level: number; seconds: number; human: SideHud; jev: SideHud; stats: JevStats; opponent: AnsweredBy };
@@ -80,11 +84,13 @@ function snapshot(match: Match): Hud {
   return { level: match.level, seconds: secondsLeft(match), human: side(match.human), jev: side(match.jev), stats: { ...match.stats, ms: match.stats.ms }, opponent: match.opponent };
 }
 
-// The match is over, finished or not: its last line goes to the server now.
-function endRecord(match: Match, reason: 'final' | 'down' | 'left') {
+// The match is over, finished or not: its last line goes to the server now,
+// as a beacon when the page is closing.
+function endRecord(match: Match, reason: 'final' | 'down' | 'left', closing = false) {
   if (!match.log || match.log.done) return;
   match.log.end(reason, match.human.score, match.jev.score);
-  void match.log.flush();
+  void match.log.flush(closing);
+  analytics.track('match_ended', { reason, you: match.human.score, jev: match.jev.score, levels_won: match.results.filter(r => r.winner === 'human').length });
 }
 
 // The first check runs before the game mounts. When the forwarder says Jev is
@@ -93,6 +99,9 @@ function endRecord(match: Match, reason: 'final' | 'down' | 'left') {
 export function Root({ initial = 'checking' }: { initial?: Probe | 'checking' }) {
   const [probe, setProbe] = useState<Probe | 'checking'>(initial);
   useEffect(() => { if (initial === 'checking') void probeJev().then(setProbe); }, [initial]);
+  useEffect(() => {
+    analytics.track('session_started', { viewport: `${window.innerWidth}x${window.innerHeight}`, pointer: window.matchMedia('(pointer: coarse)').matches ? 'coarse' : 'fine', tuning: TUNING_NAME });
+  }, []);
   if (probe === 'checking') return <Checking />;
   if (!probe.ok && probe.down) return <DownPage down={probe.down} onProbe={setProbe} />;
   return <App initialProbe={probe} onDown={down => setProbe({ ok: false, reason: 'Jev is down.', down })} />;
@@ -117,6 +126,9 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
   const rulesPaused = useRef(false);
 
   const setPhase = useCallback((next: Phase) => {
+    const was = phaseRef.current, match = game.current;
+    if (was === 'playing' && next === 'paused') analytics.track('paused', { level: match.level, seconds_in: secondsIn(match) });
+    if (was === 'paused' && next === 'playing') analytics.track('resumed', { level: match.level, seconds_in: secondsIn(match) });
     phaseRef.current = next;
     setPhaseState(next);
   }, []);
@@ -125,6 +137,7 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     rulesPaused.current = phaseRef.current === 'playing';
     if (rulesPaused.current) setPhase('paused');
     setRules(true);
+    analytics.track('rules_opened', {});
   }, [setPhase]);
 
   const closeRules = useCallback(() => {
@@ -152,6 +165,7 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     match.human = newSide('human', level, match.human.score);
     match.jev = newSide('jev', level, match.jev.score);
     match.log?.write({ type: 'level', level, name: levelNames[level] });
+    analytics.track('level_started', { level, name: levelNames[level] });
     keys.current.launch = false;
     setHud(snapshot(match));
     setPhase('banner');
@@ -167,6 +181,7 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     endRecord(game.current, 'left');
     game.current = newMatch(result.answeredBy);
     game.current.log = new MatchLog({ seed: SEED, tuning: TUNING_NAME, opponent: result.answeredBy, debug: DEBUG });
+    analytics.startMatch(game.current.log.id, result.answeredBy, { seed: SEED, tuning: TUNING_NAME });
     startLevel(0);
   }, [checkJev, startLevel]);
 
@@ -174,7 +189,9 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     const match = game.current;
     const human = levelSide(match.human), jev = levelSide(match.jev);
     const winner = levelWinner(human, jev);
-    match.results.push({ level: match.level, winner, human: match.human.levelScore, jev: match.jev.levelScore, humanPercent: percentCleared(match.human.state), jevPercent: percentCleared(match.jev.state), humanCleared: human.clearedAt !== null, jevCleared: jev.clearedAt !== null });
+    const result: LevelResult = { level: match.level, winner, human: match.human.levelScore, jev: match.jev.levelScore, humanPercent: percentCleared(match.human.state), jevPercent: percentCleared(match.jev.state), humanCleared: human.clearedAt !== null, jevCleared: jev.clearedAt !== null };
+    match.results.push(result);
+    analytics.track('level_ended', { level: result.level, winner, you_percent: result.humanPercent, jev_percent: result.jevPercent });
     if (match.log) {
       const at = { level: match.level, frame: match.frame };
       // On a whole second the tick has just written this progress line.
@@ -244,7 +261,9 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     const at = { level: match.level, frame: match.frame, tick: match.jev.state.tick, lead: leadTicks };
     void askJev(ask).then(answer => {
       if (game.current !== match) return;
-      match.log?.write(jevLine(at, ask, match.gen !== gen && answer.ok ? 'stale' : answer.ok ? 'answered' : answer.kind, answer.ms, answer.ok ? answer.choice : undefined));
+      const outcome = match.gen !== gen && answer.ok ? 'stale' : answer.ok ? 'answered' : answer.kind;
+      match.log?.write(jevLine(at, ask, outcome, answer.ms, answer.ok ? answer.choice : undefined));
+      analytics.track('jev_decision', { level: at.level, question: ask.question, choice: answer.ok ? answer.choice : null, outcome, answer_ms: answer.ms, lead_ticks: leadTicks });
       if (match.gen !== gen) return;
       stats.pending = false;
       if (!answer.ok && answer.kind === 'down') { endRecord(match, 'down'); onDown(answer.down); return; }
@@ -294,7 +313,10 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     const { state, events } = arenaStep(before, TUNING);
     side.state = state;
     feel(side, before, events);
-    if (events.ballsLost.length) for (const line of lostLines({ level: match.level, frame: match.frame, side: side.who }, events.ballsLost, events.lifeLost, state)) match.log?.write(line);
+    if (events.ballsLost.length) for (const line of lostLines({ level: match.level, frame: match.frame, side: side.who }, events.ballsLost, events.lifeLost, state)) {
+      match.log?.write(line);
+      if (line.type === 'lost') analytics.track('ball_lost', { level: line.level, side: line.side, x: line.x, seconds_in: secondsIn(match), life_lost: line.lifeLost });
+    }
     if (events.lifeLost) side.serving = true;
     if (state.completed && side.clearedAt === null) side.clearedAt = match.frame;
     // The score is the board, not a tally of events: what is cleared now, plus
@@ -411,6 +433,15 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     return () => { window.removeEventListener('keydown', onDown); window.removeEventListener('keyup', onUp); };
   }, [advance, closeRules, openRules, probe, rules, setPhase, startGame]);
 
+  // Once each time the title screen shows, when the check before it is done.
+  const titleSeen = useRef(false);
+  useEffect(() => {
+    if (phase !== 'title') { titleSeen.current = false; return; }
+    if (probe === 'checking' || titleSeen.current) return;
+    titleSeen.current = true;
+    analytics.track('title_shown', { jev_online: probe.ok, probe_ms: probe.ok ? probe.ms : null });
+  }, [phase, probe]);
+
   // The level banner steps aside on its own.
   useEffect(() => {
     if (phase !== 'banner') return;
@@ -422,19 +453,16 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
   // mid-match says so, in a beacon the browser sends after it is gone.
   useEffect(() => {
     const timer = setInterval(() => void game.current.log?.flush(), FLUSH_MS);
-    const onHide = () => {
-      const match = game.current;
-      if (!match.log || match.log.done) return;
-      match.log.end('left', match.human.score, match.jev.score);
-      void match.log.flush(true);
-    };
+    const onHide = () => endRecord(game.current, 'left', true);
     window.addEventListener('pagehide', onHide);
     return () => { clearInterval(timer); window.removeEventListener('pagehide', onHide); };
   }, []);
 
-  // A read-only hook for scripted play-throughs; it steers nothing.
+  // A read-only hook for scripted play-throughs; it steers nothing. `events`
+  // is what the page would have sent PostHog, while the stand-in holds them.
   useEffect(() => {
     (window as unknown as { __arena: unknown }).__arena = {
+      events: () => analytics.client instanceof MemoryClient ? analytics.client.sent : [],
       read: () => {
         const match = game.current;
         const side = (s: Side) => ({ ...snapshot(match)[s.who], paddle: s.state.paddleX + s.state.paddleWidth / 2, paddleWidth: s.state.paddleWidth, balls: s.state.balls.map(b => ({ x: b.x, y: b.y, vx: b.vx, vy: b.vy })), powerUps: s.state.powerUps.map(p => ({ x: p.x, y: p.y, kind: p.kind })), bricksLeft: s.state.bricks.filter(b => !b.unbreakable && b.durability > 0).length });
