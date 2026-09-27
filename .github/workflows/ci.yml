@@ -33,3 +33,35 @@ jobs:
 
       - name: typecheck
         run: pnpm exec tsc -b
+
+  db:
+    name: Supabase path on Postgres and PostgREST
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: install
+        run: pnpm install --frozen-lockfile
+
+      # The stack of supabase/local/compose.yml, not job service containers:
+      # those start before the checkout, so they can't mount its roles and its
+      # gateway, and the proof would run on a stack no one runs locally.
+      - name: start Postgres and PostgREST
+        run: pnpm db:up
+
+      - name: test:db
+        run: pnpm test:db
+
+      - name: stack logs
+        if: failure()
+        run: docker compose -f supabase/local/compose.yml logs
