@@ -142,6 +142,11 @@ describe('each match as rows', () => {
     await writer.flush();
     expect(writer.pendingBytes()).toBeLessThanOrEqual(1500);
     expect(logged.some(line => /^dropped \d+ waiting rows, past 1500 bytes$/.test(line))).toBe(true);
+    // The match row stays, and still goes first once Supabase answers.
+    client.refuse(null);
+    await writer.flush();
+    expect(client.calls[0].table).toBe('matches');
+    expect(lastMatchRow(client).end_reason).toBe('final');
   });
 
   it('writes a match posted to the hosted server, after answering it', async () => {

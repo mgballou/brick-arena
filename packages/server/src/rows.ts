@@ -61,11 +61,13 @@ export function createRowWriter(client: RowClient, options: { build?: string | n
     }
   };
 
-  // Past the limit the oldest go first.
+  // Past the limit the oldest go first, all but the match rows: they are small,
+  // and without one every row after it would point at no match.
   const trim = () => {
     let dropped = 0;
-    while (pending > maxPendingBytes && queue.length) {
-      const op = queue.shift()!;
+    let oldest: number;
+    while (pending > maxPendingBytes && (oldest = queue.findIndex(op => op.table !== 'matches')) >= 0) {
+      const [op] = queue.splice(oldest, 1);
       pending -= op.bytes;
       dropped += op.rows.length;
     }

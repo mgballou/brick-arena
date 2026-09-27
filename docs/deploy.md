@@ -58,6 +58,8 @@ dashboard). Saving one redeploys.
 | `JEV_BASE_URL`, `JEV_MODEL` | `https://api.typesafe.ai`, `jev-latest` | Where Jev is. Leave them unset. |
 | `MATCHES_DIR` | `var/matches` in the checkout | Where match records go (see *Match records*). Set it only with a disk. |
 | `ADMIN_SECRET` | none | The one password that reads match records. Unset, no one reads them. |
+| `SUPABASE_WRITES` | off | `1` writes each live match to Supabase as rows too (see *Match records in Supabase*). |
+| `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | none | The project's URL and its secret key (`sb_secret_…`). Writes need both and the flag. |
 
 ## When Jev is down
 
@@ -161,6 +163,25 @@ Merge to `main`, and Render moves the service to Starter and mounts the disk. Se
 reach 500 MB, about 1000 matches, and no more for one match past 4 MB, so
 1 GB is room enough. It refuses a match whose id is dated more than an hour
 from its own clock, so no record can hold the top of the list.
+
+## Match records in Supabase
+
+The server can also write each live match as rows in Supabase, the store
+`docs/specs/data-collection.md` settles on. It is off until the project exists:
+
+1. Create the Supabase project: Free plan, region West US (Oregon), `us-west-2`.
+2. Run `supabase/migrations/` in its SQL Editor, oldest file first, or
+   `supabase db push`. The tables have row-level security on and no policies,
+   so the publishable key reads and writes nothing.
+3. On the service set `SUPABASE_URL`, `SUPABASE_SECRET_KEY` and
+   `SUPABASE_WRITES=1`.
+
+The files in `MATCHES_DIR` go on as before. The server writes rows after it has
+answered the browser, and only for matches against live Jev outside debug
+mode. When Supabase refuses a write, the log says so once per outage
+(`[supabase] refused …`); the server keeps up to 4 MB of rows in memory and
+tries again on the next write or after 30 seconds. A restart empties that
+memory, and matches in play across it send no more rows.
 
 ## Trying the hosted build locally
 

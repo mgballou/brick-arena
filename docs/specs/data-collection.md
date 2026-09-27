@@ -135,6 +135,7 @@ create table jev_calls (
   n           integer not null,      -- order within the match
   level       smallint not null,
   frame       integer not null,
+  tick        integer not null,      -- the board on screen when asked
   lead        smallint not null,
   question    text not null,
   options     jsonb not null,
@@ -158,13 +159,15 @@ create table match_events (          -- launch, lost ball, level start and end
 create table level_progress (        -- the clear once a second, one row a level
   match_id    text not null references matches on delete cascade,
   level       smallint not null,
-  samples     jsonb not null,        -- [[frame, you%, jev%], …]
+  samples     jsonb not null,        -- [[frame, human, jev], …], each side a SideTotal
   primary key (match_id, level)
 );
 ```
 
 The version lives in `supabase/migrations/` in this repo, one SQL file a
-change. Row-level security is on for every table with **no policies**, so the
+change. `tick` and each side's whole total in `samples` go beyond the first
+draft of these tables, so the monthly export can rebuild record version 1
+lines. Row-level security is on for every table with **no policies**, so the
 public key can read and write nothing.
 
 ### Who writes: the game server, with the secret key

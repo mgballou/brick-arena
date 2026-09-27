@@ -42,6 +42,12 @@ describe('the built client', () => {
     expect([...shipped].filter(([, text]) => text.includes(DUMMY_KEY)).map(([name]) => name)).toEqual([]);
   });
 
+  it('names no Supabase secret or its door', () => {
+    const names = ['SUPABASE_SECRET_KEY', 'sb_secret_', '/rest/v1/'];
+    const named = [...shipped].flatMap(([name, text]) => names.filter(word => text.includes(word)).map(word => `${name} names ${word}`));
+    expect(named).toEqual([]);
+  });
+
   it('names no TypeSafe host', () => {
     const hosts = [new URL(JEV_DEFAULTS.baseUrl).host, 'typesafe.ai', 'ai-gateway.vercel.sh', '127.0.0.1:18787'];
     const named = [...shipped].flatMap(([name, text]) => hosts.filter(host => text.includes(host)).map(host => `${name} names ${host}`));
