@@ -30,7 +30,7 @@ export const MATCHES_DEFAULTS = {
 } as const;
 
 export type StoreLimits = { maxTotalBytes: number; maxMatchBytes: number };
-export type Refused = 'bad-line' | 'no-start' | 'started' | 'bad-time' | 'full' | 'match-full';
+type Refused = 'bad-line' | 'no-start' | 'started' | 'bad-time' | 'full' | 'match-full';
 export type MatchStore = {
   dir: string;
   append: (id: string, lines: MatchLine[]) => 'ok' | Refused;
