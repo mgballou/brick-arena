@@ -69,8 +69,10 @@ count of late and failed calls.
 
 ## What is known so far
 
-One call has gone to live Jev. Every other number comes from the stand-in: a scripted rule
-in Jev's seat, sent through Jev's exact wire, answering at Jev's measured speed. Those
+One call to live Jev is measured. A match against live Jev on 25 September left no record
+([docs/scoring.md](docs/scoring.md#keeping-the-ball)). Every other number comes from the
+stand-in: a scripted rule in Jev's seat, sent through Jev's exact wire, answering at Jev's
+measured speed. Those
 numbers show what the arena rewards and what lag costs. They do not show what Jev does.
 
 **Jev answers in time.** One call through the `smoke` command, 22 September: HTTP 200 in
