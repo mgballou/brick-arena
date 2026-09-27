@@ -8,7 +8,8 @@ too … like the key services that people use for this, not rolling our own"*,
 and *"especially at this level which will likely be free."*
 
 So: two standard services, both on their free plans, and only the glue built
-here.
+here. Revised again after his answers to the six decisions at 11:33 PM the
+same day (see the last section); one question is left, PostHog's region.
 
 ## The plan in one table
 
@@ -57,10 +58,10 @@ Autocapture off, so only these count against the free allowance. Names are
 
 | Event | Properties |
 | --- | --- |
-| `session_started` | `viewport`, `pointer` (`fine`/`coarse`), `tuning`, `debug` (browser and OS come from PostHog itself) |
+| `session_started` | `viewport`, `pointer` (`fine`/`coarse`), `tuning` (browser and OS come from PostHog itself) |
 | `title_shown` | `jev_online`, `probe_ms` |
 | `rules_opened` | — |
-| `match_started` | `seed`, `tuning`, `opponent` (`live`/`stand-in`) |
+| `match_started` | `seed`, `tuning` |
 | `level_started` | `level`, `name` |
 | `ball_lost` | `level`, `side`, `x`, `seconds_in`, `life_lost` |
 | `paused`, `resumed` | `level`, `seconds_in` |
@@ -78,17 +79,18 @@ by hundreds.
 
 ### Setup
 
-- PostHog Cloud **EU** (Frankfurt), one project.
+- PostHog Cloud, one project. **US or EU is the one open question**; the
+  recommendation is US (see *Regions*).
 - `posthog-js` in the page: `autocapture: false`, `person_profiles: 'never'`
   (no person profiles, every event anonymous), IP capture off in project
-  settings, `respect_dnt: true`.
-- Persistence: `'memory'` keeps nothing in the browser, so each visit is a new
-  anonymous visitor. Counting **returning** players needs `localStorage`
-  persistence (decision 1).
-- Session replay: allowed on the free plan, but the board is drawn on a canvas,
-  and whether replay captures it is not verified. Try it on one session before
-  counting on it (decision 3).
-- Stand-in and debug play is not sent at all (decision 4).
+  settings, `respect_dnt: true`, `disable_session_recording: true`.
+- Persistence: `'localStorage'` (decision 1). `posthog-js` makes a random
+  anonymous id on the first visit and keeps it in the browser, so a returning
+  player counts once. The page never calls `identify`, so the id stays linked
+  to nothing; clearing site data or opting out ends it.
+- Session replay: off (decision 3).
+- Stand-in and debug play is not sent at all (decision 4): with `VITE_DEBUG=1`
+  the page loads no PostHog and sends no match lines.
 
 ### The first four questions, as PostHog insights
 
@@ -120,7 +122,7 @@ create table matches (
   ended_at    timestamptz,
   seed        integer not null,
   tuning      text not null,
-  opponent    text not null,         -- live | stand-in
+  opponent    text not null,         -- always live; kept to match record v1
   end_reason  text,                  -- final | down | left
   score_you   integer,
   score_jev   integer,
@@ -169,7 +171,8 @@ public key can read and write nothing.
 
 The browser keeps sending its lines to the game server (`POST /api/matches`,
 as today). The server checks them as it does now (known line types, size per
-write, per match and in total), then inserts rows with the Supabase **secret**
+write, per match and in total), refuses a match whose `start` line names the
+stand-in or debug, then inserts rows with the Supabase **secret**
 key, held on Render like `JEV_API_KEY`.
 
 Why not let the browser insert straight into Supabase with the publishable key
@@ -203,10 +206,15 @@ under an insert-only policy:
   `match_events` and `level_progress` for older matches, which by then are in
   a monthly export. `matches`, with its tally, stays for good. PostHog keeps
   each `jev_decision` for its own retention.
-- **Monthly export** before pruning: `pnpm export --month 2026-10` writes one
-  gzipped NDJSON file per month, the same lines as record version 1, to a place
-  Matthew keeps (decision 5). The Free plan includes **no backups**
-  (supabase.com/pricing, read 26 September 2026), so this file is the backup.
+- **Monthly export** before pruning: `pnpm export --month 2026-10 --out <dir>`
+  writes one gzipped NDJSON file per month, the same lines as record version 1,
+  to a folder on Matthew's disk (decision 5). The Free plan includes **no
+  backups** (supabase.com/pricing, read 26 September 2026), so this file is the
+  backup, and his disk holds the only copy.
+- **When it grows**, exports move to a private cloud storage bucket: once
+  Brick Arena pays for a plan, or the exports outgrow a folder. Pick a bucket
+  outside Supabase, since the export is Supabase's backup. Which service is
+  chosen at that step.
 - The export loads into DuckDB (`read_json_auto`), pandas, or back into
   Postgres with `copy`.
 
@@ -218,7 +226,7 @@ bytes for Postgres row and index overhead (an estimate).
 | Limit (free plan) | Expected per month | Share | What would push it over |
 | --- | --- | --- | --- |
 | PostHog events: 1,000,000 (posthog.com/pricing) | 644 `jev_decision` + ~35 other per match, + 3 per session ≈ **68,000** | 7% | About 1,450 matches a month. Without `jev_decision` (per-level summary only), about 25,000. |
-| PostHog replays: 5,000 (posthog.com/pricing) | ≤150 sessions | 3% | 5,000 sessions a month. |
+| PostHog replays: 5,000 (posthog.com/pricing) | 0, replay is off | — | Nothing, unless replay is turned on. |
 | PostHog projects: 1 per free org (posthog.com/docs/settings/projects) | 1 | — | A second app in its own project. |
 | Supabase database: 500 MB (supabase.com/pricing) | 100 × 0.55 MB = 55 MB of new rows; with 90 days of full rows, **about 170 MB** held once steady | 34% | About 300 matches a month at 90 days; about 900 at 30 days. |
 | Supabase egress: 5 GB | Studio reads and one ~55 MB export | ~2% | Heavy dashboards reading Supabase directly. |
@@ -260,10 +268,55 @@ starts to cost data.
   defined, the job also checks the project answers and fails loudly if not, so
   Matthew hears about a pause the same week.
 
+## Regions
+
+Matthew asked with decision 2: *"not sure why we would host in the eu? is
+that close to typesafe ai servers or something for low latency of our call to
+jev?"* It was not. What was found on 26 September:
+
+- **The Render service: Oregon (US West), by default.** Neither `render.yaml`
+  nor `docs/deploy.md` names a region, and Render's Blueprint spec says of
+  `region`: *"If omitted for other service types, the default value is
+  `oregon`"* (render.com/docs/blueprint-spec, read 26 September 2026). So a
+  Blueprint made from this `render.yaml` runs in Oregon. The live service's
+  dashboard was not checked.
+- **Jev: `https://api.typesafe.ai`, region unknown.** That is
+  `JEV_DEFAULTS.baseUrl` in `packages/jev/src/key.ts`; `JEV_BASE_URL` could
+  override it, and `render.yaml` doesn't. The host resolves to Cloudflare
+  (104.18.24.46, 104.18.25.46), and a request from this machine was answered
+  at Cloudflare's Ashburn edge (`cf-ray: …-IAD`). That is the edge nearest the
+  caller, not where TypeSafe runs, and no response header names an origin
+  region.
+- **Why this spec chose EU for PostHog: it gave no reason.** The likely one is
+  GDPR, after the first version's warning that a browser id may count as
+  personal data in the EU and UK. It had nothing to do with Jev.
+
+Where the regions matter: a Jev call goes browser → Render → TypeSafe, so only
+the Render service's distance to TypeSafe changes how fast Jev answers.
+PostHog and Supabase sit off that path: the page sends PostHog events in
+batches, and the server writes Supabase rows after it has answered. Neither
+region changes anything a player feels.
+
+**Supabase: `us-west-2`, West US (Oregon)**, the region nearest the Render
+service, since the game server is its only writer
+(supabase.com/docs/guides/platform/regions, read 26 September 2026: *"Each
+Supabase project is deployed to one primary region"*). If the service ever
+moves nearer Matthew (`region: virginia` in `render.yaml`), use `us-east-1`
+(North Virginia) instead. Choose before creating the project.
+
+**PostHog: US Cloud recommended, not decided.** Matthew is in US Eastern, the
+server and database are in the US, and so, as far as anyone knows, are most
+players; US Cloud keeps all the data in one country. GDPR covers EU players
+wherever their data is held, so EU Cloud buys one thing: EU players' events
+stay in the EU. That is worth it only if EU players become a real share. The
+anonymous id is the piece GDPR would care about, and the opt-out and Do Not
+Track cover it in either region. PostHog asks for the cloud at sign-up, so
+this is settled before build step 1.
+
 ## Privacy, with two vendors
 
-Data now leaves to PostHog (EU) and Supabase (region: decision 2), both
-holding it on Matthew's behalf. The notice names them.
+Data now leaves to PostHog (US or EU, the open question) and Supabase (West
+US, Oregon), both holding it on Matthew's behalf. The notice names them.
 
 Don't collect:
 
@@ -271,16 +324,24 @@ Don't collect:
   without them. The Jev cap still reads the address in memory per UTC day and
   never writes it.
 - Names, emails, accounts, free text. The game has no text input.
-- Fingerprints. No person profiles in PostHog; no device id unless decision 1
-  says yes.
+- Fingerprints. No person profiles in PostHog. The one id is PostHog's random
+  anonymous id in the browser (decision 1), linked to nothing and never sent
+  to Supabase. The first version of this spec warned that such an id *"may
+  count as personal data in the EU and UK,"* so treat it as such.
+- Session replay (decision 3).
 - Stand-in and debug play (decision 4).
 
 Do:
 
-- One line on the title screen: *"This game records how each match plays,
-  using PostHog and Supabase, and never who you are."* with a link to a short
-  page repeating this list (decision 6 for wording and opt-out).
-- Honor Do Not Track (`respect_dnt: true`).
+- One line on the title screen, as written: *"This game records how each match
+  plays, using PostHog and Supabase, and never who you are."* with a link to a
+  short page repeating this list, the anonymous id included (decision 6).
+- Beside it, a one-click **opt-out**. It calls `posthog.opt_out_capturing()`
+  and stops the page sending match lines to the server; the browser remembers
+  the choice, and the same spot then offers to opt back in. Play doesn't
+  change.
+- Honor Do Not Track (`respect_dnt: true`) as well, with the same effect as
+  the opt-out.
 - Keep: PostHog events for its free retention (one year for events, per
   third-party summaries of its pricing page; confirm there); Supabase full rows
   90 days, summaries for good; monthly exports as long as Matthew keeps them.
@@ -303,8 +364,9 @@ Per app: its event names, its tables and its dashboard.
   the server gains Supabase writes. The engine stays pure; the rule should say
   so and allow these two.
 - *"It holds the game only; never add who played it."* — still true of the
-  Supabase record. If decision 1 allows a device id, the rule changes for
-  PostHog.
+  Supabase record. PostHog now keeps an anonymous browser id (decision 1), so
+  the rule should say so and bound it: random, never identified, never in the
+  match record.
 
 ## Build plan
 
@@ -312,15 +374,15 @@ Each row is under three hours.
 
 | # | Work | Hours |
 | --- | --- | --- |
-| 1 | Matthew: create the Supabase project (Free, region per decision 2) and the PostHog project (EU); put `SUPABASE_URL`, `SUPABASE_SECRET_KEY` on Render and the PostHog project key in the page build. | 0.5 |
+| 1 | Matthew: settle PostHog's region; create the Supabase project (Free, `us-west-2`) and the PostHog project; put `SUPABASE_URL`, `SUPABASE_SECRET_KEY` on Render and the PostHog project key in the page build. | 0.5 |
 | 2 | `supabase/migrations/` with the four tables and RLS on, no policies. | 1 |
 | 3 | Server: write each match's lines as rows with the secret key, behind the checks PR #5 has; retry buffer; log refused writes. | 2.5 |
 | 4 | Weekly GitHub Actions job: keep-awake insert, pause check, 90-day prune. | 2 |
-| 5 | `pnpm match` and `pnpm export` read Supabase; monthly export file. | 2.5 |
-| 6 | `posthog-js` in the page with the privacy settings above; player events at the points `main.tsx` already marks. | 2.5 |
+| 5 | `pnpm match` and `pnpm export` read Supabase; monthly export file to a folder on Matthew's disk. | 2.5 |
+| 6 | `posthog-js` in the page with the privacy settings above (anonymous id in `localStorage`, replay off, none of it in debug); player events at the points `main.tsx` already marks. | 2.5 |
 | 7 | `jev_decision` and per-level summary events. | 1 |
 | 8 | PostHog dashboard: the four insights, saved. No code. | 1.5 |
-| 9 | Title-screen line and privacy page; retire `/matches.html`, `GET /api/matches` and `ADMIN_SECRET`; update CLAUDE.md. | 1.5 |
+| 9 | Title-screen line, opt-out and privacy page; retire `/matches.html`, `GET /api/matches` and `ADMIN_SECRET`; update CLAUDE.md. | 1.5 |
 
 About 15 hours.
 
@@ -330,16 +392,34 @@ The first version's storage, door and shared-layer questions are settled
 above: Supabase Free for the record, PostHog Free for players, the vendors' own
 sign-ins, one project each for all apps.
 
-1. **Returning players.** Let PostHog keep an anonymous id in the browser to
-   count returning players, or keep nothing (memory only) and give that number
-   up?
-2. **Supabase region.** EU, to match PostHog, or the region the Render
-   service runs in?
-3. **Session replay.** Try it (free up to 5,000 a month), knowing the canvas
-   may not record?
-4. **Stand-in and debug play.** Drop it from both services (proposed), or keep
-   it flagged?
-5. **Where monthly exports live.** Matthew's disk, a private repo, or cloud
-   storage?
-6. **Notice.** The title-screen line as written, and should players get an
-   opt-out beyond Do Not Track?
+Matthew answered the six on 26 September at 11:33 PM. His words, then what
+the spec now says.
+
+1. **Returning players** (anonymous id, or keep nothing). *"anon id"* —
+   answered. PostHog keeps a random anonymous id in `localStorage`.
+2. **Supabase region** (EU to match PostHog, or Render's). *"i am actually in
+   US Eastern, which is obscurbed by my VPN at times. not sure why we would
+   host in the eu? is that close to typesafe ai servers or something for low
+   latency of our call to jev? whatever region is best for proximity would be
+   what i think for supabase"* — answered. `us-west-2` (Oregon), nearest the
+   Render service; his question is answered under *Regions*.
+3. **Session replay** (try it, knowing the canvas may not record). *"skip
+   it"* — answered. Replay is off.
+4. **Stand-in and debug play** (drop it, or keep it flagged). *"skip it"* —
+   answered. Neither service receives it.
+5. **Where monthly exports live** (his disk, a private repo, or cloud
+   storage). *"disk for now, cloud storage if it grows - more scalable, matches
+   for something that is paid, storage is secure"* — answered. A folder on his
+   disk now; a private bucket outside Supabase once the game pays for a plan
+   or the exports outgrow the folder.
+6. **Notice** (the line as written, and an opt-out beyond Do Not Track).
+   *"your pick"* — answered by the desk's pick: the title-screen line as
+   written, and a one-click opt-out beside it, on top of Do Not Track.
+
+One question left:
+
+7. **PostHog region.** US Cloud or EU Cloud? **Recommended: US**, because
+   Matthew, the server, the database and most likely most players are in the
+   US, and EU only earns its place if EU players become a real share (see
+   *Regions*). Needed before build step 1, since PostHog fixes the cloud at
+   sign-up.
