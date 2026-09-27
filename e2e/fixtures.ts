@@ -41,6 +41,7 @@ export type Read = {
   seconds: number;
   human: { paddle: number; serving: boolean; balls: Ball[]; lives: number };
   results: { level: number; winner: string; human: number; jev: number }[];
+  stats: { answeredBy: { live: number; 'stand-in': number } };
 };
 
 export const read = (page: Page) => page.evaluate(() => (window as unknown as { __arena: { read(): Read } }).__arena.read());

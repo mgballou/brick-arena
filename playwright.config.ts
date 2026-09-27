@@ -1,10 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
-import { DEV_URL, dummyKeyFile, HOSTED_URL, OUT, POSTHOG_HOST, STAND_IN_PORT } from './e2e/servers.ts';
+import { DEPLOYED_URL, DEV_URL, dummyKeyFile, HOSTED_URL, OUT, POSTHOG_HOST, STAND_IN_PORT } from './e2e/servers.ts';
 
 // The browser specs (e2e/*.e2e.ts), in Chromium: `pnpm e2e`. They play the real
 // page against the stand-in, which e2e/fixtures.ts runs in the test process so
-// a spec can stop it. Neither server can reach Jev (e2e/servers.ts), and
-// neither reuses a server already running, which might hold the real key.
+// a spec can stop it. No server can reach Jev (e2e/servers.ts), and none
+// reuses a server already running, which might hold the real key.
 // Headed or not, the page is dark: it has no light theme.
 export default defineConfig({
   testDir: 'e2e',
@@ -52,6 +52,16 @@ export default defineConfig({
         VITE_POSTHOG_KEY: 'phc_e2e',
         VITE_POSTHOG_HOST: POSTHOG_HOST,
       },
+    },
+    {
+      // The page as Render builds and serves it (render.yaml): no VITE_ flag,
+      // so no debug and no PostHog, on serve.ts's own options. Its TypeSafe is
+      // the fake that e2e/deployed.e2e.ts runs, reached with a dummy key.
+      command: `pnpm exec vite build --outDir ${OUT}/render-dist --emptyOutDir && node e2e/deployed.ts`,
+      url: `${DEPLOYED_URL}/healthz`,
+      reuseExistingServer: false,
+      timeout: 120_000,
+      env: Object.fromEntries(Object.entries(process.env).filter((entry): entry is [string, string] => !entry[0].startsWith('VITE_') && entry[1] !== undefined)),
     },
   ],
 });
