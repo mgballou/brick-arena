@@ -205,8 +205,8 @@ opting out.
 | `packages/engine` | The board, in pure TypeScript: `step`, the five levels, and `askForDecision`, which turns a board into one closed question. `arena.ts` lays the match rules over it: paddle, serves, lives, scoring. |
 | `packages/jev` | Jev's seat: the wire format and prompt (`wire.ts`), the one reader of the key (`key.ts`), the forwarder the browser calls (`proxy.ts`), the daily cap, and the stand-in. |
 | `packages/web` | The React page. It draws both boards and reads the keys; it never holds the TypeSafe key. |
-| `packages/server` | The hosted page's Node server: the built page, plus the same forwarder. |
-| `packages/cli` | The measuring tools below. |
+| `packages/server` | The hosted page's Node server: the built page, the same forwarder, and the match records (`record.ts`, `matches.ts`) behind the admin's password (`admin.ts`), with their rows in Supabase (`supabase.ts`, `rows.ts`). |
+| `packages/cli` | The measuring tools below, and the admin's tools that [docs/deploy.md](docs/deploy.md) runs: `match`, `export`, `weekly` and `smoke:site`. |
 
 The engine is deterministic: the same seed and the same answers give the same board, tick for
 tick. So a recorded session replays exactly, and each number above reruns from its command.
@@ -223,8 +223,10 @@ npm run build       # typecheck (tsc -b), then the production build in dist/
 npx --yes knip      # unused files, exports and dependencies; it should report nothing
 ```
 
-CI installs from the lockfile with pnpm, then runs the tests and `tsc -b` on every push and
-pull request.
+On every push and pull request, CI installs from the lockfile with the pnpm that
+`packageManager` pins, on the Node in `.nvmrc`, then runs three jobs: the tests and `tsc -b`,
+the browser specs in Chromium (`pnpm e2e`), and the Supabase path on Postgres and PostgREST
+(`pnpm test:db`). Dependabot proposes updates to the pins once a week.
 
 | Command | What it does |
 |---|---|
