@@ -37,4 +37,5 @@ export const clearFast: StandInPolicy = request => {
 // The stand-in's whole rule, shared by `pnpm jev:stub`, `pnpm fair` and
 // `pnpm objective`, so the measured stand-in and the one you play against
 // choose alike.
+/** @alias */
 export const standInChoice = clearFast;
