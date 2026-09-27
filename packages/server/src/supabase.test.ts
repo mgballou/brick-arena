@@ -12,7 +12,7 @@ import { createMatchStore } from './matches';
 import { MATCHES_PATH, newMatchId, type MatchLine } from './record';
 import { createRowWriter } from './rows';
 import { hostedApp } from './serve';
-import { clientFromEnv, CONFLICT, restClient, stubClient, type Row, type StubClient, type TableName } from './supabase';
+import { clientFromEnv, CONFLICT, restClient, stubClient, tableClientFromEnv, type Row, type StubClient, type TableName } from './supabase';
 
 // The rows each match leaves in Supabase, written through the stub: no test
 // here reaches Supabase. The migration runs against a local Postgres only when
@@ -201,6 +201,59 @@ describe('the client', () => {
     expect(await refusing.upsert('matches', [])).toEqual({ ok: false, status: 503, message: '{"message":"paused"}' });
     const silent = restClient({ url: 'https://example.supabase.co', key: 'k', fetch: (async () => { throw new TypeError('fetch failed'); }) as typeof fetch });
     expect(await silent.upsert('matches', [])).toEqual({ ok: false, status: 0, message: 'fetch failed' });
+    expect(await silent.select('matches', { order: [['id', 'asc']] })).toEqual({ ok: false, status: 0, message: 'fetch failed' });
+    expect(await refusing.remove('matches', [['id', 'eq', 'x']])).toEqual({ ok: false, status: 503, message: '{"message":"paused"}' });
+  });
+
+  it('reads a page at a time until a page comes back empty, whatever the row cap', async () => {
+    const urls: string[] = [];
+    // A server capped at 700 rows a page, holding 1500.
+    const fake = (async (url: string) => {
+      urls.push(url);
+      const offset = Number(new URL(url).searchParams.get('offset'));
+      const count = Math.max(0, Math.min(700, Number(new URL(url).searchParams.get('limit')), 1500 - offset));
+      return Response.json(Array.from({ length: count }, (_, n) => ({ n: offset + n })));
+    }) as typeof fetch;
+    const client = restClient({ url: 'https://example.supabase.co', key: 'k', fetch: fake });
+    const read = await client.select('jev_calls', { columns: ['match_id', 'n'], where: [['match_id', 'in', ['a', 'b"c']], ['n', 'gte', 3]], order: [['match_id', 'asc'], ['n', 'desc']] });
+    expect(read.ok && read.rows.map(row => row.n)).toEqual(Array.from({ length: 1500 }, (_, n) => n));
+    expect(urls.map(url => new URL(url).searchParams.get('offset'))).toEqual(['0', '700', '1400', '1500']);
+    const params = new URL(urls[0]).searchParams;
+    expect(Object.fromEntries(params)).toEqual({ select: 'match_id,n', match_id: 'in.("a","b\\"c")', n: 'gte.3', order: 'match_id.asc,n.desc', limit: '1000', offset: '0' });
+
+    urls.length = 0;
+    const few = await client.select('matches', { order: [['id', 'asc']], limit: 5 });
+    expect(few.ok && few.rows).toHaveLength(5);
+    expect(urls).toEqual(['https://example.supabase.co/rest/v1/matches?select=*&order=id.asc&limit=5&offset=0']);
+  });
+
+  it('deletes only named rows, and reads the count from Content-Range', async () => {
+    const sent: Array<{ url: string; init: RequestInit }> = [];
+    const fake = (async (url: string, init: RequestInit) => (sent.push({ url, init }), new Response(null, { status: 204, headers: { 'content-range': '*/42' } }))) as typeof fetch;
+    const client = restClient({ url: 'https://example.supabase.co', key: 'k', fetch: fake });
+    expect(await client.remove('keep_awake', [['at', 'lt', '2026-07-01T00:00:00.000+00:00']])).toEqual({ ok: true, count: 42 });
+    expect(sent[0].url).toBe('https://example.supabase.co/rest/v1/keep_awake?at=lt.2026-07-01T00%3A00%3A00.000%2B00%3A00');
+    expect(sent[0].init).toMatchObject({ method: 'DELETE', headers: { apikey: 'k', prefer: 'return=minimal,count=exact' } });
+    expect(await client.remove('keep_awake', [])).toEqual({ ok: false, status: 400, message: 'a delete must name its rows' });
+    expect(sent).toHaveLength(1);
+    const uncounted = restClient({ url: 'https://example.supabase.co', key: 'k', fetch: (async () => new Response(null, { status: 204 })) as typeof fetch });
+    expect(await uncounted.remove('matches', [['id', 'eq', 'x']])).toEqual({ ok: true, count: null });
+  });
+
+  it('gives the CLIs a client only when SUPABASE_URL is set, and wants the key with it', () => {
+    expect(tableClientFromEnv({})).toBeNull();
+    expect(tableClientFromEnv({ SUPABASE_URL: ' ', SUPABASE_SECRET_KEY: 'k' })).toBeNull();
+    expect(() => tableClientFromEnv({ SUPABASE_URL: 'https://example.supabase.co' })).toThrow('SUPABASE_URL is set but SUPABASE_SECRET_KEY is not');
+    expect(tableClientFromEnv({ SUPABASE_URL: 'https://example.supabase.co', SUPABASE_SECRET_KEY: 'k' })).not.toBeNull();
+  });
+
+  it('keeps the stub\'s tables the way upserts on each key would', async () => {
+    const client = stubClient();
+    await client.upsert('level_progress', [{ match_id: 'a', level: 0, samples: [1] }, { match_id: 'a', level: 1, samples: [] }]);
+    await client.upsert('level_progress', [{ match_id: 'a', level: 0, samples: [1, 2] }]);
+    expect(client.tables.level_progress).toEqual([{ match_id: 'a', level: 0, samples: [1, 2] }, { match_id: 'a', level: 1, samples: [] }]);
+    const read = await client.select('level_progress', { columns: ['level'], where: [['match_id', 'eq', 'a']], order: [['level', 'desc']], limit: 1 });
+    expect(read).toEqual({ ok: true, rows: [{ level: 1 }] });
   });
 });
 
@@ -230,7 +283,7 @@ describe('the migration', () => {
   const sql = migrationSql();
   const tables = tablesOf(sql);
 
-  it('makes the four tables, each with row-level security on and no policy', () => {
+  it('makes the tables, each with row-level security on and no policy', () => {
     expect([...tables.keys()].sort()).toEqual(Object.keys(CONFLICT).sort());
     for (const table of tables.keys()) expect(sql).toMatch(new RegExp(`alter table ${table} enable row level security;`));
     expect(sql).not.toMatch(/create policy/i);
@@ -275,8 +328,8 @@ describe('the migration', () => {
       const counts = psql(db, ['-c', 'select (select count(*) from matches), (select count(*) from jev_calls), (select count(*) from match_events), (select count(*) from level_progress)']).trim();
       expect(counts).toBe('1|2|4|1');
       expect(psql(db, ['-c', "select jsonb_array_length(samples) from level_progress"]).trim()).toBe('2');
-      const secured = psql(db, ['-c', "select string_agg(relname || ':' || relrowsecurity, ',' order by relname) from pg_class where relname in ('matches', 'jev_calls', 'match_events', 'level_progress')"]).trim();
-      expect(secured).toBe('jev_calls:true,level_progress:true,match_events:true,matches:true');
+      const secured = psql(db, ['-c', "select string_agg(relname || ':' || relrowsecurity, ',' order by relname) from pg_class where relname in ('matches', 'jev_calls', 'match_events', 'level_progress', 'keep_awake')"]).trim();
+      expect(secured).toBe('jev_calls:true,keep_awake:true,level_progress:true,match_events:true,matches:true');
       expect(psql(db, ['-c', 'select count(*) from pg_policies']).trim()).toBe('0');
     } finally {
       psql(pg, ['-c', `drop database if exists ${name} with (force)`]);
