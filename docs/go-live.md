@@ -61,12 +61,12 @@ harder to squash than one PR:
 ### Secrets
 
 Render asks for every `sync: false` value in `render.yaml` when it creates the
-Blueprint. After the stack merges there are four, not the two that
-`docs/deploy.md` step 3 names.
+Blueprint. After the stack merges there are four, and `docs/deploy.md` step 3
+(*Secrets*) names all four.
 
 18. `JEV_API_KEY`: paste the token in `~/.jev-key`, the value only (Render's Blueprint form).
 19. `ADMIN_SECRET`: paste the output of `openssl rand -base64 24`, and keep a copy in your password manager (Render's Blueprint form).
-20. `SUPABASE_URL` and `SUPABASE_SECRET_KEY`: leave them empty for now; writes stay off without `SUPABASE_WRITES=1`. If Render refuses an empty value, do steps 24 and 25 first and paste the real ones (Render's Blueprint form). The dry run could not test this form.
+20. `SUPABASE_URL` and `SUPABASE_SECRET_KEY`: leave them empty for now; writes stay off without `SUPABASE_WRITES=1`. If Render refuses an empty value, first create the Supabase project and run its two migrations (the first two steps under *Supabase*), then paste the real ones (Render's Blueprint form). The dry run could not test this form.
 21. Choose **Apply**, and watch the build log end in `✓ built` (Render → brick-arena → Events).
 22. Run `pnpm smoke:site https://brick-arena.onrender.com` and see `every check passed`: `/healthz` answers `ok`, and `/` shows *Jev is online* on the title screen, with the data notice and its Privacy link (terminal; it needs `pnpm exec playwright install chromium` once).
 23. Decide whether match records on disk must last. On the free plan they vanish when the service sleeps, 15 minutes after the last visit. Keeping them means `plan: starter`, a 1 GB disk and `MATCHES_DIR` in `render.yaml`, about $7.25 a month (`docs/deploy.md`, *Where they live, and why a disk*). Once Supabase holds the rows, free is enough.
@@ -91,7 +91,7 @@ Blueprint. After the stack merges there are four, not the two that
 
 ### Play it
 
-36. In a PR, put the service URL in the README's *Play it* line, which now reads `` `<hosted URL — filled in after the deploy>` `` (`README.md`, line 30 once #13 merges).
+36. In a PR, put the service URL in the README's *Play it* line, which now reads `` `<hosted URL — filled in after the deploy>` `` (`README.md`, the bold line under the film at the top).
 
 ## Before the repo goes public
 
@@ -303,19 +303,27 @@ the hosted server has no debug mode, which is right.
   `VITE_POSTHOG`, `VITE_POSTHOG_KEY`, `VITE_POSTHOG_HOST`. The three `VITE_`
   values are read at build time, so each change needs a new build.
 - **One optional setting**: `MATCHES_DIR`, only with a paid disk.
-- **One new dependency**: `posthog-js`. It loads only on the first event, so
-  the dry run's page fetched no PostHog code.
+- **Two new dependencies**: `posthog-js`, which loads only on the first
+  event, so the dry run's page fetched no PostHog code; and, from #15, the
+  devDependency `@playwright/test`, which downloads no browser at install.
+- **A pinned pnpm and Node**: from #16, `packageManager` is `pnpm@11.18.0`
+  and `engines.node` is `24.x`, so `npx --yes pnpm@11` hands over to 11.18.0.
+  The dry run's installs below used 11.28.0.
 - **Two new pages**: `dist/matches.html` and `dist/privacy.html`.
   `/privacy.html` answers 200. `/matches.html` and `/api/matches` answer 404
   with no `ADMIN_SECRET`, as `docs/deploy.md` says.
 - **Two new start-up log lines**, `[matches] …` and `[supabase] …`, which say
   where records go and whether rows are written.
 - **One new outside job**: `.github/workflows/supabase-weekly.yml`, which needs
-  the two GitHub secrets in step 27.
+  the two repository secrets from the *Supabase* steps.
 
-### Fixes the stack needs, for its own branches
+### Fixes the stack needed, for its own branches
 
-These belong in the stack's files, not this branch.
+The dry run found four. #12 (`ba-clean-for-show`) fixed all four, and they
+hold at the top of the stack (#17, `332cd83`): step 3 names all four secrets,
+the Supabase block sits above the comment, *What you need* says "The work you
+want live merged to `main`", and the recipe waits for the stand-in with
+`until curl …` before `pnpm start`.
 
 - **`docs/deploy.md` step 3 counts two `sync: false` values**; the stack's
   `render.yaml` has four. It should name all four and say what to do with the
@@ -331,16 +339,38 @@ These belong in the stack's files, not this branch.
   did; **Check again** then logged the stand-in's refusal. Harmless, but
   confusing on a first try.
 
+### Tested since the dry run
+
+Both on 27 September 2026, at the top of the stack (#17,
+`ba-jev-asks-only-its-questions` at `332cd83`), each in a fresh worktree with
+no `node_modules`.
+
+- **A build from an empty store, as on Render's build machine.** The pnpm
+  store, the npm cache (where `npx` keeps `pnpm@11`) and pnpm's own cache and
+  data folders were all new, empty folders under `/private/tmp`, with the
+  network on. The install downloaded all 65 packages and reused none, fetched
+  pnpm 11.18.0 as `packageManager` pins, and the build passed in 17 seconds
+  (*Output: an empty store*, below). It still ran on this Mac, not on Render's
+  Linux image.
+- **The online title screen, through the hosted server's code.** `serve.ts`
+  starts with `debug: false`, so as written it refuses the stand-in and shows
+  only the down page. A throwaway script ran `hostedApp` from `serve.ts` with
+  `debug: true`, a dummy key and `startStandIn` from
+  `packages/jev/src/stand-in-server.ts`, over a page built with
+  `VITE_DEBUG=1`, as `e2e/hosted.ts` runs it with no key. In headless
+  Chromium, 1280×800, dark: `/api/jev` answered 200, the title screen showed
+  the data notice with its Privacy link (`href="/privacy.html"`) and Opt out,
+  and the link opened the *Privacy* page. In place of *Jev is online* the
+  line read *Debug: the stand-in answered, not Jev · 376 ms*, under the
+  *DEBUG · stand-in* badge. Screen:
+  `docs/screens/2026-09-27-go-live/stack-online-title-debug-dark.png`. The
+  same screen without debug and with live Jev is what the `pnpm smoke:site`
+  step under *Secrets* checks after the deploy.
+
 ### Not tested here
 
-- Render's own build machine. Both installs came from this machine's pnpm
-  store; Render downloads all 62 packages, and `npx --yes pnpm@11` needs the
-  network at build time.
 - Whether Render's Blueprint form accepts an empty `sync: false` value
-  (step 20).
-- The online title screen. With no live Jev, both runs show only the down
-  page, which carries no data notice and no Privacy link; the notice renders
-  on the online title screen (`notice.test.tsx`).
+  (the Supabase pair under *Secrets*).
 - `RENDER_GIT_COMMIT`, which the stack reads as the build's name in Supabase
   rows and PostHog events. Off Render it is unset and the build goes unnamed.
 
@@ -487,7 +517,66 @@ REQUESTS:
 ```
 
 The `ECONNREFUSED` line is the stand-in still starting (see *Fixes the stack
-needs*). Both browser runs also logged one console error, the browser's own
+needed*). Both browser runs also logged one console error, the browser's own
 note on the 503.
+
+### Output: an empty store, `ba-jev-asks-only-its-questions` at `332cd83`
+
+`E` is a new folder under `/private/tmp` holding empty `store`, `npm`,
+`cache`, `data`, `state` and `pnpmhome` folders.
+
+```
+$ env npm_config_cache=$E/npm XDG_CACHE_HOME=$E/cache XDG_DATA_HOME=$E/data \
+    XDG_STATE_HOME=$E/state PNPM_HOME=$E/pnpmhome \
+    sh -c "NODE_ENV=development npx --yes pnpm@11 install --frozen-lockfile --store-dir $E/store && npx --yes pnpm@11 build"
+? Verifying lockfile against supply-chain policies (133 entries)...
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +65
+…
+Progress: resolved 65, reused 0, downloaded 64, added 64
+Progress: resolved 65, reused 0, downloaded 65, added 65, done
+.../esbuild@0.28.2/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.28.2/node_modules/esbuild postinstall: Done
+
+dependencies:
++ @vitejs/plugin-react 6.1.1
++ posthog-js 1.434.14
++ react 19.3.0
++ react-dom 19.3.0
++ vite 8.3.1
+
+devDependencies:
++ @playwright/test 1.63.0
++ @types/node 26.6.3
++ @types/react 19.3.0
++ @types/react-dom 19.3.0
++ tsx 4.23.15
++ typescript 7.0.2
++ vitest 5.0.2
+
+Done in 7.2s using pnpm v11.18.0
+$ tsc -b && vite build
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 32 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.46 kB │ gzip:  0.28 kB
+dist/matches.html                   0.48 kB │ gzip:  0.29 kB
+dist/privacy.html                   4.31 kB │ gzip:  1.89 kB
+dist/assets/matches-CSdMfd_a.css    2.44 kB │ gzip:  1.03 kB
+dist/assets/main-D6b9qJUx.css       8.58 kB │ gzip:  2.71 kB
+dist/assets/matches-C4CdGbrv.js     6.05 kB │ gzip:  2.77 kB
+dist/assets/record-vknUprxq.js     20.84 kB │ gzip:  8.29 kB
+dist/assets/main-BhVnqdUA.js      256.09 kB │ gzip: 81.08 kB
+
+✓ built in 340ms
+        5.85s user 3.94s system 57% cpu 17.082 total
+```
+
+Afterwards the store held 213 MB and the npm cache 35 MB, all of it
+downloaded by this run. npm also printed a notice that 12.1.0 is out, which
+changes nothing here.
 
 Screens: `docs/screens/2026-09-27-go-live/`.
