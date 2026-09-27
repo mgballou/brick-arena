@@ -6,3 +6,6 @@ docs/jev-race.ndjson
 tsconfig.tsbuildinfo
 .playwright-mcp
 var
+e2e/.out
+test-results
+playwright-report
