@@ -10,7 +10,7 @@ import { browserStore, pageConsent, type Consent } from './consent';
 // nothing. Debug play, stand-in matches, Do Not Track and the title screen's
 // opt-out (consent.ts) send nothing at all.
 // Analytics never touches play: a client that fails is dropped.
-export const SCHEMA = 1;
+const SCHEMA = 1;
 
 // The events and their properties, as the spec lists them.
 export type Events = {
@@ -72,7 +72,7 @@ export type LoadPostHog = () => Promise<{ default: PostHog }>;
 // With `persistence: 'localStorage'`, posthog-js keeps the anonymous id under
 // `ph_<project key>_…`. Removing those keys ends the id.
 export type IdStore = Pick<Storage, 'length' | 'key' | 'removeItem'>;
-export function forgetId(link: PostHogLink, store: IdStore | null) {
+function forgetId(link: PostHogLink, store: IdStore | null) {
   try {
     if (!store) return;
     const kept = Array.from({ length: store.length }, (_, i) => store.key(i)).filter((key): key is string => !!key?.startsWith(`ph_${link.key}_`));

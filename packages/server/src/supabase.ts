@@ -106,7 +106,7 @@ const PAGE = 1000;
 
 // A value inside `in.(…)`, quoted so a comma or a bracket can't end it.
 const quoted = (value: string | number) => typeof value === 'number' ? String(value) : `"${value.replace(/["\\]/g, '\\$&')}"`;
-export function filterParams(where: Where = []): string[] {
+function filterParams(where: Where = []): string[] {
   return where.map(([column, op, value]) => `${column}=${encodeURIComponent(op === 'in' ? `in.(${value.map(quoted).join(',')})` : `${op}.${value}`)}`);
 }
 

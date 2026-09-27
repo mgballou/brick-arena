@@ -4,7 +4,7 @@ import { answeredBy, downOf, fromResponse, JEV_PATH, refusal, toRequest, type An
 // The browser only ever talks to its own origin's /api/jev, which holds the
 // key and forwards to TypeSafe (packages/jev/src/proxy.ts, on the dev server
 // and the hosted one). No key and no TypeSafe address exist on this side.
-export const DEADLINE_MS = 2000;
+const DEADLINE_MS = 2000;
 
 // Debug mode is one switch, set when the dev server starts: VITE_DEBUG=1. Only
 // then may the stand-in play, and the screen says so for the whole match.

@@ -214,7 +214,7 @@ export function keepsBall(state: BoardState, power: PowerUp): boolean {
 // names them in packages/jev/src/wire.ts: under the landing point, aimed at the
 // densest bricks the ball can reach (under the landing point if none), and off
 // the landing point so the ball leaves at 45 degrees to the left or right.
-export function targetOptions(state: BoardState, ball: Ball): number[] {
+function targetOptions(state: BoardState, ball: Ball): number[] {
   const landing = landingX(state, ball);
   const diagonal = Math.abs(ball.vy);
   return [landing, aimShot(state, ball, landing)?.paddleX ?? landing, paddleForReturn(state, landing, -diagonal), paddleForReturn(state, landing, diagonal)];
