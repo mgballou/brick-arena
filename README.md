@@ -4,7 +4,10 @@
 
 <h1>Brick Arena</h1>
 
-<p><strong>Breakout in the browser against TypeSafe's Jev: the same five levels on one seed, side by side, and the faster clear wins.</strong></p>
+<p><strong>A person against TypeSafe's Jev at Breakout, live, to see how a small typed model plays when every answer lands late.</strong></p>
+
+<p>Two boards, one level, one seed. You play the left on the arrow keys.<br />
+Jev plays the right, one closed question at a time, over the network.</p>
 
 <p>
 <a href="https://github.com/mgballou/brick-arena/actions/workflows/ci.yml"><img src="https://github.com/mgballou/brick-arena/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
@@ -22,126 +25,209 @@ and the banner says so. Against live Jev the same screen names Jev on that board
 
 **Play it: `<hosted URL — filled in after the deploy>`**
 
-The game is live Jev or nothing. Live Jev needs a TypeSafe key; with no key, or when Jev can't
-answer, the page says the game is down and shows no board. The hosted page holds the key as a
-server secret, so you need none there. [docs/deploy.md](docs/deploy.md) sets it up.
+## The question
 
-## How a match works
+Jev is a small, text-only model from TypeSafe. It does not write prose; it picks one option
+from a list you hand it, and it picks fast. It is pitched at the narrow question inside a
+loop: which tool next, is this spam, does this need a person.
 
-- A countdown opens each level and launches both first balls at once. Left and Right move your paddle; after a lost ball, Space or Up serves; P pauses; H shows how scoring works; M mutes.
-- Each level runs 90 seconds with three balls a side. The first to clear it takes it; otherwise the larger share cleared does. A level scores 10 per percent cleared plus 10 per second left at a clear, so the score leader is the one winning. A lost ball costs only the serve. The higher total after level 5 wins. [docs/scoring.md](docs/scoring.md) defines it, and Jev's prompt states it.
-- Jev picks where each catch sends the ball, asked about the board as it will stand when its answer lands, so a slow answer still fits the ball.
-- The page checks Jev before it shows a board. When the forwarder says Jev can't answer (no key; an auth, credit or rate refusal; a TypeSafe error or timeout; a stand-in outside debug mode; or the day's cap spent), the page says the game is down and shows no board, then or mid-match. The reason goes to the server log only. A run of timeouts, or losing the game server, pauses the match with a Retry, and it never goes on without Jev.
-- Who answered comes from the reply, never the URL: a reply marked `answered_by: "stand-in"` is the stand-in, and one without the mark is live Jev. The proxy and the browser both refuse the stand-in outside debug mode.
+Brick Arena gives it a harder job. Can a model that only picks from a list play a real-time
+game against a person, when the board keeps moving while it thinks? And told what winning
+takes, does it pick the safe move or the one that wins?
 
-## The data it collects
+## How the arena asks it
 
-How each match plays, never who played it. The title screen says so in one line, with a link to the [privacy page](privacy.html) and an **Opt out** beside it; Do Not Track counts as opting out.
+- **Same level, same ball.** Both boards start from one seed on one of five levels, and a
+  countdown launches both first balls at once. Each level runs 90 seconds with three balls
+  a side.
+- **Winning is clearing fast.** The first board to break every breakable brick takes the
+  level. If nobody clears, the larger share cleared takes it. A level scores 10 per percent
+  cleared plus 10 per second left at a clear, and the higher total after five levels wins
+  ([docs/scoring.md](docs/scoring.md)).
+- **What Jev is sent.** The whole board as JSON (paddle, balls, falling power-ups, every
+  live brick), the rules and scoring above, and one question with a closed list of answers:
+  - `target`: where to catch the ball, and so where it goes next. `landing` catches it
+    dead center, the safe catch. `aim` catches it off center to send it into the densest
+    bricks it can reach. `angle-left` and `angle-right` send it off at 45 degrees.
+  - `chase`: which falling power-up to go for, each named with what it does to the pace
+    of a clear, or `none`.
+  - `track`: which ball to play, when more than one is in the air.
+- **What Jev decides.** One key from that list, and nothing else. An answer outside the list
+  fails the call. The paddle acts on the key; it never takes a number from Jev.
+- **The board never waits.** The page asks Jev on a steady beat and after every bounce, one
+  call at a time. Its board keeps playing Jev's last answer, and a new one lands as many ticks
+  late as the call took, at 60 ticks a second. A call with no answer in two seconds is late
+  and changes nothing; three late in a row pause the match until Jev is back. To make up for
+  the lag, the page asks about the board as it will stand when the answer lands, judged by
+  Jev's median answer time so far.
+- **No live Jev, no game.** When Jev can't answer, the page says the game is down and shows
+  no board. A local stand-in can sit in Jev's seat only in debug mode, which says so on
+  screen and in the match record.
 
-- **Player events**, sent to PostHog when the page is built with `VITE_POSTHOG=1`: matches, levels, lost balls, pauses and Jev's choices, with screen size and input type. PostHog's random anonymous id stays in the browser's local storage and is never identified.
-- **The match record**, sent to the game server: every Jev call with the board it was sent, every launch and lost ball, both boards' clear over time and each level's result. The server keeps it as a file in `MATCHES_DIR`, and as rows in Supabase with `SUPABASE_WRITES=1`. Only the admin reads it, with the server's `ADMIN_SECRET`: `/matches.html` lists matches and `pnpm match` prints them.
-- **Never**: an IP address, a name, an account, a fingerprint or a screen recording. Debug play and stand-in matches reach neither PostHog nor Supabase.
+As you play, Jev's board shows each choice as it lands, how long it took, the median, and a
+count of late and failed calls.
 
-[docs/specs/data-collection.md](docs/specs/data-collection.md) has the design, and [docs/deploy.md](docs/deploy.md#match-records) says where each piece lives.
+## What is known so far
 
-## Run it locally
+One call has gone to live Jev. Every other number comes from the stand-in: a scripted rule
+in Jev's seat, sent through Jev's exact wire, answering at Jev's measured speed. Those
+numbers show what the arena rewards and what lag costs. They do not show what Jev does.
 
-You need Node 24, pnpm 11 and git; CI runs the same. The repo pins neither version. With no pnpm installed, `npm install -g pnpm@11` gets it, or put `npx --yes pnpm@11` wherever a command says `pnpm`.
+**Jev answers in time.** One call through the `smoke` command, 22 September: HTTP 200 in
+728 ms, well inside the game's two seconds, with 1,502 tokens in and 45 out. It chose
+`landing`, the safe catch. That call came before the prompt stated the objective, so it says
+nothing about how Jev plays now. At 728 ms an answer lands 44 ticks after its question.
+
+**Lag costs balls, and asking ahead wins most of them back.** `npm run fair`, 24 September:
+seed 20260919, five levels, the stand-in answering in 728 ms against a scripted player on the
+keys who reacts in 200 ms ([docs/where-it-is.md](docs/where-it-is.md)).
+
+| Jev's board | Balls lost | Bricks broken |
+|---|---|---|
+| Player on the keys, for scale | 0 | 48 |
+| Asked about the board on screen | 15 | 24 |
+| Asked about the board as it will stand (kept) | 4 | 39 |
+
+**Aiming wins, and spends balls to do it.** `npm run objective`, 24 September: 50 seeds, five
+levels each, answers at 728 ± 150 ms, then the two rules played head to head
+([docs/scoring.md](docs/scoring.md)).
+
+| Rule | Levels cleared | Balls lost | Levels won head to head |
+|---|---|---|---|
+| Always `landing` | 10 of 250 | 351 | 26 |
+| Always `aim` | 78 of 250 | 461 | 214 (10 ties) |
+
+**The arena rewards the aimed catch over the safe one.** `npm run tunings`, 25 September, the
+standard game: the stand-in as the game plays it, at 500, 728 and 1,000 ms, cleared 32 of 75
+level runs. A scripted keys player who sees the board 200 ms late and only catches cleared
+none of 25. Neither cleared level 2 (split walls) or level 4 (regenerating perimeter)
+([docs/tunings.md](docs/tunings.md), which also holds two tunings to try behind `?tuning=`).
+
+**A dead-center catch can trap the ball.** In the bare engine, a ball caught dead center goes
+straight up and down one column for good. The arena sets a floor on the return angle, so
+`landing` stays a real choice and not a trap
+([docs/brick-collisions.md](docs/brick-collisions.md)).
+
+## What is not known yet
+
+The repo records no live match. Until some are played, these stay open:
+
+- Which catch Jev picks once it knows the objective, and how often it takes `aim`.
+- How its answer time spreads over a match: the median, the slow tail, how many calls run late.
+- Whether it beats a person, and on which levels.
+- What a call costs in tokens now that the prompt carries the objective and names each catch.
+
+The server keeps a record of each match, with every Jev call in it, so a few played
+matches can answer these.
+
+## Play it
+
+### Hosted
+
+Open the link above. The hosted page holds the TypeSafe key as a server secret, so you need
+none, and a daily cap on Jev calls keeps a bot from spending it. When Jev can't answer or
+the cap is spent, the page says so and shows no board. [docs/deploy.md](docs/deploy.md) sets
+up the host.
+
+The server keeps a record of each match: every launch, lost ball and Jev call, with the board
+Jev was sent, and both boards' clear over time. Only the admin reads them, with the server's
+`ADMIN_SECRET`: `/matches.html` lists recent matches and opens each one's timeline, and
+`npm run match` prints them with a tally of every choice Jev made.
+[docs/deploy.md](docs/deploy.md#match-records) says where they live.
+
+Left and Right move your paddle. After a lost ball, Space or Up serves. P pauses, H shows how
+scoring works, M mutes.
+
+### Locally
+
+You need Node 24 and your own TypeSafe key.
 
 ```sh
 git clone https://github.com/mgballou/brick-arena.git
 cd brick-arena
-pnpm install --frozen-lockfile
-```
-
-**Against live Jev**, with your own TypeSafe key:
-
-```sh
+npm install
 printf '%s\n' '<your TypeSafe key>' > ~/.jev-key
 chmod 600 ~/.jev-key
-pnpm dev
+npm run dev
 ```
 
-Then open <http://localhost:5173>. The dev server reads `~/.jev-key` once, when it starts, and forwards Jev's calls itself, so the browser never sees the key. The title screen says *Jev is online* when the key works.
+Open <http://localhost:5173>. The dev server reads `~/.jev-key` once, when it starts, and
+forwards Jev's calls itself, so the browser never sees the key. The title screen says
+*Jev is online* when the key works. pnpm works too (`pnpm install`, `pnpm dev`) and installs
+from the lockfile, as CI does.
 
-**Without a key**, in debug mode. This is not a real game: a local stand-in answers in Jev's place. It keeps the ball first and aims every catch at the densest bricks (`clearFast` in `packages/jev/src/stand-in.ts`), and marks every reply `"answered_by": "stand-in"`.
+### Debug mode, without Jev
+
+**Not a real match.** A local stand-in answers in Jev's place. It keeps the ball first and
+aims every catch at the densest bricks (`clearFast` in `packages/jev/src/stand-in.ts`) and marks every reply
+`"answered_by": "stand-in"`. No call leaves your machine.
 
 ```sh
-pnpm jev:stub &
+npm run jev:stub &
 until curl -s -o /dev/null --max-time 1 http://127.0.0.1:18787/; do sleep 0.2; done
 printf 'dummy\n' > /tmp/dummy-key
-VITE_DEBUG=1 JEV_KEY_FILE=/tmp/dummy-key JEV_BASE_URL=http://127.0.0.1:18787 pnpm dev
+VITE_DEBUG=1 JEV_KEY_FILE=/tmp/dummy-key JEV_BASE_URL=http://127.0.0.1:18787 npm run dev
 ```
 
-The screen then shows a `DEBUG · stand-in` banner and names the right-hand board Stand-in, and the match record (`window.__arena.read()`) carries `debug`, `opponent` and `tuning`. Automated runs and Playwright use this mode. The endpoint overrides apply only with `JEV_KEY_FILE`, so the real key goes only to TypeSafe.
+The screen shows a `DEBUG · stand-in` banner and names the right-hand board Stand-in. Outside
+debug mode, the forwarder and the page both refuse a stand-in's reply. Who answered comes from
+the reply's mark, never the URL.
 
-## Test it
+## The data it collects
+
+How each match plays, never who played it. The title screen says so in one line, with a link
+to the [privacy page](privacy.html) and an **Opt out** beside it; Do Not Track counts as
+opting out.
+
+- **Player events**, sent to PostHog when the page is built with `VITE_POSTHOG=1`: matches,
+  levels, lost balls, pauses and Jev's choices, with screen size and input type. PostHog's
+  random anonymous id stays in the browser's local storage and is never identified.
+- **The match record**, sent to the game server: every Jev call with the board it was sent,
+  every launch and lost ball, both boards' clear over time and each level's result. The
+  server keeps it as a file in `MATCHES_DIR`, and as rows in Supabase with
+  `SUPABASE_WRITES=1`. Only the admin reads it, with the server's `ADMIN_SECRET`.
+- **Never**: an IP address, a name, an account, a fingerprint or a screen recording. Debug
+  play and stand-in matches reach neither PostHog nor Supabase.
+
+[docs/specs/data-collection.md](docs/specs/data-collection.md) has the design, and
+[docs/deploy.md](docs/deploy.md#match-records) says where each piece lives.
+
+## How it is built
+
+| Package | Holds |
+|---|---|
+| `packages/engine` | The board, in pure TypeScript: `step`, the five levels, and `askForDecision`, which turns a board into one closed question. `arena.ts` lays the match rules over it: paddle, serves, lives, scoring. |
+| `packages/jev` | Jev's seat: the wire format and prompt (`wire.ts`), the one reader of the key (`key.ts`), the forwarder the browser calls (`proxy.ts`), the daily cap, and the stand-in. |
+| `packages/web` | The React page. It draws both boards and reads the keys; it never holds the TypeSafe key. |
+| `packages/server` | The hosted page's Node server: the built page, plus the same forwarder. |
+| `packages/cli` | The measuring tools below. |
+
+The engine is deterministic: the same seed and the same answers give the same board, tick for
+tick. So a recorded session replays exactly, and each number above reruns from its command.
+
+`npm test` runs the Vitest suite. It pins the ball's collisions with bricks, replays the
+recorded sessions in `docs/`, checks the forwarder and the cap, and builds the page to fail
+if the bundle holds a key or names a TypeSafe host. No test calls live Jev. The Jev tests
+replay `docs/jev-calls.synthetic.ndjson`, which is **synthetic**: written by hand from the
+documented reply shape, not captured from a call.
 
 ```sh
-pnpm test                 # the engine, Jev, server and page tests; none calls live Jev or Supabase
-pnpm build                # typecheck (tsc -b), then the production build in dist/
-npx --yes knip            # unused files, exports and dependencies; it should report nothing
+npm test            # the engine, Jev, server and page tests; none calls live Jev or Supabase
+npm run build       # typecheck (tsc -b), then the production build in dist/
+npx --yes knip      # unused files, exports and dependencies; it should report nothing
 ```
 
-CI runs the install, `pnpm test` and `tsc -b` on every push and pull request.
+CI installs from the lockfile with pnpm, then runs the tests and `tsc -b` on every push and
+pull request.
 
-## The engine
+| Command | What it does |
+|---|---|
+| `npm run smoke` | One live call to Jev: status, time, the choice it made. |
+| `npm run jev` | Races live Jev against the engine's scripted bot and writes every call to `docs/jev-calls.ndjson`. `--replay` plays a recording back. |
+| `npm run fair` | Jev's board at a set answer time against a player on the keys. |
+| `npm run objective` | The `landing` and `aim` rules head to head over many seeds. |
+| `npm run tunings` | Clear times for each tuning. |
+| `npm run session`, `npm run compare` | Record a session to `docs/session.ndjson`, then compare two players on it, as a race or with one replaying the other's exact states. |
 
-The board is pure TypeScript; React only renders it. Players answer one categorical `Ask` at bounce cadence, and every answer carries `ms` without pausing simulation. `packages/engine/src/arena.ts` layers the game's rules over it (a narrower paddle, serves, lives, scoring, level results) without changing `step`, so recorded sessions still replay. The deterministic bot stays for the tooling below; players never see it.
-
-```sh
-pnpm test
-pnpm session && pnpm compare
-```
-
-The session command writes newline-delimited telemetry to `docs/session.ndjson`, which stays in the tree because `replay.test.ts` replays it; the comparison command reports completion ticks and reaction median/p95. Five levels force different decisions: multi-hit rows reward bounce planning; split walls make the reachable side depend on angle; a narrow gap trades patience for a high-value cluster; a regenerating perimeter makes neglected regions costly; and power-up hazards make accepting a drop a judgment call. The power-ups are `extra-ball` (more balls, harder tracking), `long-slow-paddle` (more reach, less speed), `piercing-ball` (less bounce control), `magnet-paddle` (safer but less lateral control), and `short-paddle` (bad when the board tempts a careless chase).
-
-Every session record includes the seed, level, complete `Ask` (including the exact board state), decision, tick, and reaction time. That makes the state sequence replayable for a later ghost-mode comparison even though the two live boards diverge after their first different decision.
-
-There are two comparison modes:
-
-- **Race** compares outcomes on the same seed: completion time and bricks cleared, plus each player's own reaction-time distribution.
-- **Ghost** replays one recorded player's exact decisions and asks a second `Player` the same `Ask` without applying its answer. It compares decisions, reports divergences with the faced state, and counts failed or timed-out ghost answers as missing rather than agreement.
-
-`pnpm compare` prints both the race summary and the deterministic bot as a ghost for each recorded Human level. Pass another NDJSON session path to compare a different recording.
-
-## Add a third player
-
-Implement `Player` in `packages/engine/src/index.ts` (or an adapter file): provide a `name` and `decide(ask: Ask): Promise<{ decision: Decision; ms: number }>`; return a categorical `Decision`, never paddle arithmetic. The board accepts it without knowing whether it is human, deterministic, or network-backed.
-
-## Seat a real Jev
-
-`packages/jev` holds a `Player` backed by TypeSafe's Jev, called over plain `fetch` at `POST {base}/v1/systemone`. It reads the TypeSafe key from `~/.jev-key` once, at construction, and sends it as `Authorization: Bearer`. The key never enters the environment or a recording.
-
-```sh
-pnpm smoke   # one live call: status, latency, the choice Jev made
-pnpm jev     # race Jev against the deterministic bot
-```
-
-- Endpoint: `https://api.typesafe.ai`, model `jev-latest`. A `JEV_BASE_URL=` or `JEV_MODEL=` line in the key file overrides either; so do `--base-url` and `--model`.
-- Key file: a bare token, or a `JEV_API_KEY=` line. `--key-file` reads another.
-- The Vercel AI Gateway route (`https://ai-gateway.vercel.sh/typesafe`, `typesafe-ai/jev`) wants a Gateway key, not a TypeSafe one, and answers 401 to it.
-
-That races Jev against the deterministic bot on level 0 (`--level`, `--seed`, `--max-ticks`, `--deadline` to change), writes every call and response to `docs/jev-calls.ndjson`, and every decision to `docs/jev-race.ndjson`.
-
-Each `Ask` becomes one `choice` question keyed `decision`, and the answer must be one of the offered keys or the call fails:
-
-- `target`: `landing`, `aim`, `angle-left`, `angle-right`, the four `x` values `askForDecision` offers, in that order: a dead-center catch, a catch that sends the ball into the densest bricks it can reach, and catches that send it off at 45 degrees. Every question opens with the objective and scoring from `docs/scoring.md`.
-- `chase`: each falling power-up by id, plus `none`.
-- `track`: each ball by id.
-
-A call never holds the board. Its wall-clock time becomes game time at 60 ticks a second: the board keeps stepping on the last target, and the answer lands `ceil(ms / 16.7)` ticks after its ask. An 800 ms answer lands 48 ticks late and the player misses the next ask. A call with no answer by `--deadline` (1000 ms) is a timeout, and a failed call is an error; neither applies anything. The summary prints each of these: applied, timeouts, errors, asks missed while waiting, ticks spent waiting, and ms median, p95 and max.
-
-In the web game Jev is asked about the board as it will stand when its answer lands (`boardAhead` in `arena.ts`, led by the match's median answer time), so a slow answer still fits the ball. `pnpm fair` measures what that buys: both boards on one seed, the stand-in's rule answering after `--ms` (default 728, the first live Jev call), against a player on the keys who reacts in `--react` ms. `pnpm objective` compares clear times for the stand-in's old rule (always `landing`) and its new one (always `aim`) over many seeds.
-
-`docs/jev-calls.synthetic.ndjson` is **synthetic**: hand-written from the documented response shape by `pnpm jev --write-synthetic`, not captured from a call. Its answers follow a fixed rule (`aim` every catch), it holds one made-up failure, and it carries no times. It plays seed 20260919 on level 0, the first seed where that rule clears a level and meets all three questions. The tests replay it, and so can you:
-
-```sh
-pnpm jev --replay docs/jev-calls.synthetic.ndjson --seed 20260919 --level 0
-```
-
-`--replay` also takes a captured `docs/jev-calls.ndjson`, landing each answer as late as it was recorded.
-
-## Reference read
-
-Before building, I read [jakesgordon/javascript-breakout](https://github.com/jakesgordon/javascript-breakout), the Breakout entry linked from [open-source-games](https://github.com/bobeff/open-source-games). I took its clear update/draw split, row-based level data, and rectangle model. I changed the architecture where this brief requires it: pure state transitions, fixed-step tests, bounce-cadenced decisions, and non-blocking player answers.
+The board's split of update and draw, its rows of level data and its rectangles follow
+[jakesgordon/javascript-breakout](https://github.com/jakesgordon/javascript-breakout).
