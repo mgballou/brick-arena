@@ -234,6 +234,39 @@ holds only each match's start and end, and it names any match it finds pruned.
 Within a level the lines come back ordered by frame, which can differ from the
 order the browser wrote them at one frame.
 
+### Proving it on your machine
+
+`pnpm test:db` runs the code above against a real Postgres and PostgREST in
+Docker, with no Supabase project. It needs Docker and `psql`:
+
+```bash
+pnpm db:up      # supabase/local/compose.yml; waits until it answers
+pnpm test:db    # also a CI job on every push
+pnpm db:down    # stops it and drops the data
+```
+
+The stack runs Postgres 17 and the PostgREST version Supabase pins, capped at
+1000 rows a read as Supabase is. An nginx gateway takes a fixed, public secret
+key on `apikey` and hands PostgREST the `service_role` JWT, as Supabase's
+gateway does; `supabase/local/roles.sql` makes the roles and grants a project
+starts with. Each run empties the schema and applies every migration in order.
+Then it:
+
+- posts a match to the hosted server with `SUPABASE_WRITES=1`, and reads it back
+  from the rows as the same record;
+- exports a month of 1,250 matches and 1,200 of Jev's calls, which takes more
+  than one page of each;
+- runs the weekly job's check, insert and prune, and matches the prune's counts
+  from `Content-Range` to the rows really gone;
+- shows the publishable key can read and write nothing.
+
+The CLIs work against it too: `SUPABASE_URL=http://127.0.0.1:54321
+SUPABASE_SECRET_KEY=sb_secret_brick_arena_local pnpm weekly check`.
+
+What it does not prove: Supabase's own key handling and gateway, which the
+nginx stands in for; its limits past the row cap, such as request size and
+statement timeouts; Render's network to Supabase; and the Free plan's pausing.
+
 ## Player events in PostHog
 
 The page can send what players do, and each Jev choice in brief, to PostHog

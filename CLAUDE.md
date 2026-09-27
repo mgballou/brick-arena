@@ -17,8 +17,10 @@ repeatable stepping. The engine stays pure. The one network call the game
 server adds is its writes to Supabase (`docs/specs/data-collection.md`), made
 only by `packages/server/src/supabase.ts`, behind `SUPABASE_WRITES=1`, and
 never on a player's path: play never waits on it or depends on it. Its
-`SUPABASE_SECRET_KEY` stays on the host like `JEV_API_KEY`. Tests use the
-stub there and never call live Supabase. The same file is the door for
+`SUPABASE_SECRET_KEY` stays on the host like `JEV_API_KEY`. `pnpm test` uses
+the stub there; `pnpm test:db` drives the real client against the local
+Postgres and PostgREST of `supabase/local/` (`docs/deploy.md`). Neither calls
+live Supabase. The same file is the door for
 `pnpm match`, `pnpm export` and the weekly job (`pnpm weekly`), which read the
 key from the shell or a GitHub secret and do nothing when `SUPABASE_URL` is
 unset. `pnpm export` writes the only backup; never make it replace a file
