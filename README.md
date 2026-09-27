@@ -15,6 +15,10 @@
 
 <br />
 
+<img src="docs/screens/2026-09-27/level-1.gif" alt="27 seconds of level 1 on a dark page: both balls launch at once, each paddle returns its ball, bricks fall on both boards and the scores climb." />
+
+Level 1: a script on the arrow keys plays the left board, and the right is the local stand-in, not Jev, answering at live Jev's measured 728 ms ([MP4](docs/screens/2026-09-27/level-1.mp4)).
+
 <img src="docs/screens/2026-09-27/readme-playing.png" alt="Level 1 in progress on a dark page: your board on the left, the opponent's on the right, the score and clock above them." />
 
 Level 1, *Multi-hit rows*, in debug mode: the right-hand board is the local stand-in, not Jev,
