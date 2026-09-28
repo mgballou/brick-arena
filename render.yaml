@@ -7,8 +7,9 @@ services:
     plan: free
     branch: main
     # Render's docs name neither the pnpm it preloads nor NODE_ENV at build
-    # time, so pin the pnpm that wrote the lockfile and keep devDependencies
-    # (typescript, for `tsc -b`) whatever NODE_ENV says.
+    # time, so start pnpm 11, which hands over to the pnpm that package.json's
+    # packageManager pins, and keep devDependencies (typescript, for `tsc -b`)
+    # whatever NODE_ENV says.
     buildCommand: NODE_ENV=development npx --yes pnpm@11 install --frozen-lockfile && npx --yes pnpm@11 build
     startCommand: node packages/server/src/serve.ts
     healthCheckPath: /healthz

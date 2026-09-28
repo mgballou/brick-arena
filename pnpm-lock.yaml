@@ -9,41 +9,41 @@ importers:
   .:
     dependencies:
       '@vitejs/plugin-react':
-        specifier: latest
+        specifier: 6.1.1
         version: 6.1.1(vite@8.3.1(@types/node@26.6.3)(esbuild@0.28.2)(tsx@4.23.15))
       posthog-js:
-        specifier: latest
+        specifier: 1.434.14
         version: 1.434.14(@types/react@19.3.0)(react@19.3.0)
       react:
-        specifier: latest
+        specifier: 19.3.0
         version: 19.3.0
       react-dom:
-        specifier: latest
+        specifier: 19.3.0
         version: 19.3.0(react@19.3.0)
       vite:
-        specifier: latest
+        specifier: 8.3.1
         version: 8.3.1(@types/node@26.6.3)(esbuild@0.28.2)(tsx@4.23.15)
     devDependencies:
       '@playwright/test':
         specifier: 1.63.0
         version: 1.63.0
       '@types/node':
-        specifier: latest
+        specifier: 26.6.3
         version: 26.6.3
       '@types/react':
-        specifier: latest
+        specifier: 19.3.0
         version: 19.3.0
       '@types/react-dom':
-        specifier: latest
+        specifier: 19.3.0
         version: 19.3.0(@types/react@19.3.0)
       tsx:
-        specifier: latest
+        specifier: 4.23.15
         version: 4.23.15
       typescript:
-        specifier: latest
+        specifier: 7.0.2
         version: 7.0.2
       vitest:
-        specifier: latest
+        specifier: 5.0.2
         version: 5.0.2(@types/node@26.6.3)(vite@8.3.1(@types/node@26.6.3)(esbuild@0.28.2)(tsx@4.23.15))
 
 packages:

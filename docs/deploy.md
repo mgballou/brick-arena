@@ -93,7 +93,8 @@ Screens: `docs/screens/2026-09-25/`.
 - A visitor is the first `X-Forwarded-For` address. A bot can forge that
   header to dodge the per-visitor cap. The daily total still binds it.
 - Render's docs don't say which pnpm the Node runtime preloads, or whether
-  `NODE_ENV` is `production` during the build, so the build command pins pnpm 11
+  `NODE_ENV` is `production` during the build, so the build command starts
+  pnpm 11, which runs the pnpm that `packageManager` in `package.json` pins,
   and keeps devDependencies itself.
 
 ## Match records
