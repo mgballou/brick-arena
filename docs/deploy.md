@@ -185,6 +185,51 @@ mode. When Supabase refuses a write, the log says so once per outage
 tries again on the next write or after 30 seconds. A restart empties that
 memory, and matches in play across it send no more rows.
 
+### The weekly job
+
+Supabase pauses a Free project after a week without enough database activity,
+and only the dashboard's **Resume project** brings it back. Every Monday
+`.github/workflows/supabase-weekly.yml` runs three steps
+(`packages/cli/src/upkeep.ts`):
+
+1. `pnpm weekly check` reads one row, and fails the run with a link to the
+   project's dashboard when Supabase doesn't answer. GitHub emails whoever last
+   changed the workflow's schedule about a failed scheduled run.
+2. `pnpm weekly awake` inserts one row into `keep_awake`.
+3. `pnpm weekly prune` deletes `jev_calls`, `match_events` and
+   `level_progress` rows of matches begun more than 90 days ago, and
+   `keep_awake` rows as old. `matches` keeps every row, with Jev's tally.
+
+It needs two repository secrets (Settings → Secrets and variables →
+Actions): `SUPABASE_URL` and `SUPABASE_SECRET_KEY`, the same values as the
+service's. Until they are set, and on a fork or a pull request, each step logs
+`SUPABASE_URL is not set, so the … step does nothing.` and passes. Run it by
+hand from the Actions tab with **Run workflow**. If the repository goes public,
+GitHub turns scheduled workflows off after 60 days without repository
+activity, and the job stops until someone turns it back on.
+
+### Reading and exporting from your machine
+
+With `SUPABASE_URL` and `SUPABASE_SECRET_KEY` set in your shell, `pnpm match`
+lists and prints matches from Supabase instead of `MATCHES_DIR`; `--from`
+still reads the hosted server's files.
+
+The Free plan keeps no backups, so the monthly export is the backup. Early each
+month, before the prune reaches it, run:
+
+```bash
+pnpm export                   # last month, UTC
+pnpm export --month 2026-10   # a given month
+```
+
+It writes `brick-arena-<month>.ndjson.gz`, every match begun that month as
+record version 1 lines, one match after another, to `--out`, else
+`BRICK_ARENA_EXPORT_DIR`, else `~/brick-arena-exports`. It never replaces a
+file already there unless given `--force`, since an export made after the prune
+holds only each match's start and end, and it names any match it finds pruned.
+Within a level the lines come back ordered by frame, which can differ from the
+order the browser wrote them at one frame.
+
 ## Player events in PostHog
 
 The page can send what players do, and each Jev choice in brief, to PostHog
