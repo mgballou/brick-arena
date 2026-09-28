@@ -13,7 +13,12 @@ the exact state sequence; do not reduce records to only the chosen target.
 
 Do not add model SDKs, network calls, physics engines, or flavor naming. Level
 content belongs in the engine's data tables and must preserve seeded,
-repeatable stepping.
+repeatable stepping. The engine stays pure. The one network call the game
+server adds is its writes to Supabase (`docs/specs/data-collection.md`), made
+only by `packages/server/src/supabase.ts`, behind `SUPABASE_WRITES=1`, and
+never on a player's path: play never waits on it or depends on it. Its
+`SUPABASE_SECRET_KEY` stays on the host like `JEV_API_KEY`. Tests use the
+stub there and never call live Supabase.
 
 ## The Jev key never reaches the browser
 
