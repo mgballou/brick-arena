@@ -61,8 +61,20 @@ function matchRecords(): Plugin {
   };
 }
 
+// The hosted server's health check (serve.ts), here too, so `pnpm smoke:site`
+// and the browser specs can ask the dev server whether it is up.
+function healthCheck(): Plugin {
+  return {
+    name: 'health-check',
+    apply: 'serve',
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use('/healthz', (_req, res) => res.end('ok'));
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), jevProxy(), matchRecords()],
+  plugins: [react(), jevProxy(), matchRecords(), healthCheck()],
   // The commit each PostHog event names as `build`, read as the server's
   // Supabase rows read it; null off Render.
   define: { __BUILD__: JSON.stringify(process.env.RENDER_GIT_COMMIT?.trim() || null) },

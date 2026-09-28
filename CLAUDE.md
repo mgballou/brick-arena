@@ -2,8 +2,9 @@
 
 This repository contains a deterministic TypeScript breakout simulation, a CLI
 session recorder, and a small React viewer. Run `pnpm test` for the engine
-tests, `pnpm build` for the typecheck/build, and `pnpm session && pnpm compare`
-to refresh and summarize the telemetry in `docs/session.ndjson`.
+tests, `pnpm build` for the typecheck/build, `pnpm e2e` for the browser specs,
+and `pnpm session && pnpm compare` to refresh and summarize the telemetry in
+`docs/session.ndjson`.
 
 The engine is intentionally pure: seed and elapsed ticks are inputs, while
 players answer categorical `Ask` questions. Keep browser concerns in
@@ -34,6 +35,13 @@ browser send nothing.
 PostHog keeps a random anonymous id in `localStorage`; never call `identify`,
 and never put that id in the match record. No analytics import belongs in the
 engine. Tests use the in-memory stub and never call live PostHog.
+
+The browser specs (`e2e/`, `playwright.config.ts`) play the page in Chromium
+against a stand-in they start themselves. `playwright.config.ts` hands the dev
+server a dummy key file and the stand-in's address, builds the hosted page with
+a PostHog host the specs answer, and never reuses a running server, which might
+hold the real key; keep all three. posthog-js drops events from an automated
+browser, so a spec that expects PostHog to hear something hides that first.
 
 ## The Jev key never reaches the browser
 
