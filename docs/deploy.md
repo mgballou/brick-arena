@@ -48,7 +48,10 @@ paid instance type stays awake.
    Privacy link opens the privacy page. It exits 1 if any check fails. The
    title screen's check is one call to Jev, as any visitor's is; PostHog drops
    an automated browser's events, and the run starts no match. It needs
-   Chromium once: `pnpm exec playwright install chromium`.
+   Chromium once: `pnpm exec playwright install chromium`. CI runs the same
+   checks before a deploy, on Render's build and `serve.ts`'s own options with
+   a fake TypeSafe (`e2e/deployed.e2e.ts`); only the real key and the real Jev
+   wait for this step.
 
 After that, every push to `main` deploys again. To deploy by hand, use
 **Manual Deploy** in the dashboard, or the Render CLI:

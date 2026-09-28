@@ -54,8 +54,10 @@ jobs:
       - name: install Chromium
         run: pnpm exec playwright install --with-deps chromium
 
-      # playwright.config.ts starts the dev server against the stand-in and
-      # the built page on the hosted app. Neither can reach Jev.
+      # playwright.config.ts starts the dev server against the stand-in, the
+      # built page on the hosted app with no key, and Render's build on
+      # serve.ts's own options with a fake TypeSafe (e2e/deployed.e2e.ts). None
+      # can reach Jev.
       - name: e2e
         run: pnpm e2e
 
