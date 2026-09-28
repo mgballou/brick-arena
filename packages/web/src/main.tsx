@@ -9,6 +9,7 @@ import { burst, reducedMotion, Sound, stepParticles } from './feedback';
 import type { AnsweredBy, Down } from '../../jev/src/wire';
 import { Checking, DownPage } from './down';
 import { askJev, DEBUG, probeJev, type Probe } from './jev';
+import { FLUSH_MS, jevLine, lostLines, MatchLog, sideTotal } from './match-log';
 import { brickColor, drawBoard, PALETTE, POWER_UPS, type View } from './render';
 import './style.css';
 
@@ -42,8 +43,9 @@ type LevelResult = { level: number; winner: 'human' | 'jev' | 'tie'; human: numb
 // `opponent` is who answered the check before the match, and `debug` whether
 // the stand-in was allowed. Both travel with every read of the match.
 // `countdown` is the ticks left before both first balls launch; the level
-// clock, `frame`, starts when it runs out.
-type Match = { level: number; frame: number; countdown: number; gen: number; human: Side; jev: Side; stats: JevStats; results: LevelResult[]; offlineReason: string; opponent: AnsweredBy; debug: boolean };
+// clock, `frame`, starts when it runs out. `log` is the match's record on the
+// server (match-log.ts), from the first level on.
+type Match = { level: number; frame: number; countdown: number; gen: number; human: Side; jev: Side; stats: JevStats; results: LevelResult[]; offlineReason: string; opponent: AnsweredBy; debug: boolean; log: MatchLog | null };
 
 const blankStats = (): JevStats => ({ calls: 0, answered: 0, timeouts: 0, errors: 0, missedStreak: 0, lastChoice: '', lastMs: null, ms: [], pending: false, answeredBy: { live: 0, 'stand-in': 0 } });
 
@@ -61,7 +63,7 @@ function newSide(who: Who, level: number, score = 0): Side {
 }
 
 function newMatch(opponent: AnsweredBy = 'live'): Match {
-  return { level: 0, frame: 0, countdown: ARENA.countdownTicks, gen: 0, human: newSide('human', 0), jev: newSide('jev', 0), stats: blankStats(), results: [], offlineReason: '', opponent, debug: DEBUG };
+  return { level: 0, frame: 0, countdown: ARENA.countdownTicks, gen: 0, human: newSide('human', 0), jev: newSide('jev', 0), stats: blankStats(), results: [], offlineReason: '', opponent, debug: DEBUG, log: null };
 }
 
 const levelSide = (side: Side): LevelSide => ({ status: sideStatus(side.state), clearedAt: side.clearedAt, levelScore: side.levelScore });
@@ -76,6 +78,13 @@ type Hud = { level: number; seconds: number; human: SideHud; jev: SideHud; stats
 function snapshot(match: Match): Hud {
   const side = (s: Side): SideHud => ({ score: s.score, levelScore: s.levelScore, percent: percentCleared(s.state), lives: livesLeft(s.state), status: sideStatus(s.state), serving: s.serving });
   return { level: match.level, seconds: secondsLeft(match), human: side(match.human), jev: side(match.jev), stats: { ...match.stats, ms: match.stats.ms }, opponent: match.opponent };
+}
+
+// The match is over, finished or not: its last line goes to the server now.
+function endRecord(match: Match, reason: 'final' | 'down' | 'left') {
+  if (!match.log || match.log.done) return;
+  match.log.end(reason, match.human.score, match.jev.score);
+  void match.log.flush();
 }
 
 // The first check runs before the game mounts. When the forwarder says Jev is
@@ -129,7 +138,7 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     const result = await probeJev();
     if (result.ok) probeMs.current = result.ms;
     setProbe(result);
-    if (!result.ok && result.down) onDown(result.down);
+    if (!result.ok && result.down) { endRecord(game.current, 'down'); onDown(result.down); }
     return result;
   }, [onDown]);
 
@@ -142,6 +151,7 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     match.stats.pending = false;
     match.human = newSide('human', level, match.human.score);
     match.jev = newSide('jev', level, match.jev.score);
+    match.log?.write({ type: 'level', level, name: levelNames[level] });
     keys.current.launch = false;
     setHud(snapshot(match));
     setPhase('banner');
@@ -154,7 +164,9 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     sound.current.wake();
     const result = await checkJev();
     if (!result.ok || phaseRef.current !== 'title') return;
+    endRecord(game.current, 'left');
     game.current = newMatch(result.answeredBy);
+    game.current.log = new MatchLog({ seed: SEED, tuning: TUNING_NAME, opponent: result.answeredBy, debug: DEBUG });
     startLevel(0);
   }, [checkJev, startLevel]);
 
@@ -163,6 +175,13 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     const human = levelSide(match.human), jev = levelSide(match.jev);
     const winner = levelWinner(human, jev);
     match.results.push({ level: match.level, winner, human: match.human.levelScore, jev: match.jev.levelScore, humanPercent: percentCleared(match.human.state), jevPercent: percentCleared(match.jev.state), humanCleared: human.clearedAt !== null, jevCleared: jev.clearedAt !== null });
+    if (match.log) {
+      const at = { level: match.level, frame: match.frame };
+      // On a whole second the tick has just written this progress line.
+      if (match.frame % ARENA.ticksPerSecond !== 0) match.log.write({ type: 'progress', ...at, human: sideTotal(match.human.state, match.human.score), jev: sideTotal(match.jev.state, match.jev.score) });
+      match.log.write({ type: 'levelEnd', ...at, winner, human: { ...sideTotal(match.human.state, match.human.score), cleared: human.clearedAt !== null }, jev: { ...sideTotal(match.jev.state, match.jev.score), cleared: jev.clearedAt !== null } });
+      void match.log.flush();
+    }
     match.gen++;
     setHud(snapshot(match));
     setPhase('levelEnd');
@@ -173,6 +192,7 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     const match = game.current;
     if (match.level + 1 < ARENA.levels) startLevel(match.level + 1);
     else {
+      endRecord(match, 'final');
       setPhase('final');
       sound.current.fanfare(match.human.score >= match.jev.score);
     }
@@ -220,10 +240,14 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     // the first. Asking about the board on screen cost the stand-in, at live
     // Jev's 728 ms, every ball on every level (`pnpm fair`).
     const leadTicks = Math.ceil((median(stats.ms) ?? probeMs.current) / TICK_MS);
-    void askJev(askForDecision(boardAhead(match.jev.state, leadTicks, TUNING))).then(answer => {
-      if (game.current !== match || match.gen !== gen) return;
+    const ask = askForDecision(boardAhead(match.jev.state, leadTicks, TUNING));
+    const at = { level: match.level, frame: match.frame, tick: match.jev.state.tick, lead: leadTicks };
+    void askJev(ask).then(answer => {
+      if (game.current !== match) return;
+      match.log?.write(jevLine(at, ask, match.gen !== gen && answer.ok ? 'stale' : answer.ok ? 'answered' : answer.kind, answer.ms, answer.ok ? answer.choice : undefined));
+      if (match.gen !== gen) return;
       stats.pending = false;
-      if (!answer.ok && answer.kind === 'down') { onDown(answer.down); return; }
+      if (!answer.ok && answer.kind === 'down') { endRecord(match, 'down'); onDown(answer.down); return; }
       if (answer.ok) {
         match.jev.state = applyDecision(match.jev.state, answer.decision);
         stats.answered++;
@@ -257,6 +281,7 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
       const pressed = side.who === 'human' && keys.current.launch;
       if (side.who === 'human') keys.current.launch = false;
       const served = serveTick(side.state, side.serve, { who: side.who, countdown: match.countdown, pressed });
+      if (served.launched) match.log?.write({ type: 'launch', level: match.level, frame: match.frame, side: side.who, x: Math.round(served.state.balls[0].x), first: side.serve.first });
       side.state = served.state;
       side.serve = served.serve;
       if (served.launched) {
@@ -269,6 +294,7 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     const { state, events } = arenaStep(before, TUNING);
     side.state = state;
     feel(side, before, events);
+    if (events.ballsLost.length) for (const line of lostLines({ level: match.level, frame: match.frame, side: side.who }, events.ballsLost, events.lifeLost, state)) match.log?.write(line);
     if (events.lifeLost) side.serving = true;
     if (state.completed && side.clearedAt === null) side.clearedAt = match.frame;
     // The score is the board, not a tally of events: what is cleared now, plus
@@ -289,6 +315,10 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     } else match.frame++;
     tickSide(match, match.human);
     tickSide(match, match.jev);
+    // Both boards' clear, once a second of the level clock, for the record.
+    if (match.countdown === 0 && match.frame > 0 && match.frame % ARENA.ticksPerSecond === 0) {
+      match.log?.write({ type: 'progress', level: match.level, frame: match.frame, human: sideTotal(match.human.state, match.human.score), jev: sideTotal(match.jev.state, match.jev.score) });
+    }
     if (levelOver(levelSide(match.human), levelSide(match.jev), secondsLeft(match))) endLevel();
   }, [endLevel, tickSide]);
 
@@ -388,13 +418,27 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     return () => clearTimeout(timer);
   }, [phase, setPhase]);
 
+  // The record goes to the server every few seconds. A page that closes
+  // mid-match says so, in a beacon the browser sends after it is gone.
+  useEffect(() => {
+    const timer = setInterval(() => void game.current.log?.flush(), FLUSH_MS);
+    const onHide = () => {
+      const match = game.current;
+      if (!match.log || match.log.done) return;
+      match.log.end('left', match.human.score, match.jev.score);
+      void match.log.flush(true);
+    };
+    window.addEventListener('pagehide', onHide);
+    return () => { clearInterval(timer); window.removeEventListener('pagehide', onHide); };
+  }, []);
+
   // A read-only hook for scripted play-throughs; it steers nothing.
   useEffect(() => {
     (window as unknown as { __arena: unknown }).__arena = {
       read: () => {
         const match = game.current;
         const side = (s: Side) => ({ ...snapshot(match)[s.who], paddle: s.state.paddleX + s.state.paddleWidth / 2, paddleWidth: s.state.paddleWidth, balls: s.state.balls.map(b => ({ x: b.x, y: b.y, vx: b.vx, vy: b.vy })), powerUps: s.state.powerUps.map(p => ({ x: p.x, y: p.y, kind: p.kind })), bricksLeft: s.state.bricks.filter(b => !b.unbreakable && b.durability > 0).length });
-        return { phase: phaseRef.current, debug: match.debug, opponent: match.opponent, tuning: TUNING_NAME, level: match.level, seconds: secondsLeft(match), human: side(match.human), jev: side(match.jev), stats: match.stats, results: match.results };
+        return { phase: phaseRef.current, matchId: match.log?.id ?? null, debug: match.debug, opponent: match.opponent, tuning: TUNING_NAME, level: match.level, seconds: secondsLeft(match), human: side(match.human), jev: side(match.jev), stats: match.stats, results: match.results };
       },
     };
   }, []);
@@ -506,7 +550,7 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
             <p className="lede small">The match waits for Jev. It never goes on without it.</p>
             <div className="row">
               <button className="primary" onClick={() => void retryJev()}>{probe === 'checking' ? 'Checking…' : 'Retry'}</button>
-              <button onClick={() => setPhase('title')}>Quit</button>
+              <button onClick={() => { endRecord(game.current, 'left'); setPhase('title'); }}>Quit</button>
             </div>
           </Overlay>
         )}

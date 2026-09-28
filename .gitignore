@@ -5,3 +5,4 @@ dist
 docs/jev-race.ndjson
 tsconfig.tsbuildinfo
 .playwright-mcp
+var

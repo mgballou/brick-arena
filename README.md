@@ -117,8 +117,8 @@ The repo records no live match. Until some are played, these stay open:
 - Whether it beats a person, and on which levels.
 - What a call costs in tokens now that the prompt carries the objective and names each catch.
 
-The match record keeps Jev's last choice and its answer counts, not every choice, so the
-first question needs a tally of choices before a match can answer it.
+The server keeps a record of each match, with every Jev call in it, so a few played
+matches can answer these.
 
 ## Play it
 
@@ -128,6 +128,12 @@ Open the link above. The hosted page holds the TypeSafe key as a server secret, 
 none, and a daily cap on Jev calls keeps a bot from spending it. When Jev can't answer or
 the cap is spent, the page says so and shows no board. [docs/deploy.md](docs/deploy.md) sets
 up the host.
+
+The server keeps a record of each match: every launch, lost ball and Jev call, with the board
+Jev was sent, and both boards' clear over time. Only the admin reads them, with the server's
+`ADMIN_SECRET`: `/matches.html` lists recent matches and opens each one's timeline, and
+`npm run match` prints them with a tally of every choice Jev made.
+[docs/deploy.md](docs/deploy.md#match-records) says where they live.
 
 Left and Right move your paddle. After a lost ball, Space or Up serves. P pauses, H shows how
 scoring works, M mutes.
