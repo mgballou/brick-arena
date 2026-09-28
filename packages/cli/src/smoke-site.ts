@@ -2,7 +2,8 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, type Page } from '@playwright/test';
 
-// Go-live's check by eye, as a command (docs/go-live.md, step 18):
+// Go-live's check by eye, as a command (docs/go-live.md, the `pnpm smoke:site`
+// step under *Secrets*):
 //
 //   pnpm smoke:site https://<the service>
 //
