@@ -61,6 +61,13 @@ reason and logs the upstream detail; the browser then shows the down page and
 mounts no board. `bundle.test.ts` builds the client and fails if it holds a key
 or names a TypeSafe host.
 
+The key serves the game and nothing else. The proxy forwards only the health
+check and the game's own target, chase and track asks, and refuses any other
+with 400 before it is sent. `askRefusal` in `wire.ts` is that list, read from
+the same `OPTION_TEXT` and board shape that `toRequest` builds, so a change to
+the asks changes what passes; `proxy.test.ts` replays every recorded ask
+against it.
+
 No live Jev, no game. The stand-in plays only in debug mode (`VITE_DEBUG=1`),
 which says so on screen and in the match record. `refusal` in
 `packages/jev/src/wire.ts` is the one gate; the proxy and the browser both

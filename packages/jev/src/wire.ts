@@ -71,6 +71,36 @@ function boardForJev(state: BoardState) {
 
 const trackedBall = (state: BoardState) => state.balls.find(item => item.tracked) ?? state.balls[0];
 
+// Every option's text, with a slot for each value criteriaFor fills in. The
+// proxy checks an ask's options against the same table (askRefusal), so only
+// these sentences, with numbers, ids and the fixed phrases below in the slots,
+// ever reach Jev.
+const OPTION_TEXT = {
+  landing: 'Catch the ball dead center where it comes down, x={x}: the safest catch, sending it back up almost straight',
+  aim: 'Catch it at x={x} to send it into the densest bricks it can reach: the column at x={x}, {x} hit points open from below',
+  aimNowhere: 'No return reaches a breakable brick: catch it dead center at x={x}',
+  angleLeft: "Catch it on the paddle's right side at x={x} to send it up and to the left at 45 degrees",
+  angleRight: "Catch it on the paddle's left side at x={x} to send it up and to the right at 45 degrees",
+  none: 'Leave the power-ups and play the ball: catch it dead center where it comes down, x={x}',
+  power: 'Catch the falling {kind} power-up at x={x}, y={x}: {effect}; {cost}',
+  powerGone: 'Catch power-up {power}',
+  ball: 'Follow {ball} at x={x}, y={x}, moving {way}',
+  ballGone: 'Follow {ball}',
+} as const;
+type OptionText = keyof typeof OPTION_TEXT;
+
+// The options each question may offer: target's four by name, and a chase or
+// track option by the id of a power-up or ball in the ask's own state.
+const TARGET_TEXT: Record<typeof targetKeys[number], readonly OptionText[]> = { landing: ['landing'], aim: ['aim', 'aimNowhere'], 'angle-left': ['angleLeft'], 'angle-right': ['angleRight'] };
+const CHASE_TEXT: readonly OptionText[] = ['power', 'powerGone'];
+const TRACK_TEXT: readonly OptionText[] = ['ball', 'ballGone'];
+
+// Fills each slot in turn with the next value.
+function optionText(text: OptionText, ...values: Array<string | number>): string {
+  let next = 0;
+  return OPTION_TEXT[text].replace(/\{\w+\}/g, () => String(values[next++]));
+}
+
 function criteriaFor(ask: Ask): Record<string, string> {
   const { state, options } = ask;
   if (ask.question === 'target') {
@@ -79,30 +109,29 @@ function criteriaFor(ask: Ask): Record<string, string> {
     const ball = trackedBall(state);
     const shot = aimShot(state, ball, landingX(state, ball));
     return {
-      landing: `Catch the ball dead center where it comes down, x=${landing.toFixed(1)}: the safest catch, sending it back up almost straight`,
-      aim: shot
-        ? `Catch it at x=${aim.toFixed(1)} to send it into the densest bricks it can reach: the column at x=${shot.x}, ${shot.hitPoints} hit points open from below`
-        : `No return reaches a breakable brick: catch it dead center at x=${aim.toFixed(1)}`,
-      'angle-left': `Catch it on the paddle's right side at x=${left.toFixed(1)} to send it up and to the left at 45 degrees`,
-      'angle-right': `Catch it on the paddle's left side at x=${right.toFixed(1)} to send it up and to the right at 45 degrees`,
+      landing: optionText('landing', landing.toFixed(1)),
+      aim: shot ? optionText('aim', aim.toFixed(1), shot.x, shot.hitPoints) : optionText('aimNowhere', aim.toFixed(1)),
+      'angle-left': optionText('angleLeft', left.toFixed(1)),
+      'angle-right': optionText('angleRight', right.toFixed(1)),
     };
   }
   if (ask.question === 'chase') {
     return Object.fromEntries(options.map(option => {
       const id = String(option);
-      if (id === 'none') return [id, `Leave the power-ups and play the ball: catch it dead center where it comes down, x=${landingX(state, trackedBall(state)).toFixed(1)}`];
+      if (id === 'none') return [id, optionText('none', landingX(state, trackedBall(state)).toFixed(1))];
       const power = state.powerUps.find(item => item.id === id);
-      if (!power) return [id, `Catch power-up ${id}`];
-      const cost = keepsBall(state, power) ? 'the paddle can still get back under the ball' : 'the ball comes down out of reach first, so going for it loses the ball';
-      return [id, `Catch the falling ${power.kind} power-up at x=${power.x.toFixed(1)}, y=${power.y.toFixed(1)}: ${POWER_UP_EFFECTS[power.kind]}; ${cost}`];
+      if (!power) return [id, optionText('powerGone', id)];
+      return [id, optionText('power', power.kind, power.x.toFixed(1), power.y.toFixed(1), POWER_UP_EFFECTS[power.kind], keepsBall(state, power) ? KEEPS_BALL.yes : KEEPS_BALL.no)];
     }));
   }
   return Object.fromEntries(options.map(option => {
     const id = String(option);
     const ball = state.balls.find(item => item.id === id);
-    return [id, ball ? `Follow ${id} at x=${ball.x.toFixed(1)}, y=${ball.y.toFixed(1)}, moving ${ball.vy > 0 ? 'down' : 'up'}` : `Follow ${id}`];
+    return [id, ball ? optionText('ball', id, ball.x.toFixed(1), ball.y.toFixed(1), ball.vy > 0 ? 'down' : 'up') : optionText('ballGone', id)];
   }));
 }
+
+const KEEPS_BALL = { yes: 'the paddle can still get back under the ball', no: 'the ball comes down out of reach first, so going for it loses the ball' } as const;
 
 // What each power-up does to the pace of a clear, for the chase question.
 const POWER_UP_EFFECTS: Record<PowerUpKind, string> = {
@@ -146,4 +175,97 @@ export function fromResponse(ask: Ask, response: SystemOneResponse): Decision {
   if (ask.question === 'chase' && answer.choice === 'none') return { kind: 'target', x: landingX(ask.state, trackedBall(ask.state)) };
   if (ask.question === 'chase') return { kind: 'chase', powerUpId: answer.choice };
   return { kind: 'track', ballId: answer.choice };
+}
+
+// The model the browser names in an ask. The proxy checks it, then sends the
+// key's own model in its place.
+export const ASK_MODEL = 'jev';
+
+// The check before a match: the one ask that is not a game question.
+const HEALTH_QUESTION: ChoiceQuestion = { type: 'choice', instructions: 'Reply with ready.', criteria: { ready: 'The link is up' } };
+export function healthRequest(model: string): SystemOneRequest {
+  return { model, state: { tick: 0 }, questions: { decision: HEALTH_QUESTION } };
+}
+
+// The whole of what may be asked of Jev on this key, as boardForJev and
+// criteriaFor build it: a board of numbers, flags and the engine's ids, one
+// choice question in the game's own words, and options from OPTION_TEXT. The
+// key is not a general service; anything else is refused before it is sent.
+type Check = (value: unknown) => boolean;
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
+const hasKeys = (value: Record<string, unknown>, keys: readonly string[]) => Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
+const num: Check = value => typeof value === 'number' && Number.isFinite(value);
+const flag: Check = value => typeof value === 'boolean';
+const matches = (pattern: RegExp): Check => value => typeof value === 'string' && pattern.test(value);
+const oneOf = (values: readonly unknown[]): Check => value => values.includes(value);
+const listOf = (item: Check): Check => value => Array.isArray(value) && value.every(item);
+const orNull = (check: Check): Check => value => value === null || check(value);
+const exactly = (fields: Record<string, Check>): Check => value => isRecord(value) && hasKeys(value, Object.keys(fields)) && Object.entries(fields).every(([key, check]) => check(value[key]));
+
+// Ids as the engine makes them: `ball-0`, `ball-t812` (arena.ts), `power-412-brick-3-1`.
+const BALL_ID = /^ball-t?\d+$/;
+const POWER_ID = /^power-\d+-brick-\d+-\d+$/;
+const powerUpKinds = Object.keys(POWER_UP_EFFECTS) as PowerUpKind[];
+
+const isBoard = exactly({
+  tick: num,
+  width: num,
+  height: num,
+  paddle: exactly({ x: num, width: num, targetX: num, speed: num, magnet: flag }),
+  balls: listOf(exactly({ id: matches(BALL_ID), x: num, y: num, vx: num, vy: num, tracked: flag, piercing: flag, landsAt: orNull(exactly({ x: num, inTicks: num })) })),
+  powerUps: listOf(exactly({ id: matches(POWER_ID), kind: oneOf(powerUpKinds), x: num, y: num, vy: num, keepsBall: flag })),
+  bricks: listOf(exactly({ x: num, y: num, durability: num, unbreakable: flag, regenerates: flag })),
+  livesLost: num,
+});
+type WireBoard = ReturnType<typeof boardForJev>;
+
+// What may fill each slot in OPTION_TEXT.
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const anyOf = (texts: readonly string[]) => texts.map(escape).join('|');
+const SLOT: Record<string, string> = {
+  x: '-?\\d+(?:\\.\\d+)?',
+  kind: anyOf(powerUpKinds),
+  effect: anyOf(Object.values(POWER_UP_EFFECTS)),
+  cost: anyOf(Object.values(KEEPS_BALL)),
+  power: POWER_ID.source.slice(1, -1),
+  ball: BALL_ID.source.slice(1, -1),
+  way: 'up|down',
+};
+const OPTION_PATTERN = Object.fromEntries(Object.entries(OPTION_TEXT).map(([name, text]) => {
+  const pattern = text.split(/(\{\w+\})/).map(part => /^\{\w+\}$/.test(part) ? `(?:${SLOT[part.slice(1, -1)]})` : escape(part)).join('');
+  return [name, new RegExp(`^${pattern}$`)];
+})) as Record<OptionText, RegExp>;
+
+const QUESTIONS = Object.keys(questions) as Array<Ask['question']>;
+
+// Null when `request` is the health check or one of the game's asks on
+// `model`; otherwise why not, in words that never repeat what was sent.
+export function askRefusal(request: unknown, model: string): string | null {
+  if (!isRecord(request) || !hasKeys(request, ['model', 'state', 'questions'])) return 'An ask holds a model, a state and questions, and nothing else.';
+  if (request.model !== model) return `An ask names the model ${model}.`;
+  const { questions: asked, state } = request;
+  if (!isRecord(asked) || !hasKeys(asked, ['decision'])) return 'An ask holds one question, the decision.';
+  const decision = asked.decision;
+  if (!isRecord(decision) || !hasKeys(decision, ['type', 'instructions', 'criteria']) || decision.type !== 'choice' || !isRecord(decision.criteria)) return 'The decision is a choice with instructions and criteria.';
+  if (JSON.stringify(decision) === JSON.stringify(HEALTH_QUESTION)) return JSON.stringify(state) === JSON.stringify({ tick: 0 }) ? null : 'The health check carries no board.';
+  const question = QUESTIONS.find(name => decision.instructions === instructions(name));
+  if (!question) return "The instructions are not one of the game's questions.";
+  if (!isBoard(state)) return "The state is not the game's board.";
+  const board = state as WireBoard;
+  const criteria = decision.criteria;
+  const keys = Object.keys(criteria);
+  const textsFor = (key: string): readonly OptionText[] => {
+    if (question === 'target') return TARGET_TEXT[key as typeof targetKeys[number]] ?? [];
+    if (question === 'chase') return key === 'none' ? ['none'] : board.powerUps.some(power => power.id === key) ? CHASE_TEXT : [];
+    return board.balls.some(ball => ball.id === key) ? TRACK_TEXT : [];
+  };
+  if (question === 'target' && keys.join() !== targetKeys.join()) return `A target ask offers ${targetKeys.join(', ')}, in that order.`;
+  if (question === 'chase' && !keys.includes('none')) return 'A chase ask offers none.';
+  if (keys.length < 2) return 'An ask offers at least two options.';
+  for (const key of keys) {
+    const texts = textsFor(key);
+    if (!texts.length) return `An option of the ${question} ask is not one the game offers.`;
+    if (!texts.some(text => matches(OPTION_PATTERN[text])(criteria[key]))) return `An option of the ${question} ask is not in the game's words.`;
+  }
+  return null;
 }
