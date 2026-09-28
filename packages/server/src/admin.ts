@@ -9,7 +9,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 // backstage at all, and those routes answer 404.
 //
 //   ADMIN_SECRET=... pnpm match --from https://<your service>
-export const ADMIN_REALM = 'Brick Arena backstage';
+const ADMIN_REALM = 'Brick Arena backstage';
 // The page that reads match records. Its built script holds no data.
 export const BACKSTAGE_PAGE = '/matches.html';
 
@@ -31,7 +31,7 @@ function passwordOf(req: IncomingMessage): string | null {
 }
 
 // Compared as hashes, so the time taken says nothing about the secret.
-export function isAdmin(req: IncomingMessage, secret: string | null): boolean {
+function isAdmin(req: IncomingMessage, secret: string | null): boolean {
   const password = passwordOf(req);
   return secret !== null && password !== null && timingSafeEqual(digest(password), digest(secret));
 }

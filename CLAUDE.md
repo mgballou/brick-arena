@@ -105,9 +105,4 @@ Keep two things here: the judgment call, and a single lookup.
 
 Bound what comes back. A tool result is re-read on every later turn, so it
 costs its size times the turns remaining.
-
-You are not alone. Two skills reach the desk from any repo: `/herdr` to see and
-talk to the other agents running, and `/asking-laila` to pin a note or a
-question for Laila. Use them when you are stuck, cannot get further, or would
-otherwise stop to ask Matthew. She wakes on a pin and answers.
 <!-- block:end -->

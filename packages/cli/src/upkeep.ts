@@ -7,7 +7,7 @@ import type { TableClient, TableName } from '../../server/src/supabase.ts';
 // loudly if not, inserts one row, and deletes the full rows of matches older
 // than 90 days, which by then are in a monthly export (`pnpm export`).
 
-export const KEEP_DAYS = 90;
+const KEEP_DAYS = 90;
 const DAY = 86_400_000;
 // Match ids in one delete's `in (…)` filter, which keeps its URL near 3 KB.
 const CHUNK = 100;

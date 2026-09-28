@@ -1,11 +1,15 @@
 # Data collection: what players do, what Jev does
 
-Status: design, no code. Written 26 September 2026 for Matthew, who asked for
-it that day: *"I want to know what people do, what jev does, and be able to do
-something with the data later on."* Revised the same afternoon after his
-answers: *"Seems like this is a tailor made use case for supabase"*, *"Post hog
-too … like the key services that people use for this, not rolling our own"*,
-and *"especially at this level which will likely be free."*
+Status: built. The code is `packages/server/src/supabase.ts` and `rows.ts`,
+`packages/web/src/analytics.ts` and `consent.ts`, `supabase/migrations/` and
+`.github/workflows/supabase-weekly.yml`; creating the PostHog and Supabase
+projects is the owner's step (`docs/deploy.md`). Written 26 September 2026
+for Matthew, who asked for it that day: *"I want to know what people do, what
+jev does, and be able to do something with the data later on."* Revised the
+same afternoon after his answers: *"Seems like this is a tailor made use case
+for supabase"*, *"Post hog too … like the key services that people use for
+this, not rolling our own"*, and *"especially at this level which will likely
+be free."*
 
 So: two standard services, both on their free plans, and only the glue built
 here. Revised again after his answers to the six decisions at 11:33 PM the
@@ -89,8 +93,10 @@ by hundreds.
   player counts once. The page never calls `identify`, so the id stays linked
   to nothing; clearing site data or opting out ends it.
 - Session replay: off (decision 3).
-- Stand-in and debug play is not sent at all (decision 4): with `VITE_DEBUG=1`
-  the page loads no PostHog and sends no match lines.
+- Stand-in and debug play reaches neither service (decision 4): with
+  `VITE_DEBUG=1` the page loads no PostHog, and the server writes no Supabase
+  row for a debug or stand-in match (`rows.ts`). Debug play runs only under
+  `pnpm dev`, so its match lines stay in `MATCHES_DIR` on that machine.
 
 ### The first four questions, as PostHog insights
 
@@ -361,7 +367,9 @@ Do:
 
 Per app: its event names, its tables and its dashboard.
 
-## Rules this changes in CLAUDE.md
+## Rules this changed in CLAUDE.md
+
+`CLAUDE.md` carries both now.
 
 - *"Do not add model SDKs, network calls …"* — the page gains `posthog-js` and
   the server gains Supabase writes. The engine stays pure; the rule should say

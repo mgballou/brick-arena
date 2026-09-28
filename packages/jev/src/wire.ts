@@ -3,11 +3,11 @@ import { aimShot, keepsBall, landingOf, landingX, type Ask, type BoardState, typ
 
 // Wire shape of POST {baseUrl}/v1/systemone, as documented by TypeSafe and
 // mirrored by Vercel AI Gateway (https://vercel.com/docs/ai-gateway/sdks-and-apis/typesafe).
-export type ChoiceQuestion = { type: 'choice'; instructions: string; criteria: Record<string, string | null> };
+type ChoiceQuestion = { type: 'choice'; instructions: string; criteria: Record<string, string | null> };
 export type SystemOneRequest = { model: string; state: unknown; questions: { decision: ChoiceQuestion } };
 // Only `type` and `choice` are documented for a Choice answer; any per-option
 // probabilities are kept in the recording as received, never read here.
-export type ChoiceAnswer = { type: 'choice'; choice: string; [field: string]: unknown };
+type ChoiceAnswer = { type: 'choice'; choice: string; [field: string]: unknown };
 export type SystemOneResponse = { model?: string; answers: Record<string, unknown>; usage?: { input_tokens?: number; output_tokens?: number }; answered_by?: string };
 
 // Who answered a call. The stand-in names itself in every reply it sends;

@@ -16,7 +16,7 @@ import type { Row, RowClient, TableName } from './supabase.ts';
 // What a restart loses: the count of rows each open match has sent, so lines
 // for a match begun before it are not written.
 
-export const ROWS_DEFAULTS = {
+const ROWS_DEFAULTS = {
   // One match at its size limit.
   maxPendingBytes: MATCHES_DEFAULTS.maxMatchBytes,
   retryMs: 30_000,

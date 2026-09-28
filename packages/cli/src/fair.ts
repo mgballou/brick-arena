@@ -10,7 +10,7 @@ import { fromResponse, toRequest } from '../../jev/src/wire.ts';
 // the arrow keys who sees the board --react ms late. Each board plays every
 // level for the full clock, or until it clears or runs out of balls.
 //
-//   pnpm fair                   (728 ms: the one live Jev call, 22 September)
+//   pnpm fair                   (728 ms: the first live Jev call, 22 September)
 //   pnpm fair --ms 421 --react 250
 //
 // Modes for the Jev board:

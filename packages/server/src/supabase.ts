@@ -21,16 +21,16 @@ export const CONFLICT: Record<TableName, string> = {
 
 export type Row = Record<string, unknown>;
 // `status` 0: no answer at all (the network, or a timeout).
-export type Refusal = { ok: false; status: number; message: string };
-export type UpsertResult = { ok: true } | Refusal;
+type Refusal = { ok: false; status: number; message: string };
+type UpsertResult = { ok: true } | Refusal;
 export type RowClient = { upsert: (table: TableName, rows: Row[]) => Promise<UpsertResult> };
 
 // A filter the Data API and the stub both read. `in` takes a list.
-export type Where = Array<[column: string, op: 'eq' | 'lt' | 'gte', value: string | number] | [column: string, op: 'in', value: Array<string | number>]>;
+type Where = Array<[column: string, op: 'eq' | 'lt' | 'gte', value: string | number] | [column: string, op: 'in', value: Array<string | number>]>;
 export type Query = { columns?: string[]; where?: Where; order: Array<[column: string, direction: 'asc' | 'desc']>; limit?: number };
-export type SelectResult = { ok: true; rows: Row[] } | Refusal;
+type SelectResult = { ok: true; rows: Row[] } | Refusal;
 // `count` is null when the answer did not say.
-export type RemoveResult = { ok: true; count: number | null } | Refusal;
+type RemoveResult = { ok: true; count: number | null } | Refusal;
 export type TableClient = RowClient & {
   // Every row that matches, however many pages that takes, unless `limit` says fewer.
   select: (table: TableName, query: Query) => Promise<SelectResult>;
@@ -106,7 +106,7 @@ const PAGE = 1000;
 
 // A value inside `in.(…)`, quoted so a comma or a bracket can't end it.
 const quoted = (value: string | number) => typeof value === 'number' ? String(value) : `"${value.replace(/["\\]/g, '\\$&')}"`;
-export function filterParams(where: Where = []): string[] {
+function filterParams(where: Where = []): string[] {
   return where.map(([column, op, value]) => `${column}=${encodeURIComponent(op === 'in' ? `in.(${value.map(quoted).join(',')})` : `${op}.${value}`)}`);
 }
 

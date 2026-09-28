@@ -61,7 +61,7 @@ export async function checkHealth(options: ProxyOptions): Promise<Health> {
 // Who is asking, for the cap. Behind the host's proxy that is the first
 // X-Forwarded-For address; a client can forge it, so the daily total is the
 // ceiling that holds.
-export function visitorOf(req: IncomingMessage): string {
+function visitorOf(req: IncomingMessage): string {
   const forwarded = req.headers['x-forwarded-for'];
   const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(',')[0]?.trim();
   return first || req.socket.remoteAddress || 'unknown';

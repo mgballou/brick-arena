@@ -51,15 +51,18 @@ The outcomes still change. On level 0 the bot catches the ball dead center at
 tick 811, and from then on `vx` is 0: the ball runs straight up and down one
 column forever. The old engine cleared level 0 only because a wrong flip at tick
 77 sent the ball another way. On the new engine neither the bot nor the scripted
-Human clears level 0 on seed 20260919. The Human clears level 1 at tick 3348.
+Human clears level 0 on seed 20260919. On 24 September the Human cleared level
+1 at tick 3348; since 26 September it catches where the ball really lands
+(`landingOf`), falls into the same loop, and clears no level (`CLAUDE.md`).
 
 So:
 
-- `docs/session.ndjson` is regenerated, and the replay test takes the level the
-  Human clears.
-- The synthetic Jev recording moved to seed 20260962, level 1. It is the first
-  seed where its rule clears a level and meets all three questions; level 1 has
-  unbreakable bricks, so the recording now covers them.
+- `docs/session.ndjson` was regenerated. The replay test replays the Human's
+  level 0 (`replay.test.ts`), which checks the state sequence whether or not the
+  level clears.
+- The synthetic Jev recording moved to seed 20260962, level 1, that day. Since
+  its rule became `aim` it plays seed 20260919, level 0 again (`SYNTHETIC` in
+  `packages/jev/src/synthetic.ts`, and the README).
 - The paddle-width note in `CLAUDE.md` is corrected: with the fix, neither 180
   nor 120 clears a level.
 

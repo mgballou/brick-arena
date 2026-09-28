@@ -46,7 +46,7 @@ function attempt<T>(read: () => T, fallback: T): T {
   try { return read(); } catch { return fallback; }
 }
 
-export function doNotTrack(): boolean {
+function doNotTrack(): boolean {
   if (typeof navigator === 'undefined' || typeof window === 'undefined') return false;
   const flags = [navigator.doNotTrack, (window as { doNotTrack?: string }).doNotTrack, (navigator as { msDoNotTrack?: string }).msDoNotTrack];
   return flags.some(flag => flag === '1' || flag === 'yes');
