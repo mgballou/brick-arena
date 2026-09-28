@@ -152,8 +152,8 @@ from the lockfile, as CI does.
 
 ### Debug mode, without Jev
 
-**Not a real match.** A local stand-in answers in Jev's place. It aims every catch at the
-densest bricks (`clearFast` in `packages/jev/src/stand-in.ts`) and marks every reply
+**Not a real match.** A local stand-in answers in Jev's place. It keeps the ball first and
+aims every catch at the densest bricks (`clearFast` in `packages/jev/src/stand-in.ts`) and marks every reply
 `"answered_by": "stand-in"`. No call leaves your machine.
 
 ```sh

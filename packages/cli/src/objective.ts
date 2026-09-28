@@ -94,16 +94,18 @@ const seconds = (frames: number) => (frames / ARENA.ticksPerSecond).toFixed(1);
 const median = (xs: number[]) => xs.length ? [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] : null;
 
 console.log(`${SEEDS.length} seeds from ${SEEDS[0]}; answers land ${values.ms} ± ${JITTER_MS} ms after the ask, asked ${LATE_TICKS} ticks ahead; ${ARENA.levels} levels of ${ARENA.levelSeconds} s`);
-const totals = { landing: { clears: 0, lost: 0 }, aim: { clears: 0, lost: 0 }, wins: { landing: 0, aim: 0, tie: 0 } };
+const totals = { landing: { clears: 0, lost: 0, out: 0 }, aim: { clears: 0, lost: 0, out: 0 }, wins: { landing: 0, aim: 0, tie: 0 } };
 for (let level = 0; level < ARENA.levels; level++) {
   const runs = Object.fromEntries((Object.keys(POLICIES) as Name[]).map(name => [name, SEEDS.map(seed => play(seed, level, POLICIES[name]))])) as Record<Name, Run[]>;
   const row = (Object.keys(POLICIES) as Name[]).map(name => {
     const clears = runs[name].filter(run => run.clearedAt !== null).map(run => run.clearedAt!);
     const percent = runs[name].map(run => percentCleared(at(run, LEVEL_FRAMES)));
     const lost = runs[name].reduce((n, run) => n + run.livesLost, 0);
-    totals[name].clears += clears.length; totals[name].lost += lost;
+    // Out of balls: all three lost before the level ended.
+    const out = runs[name].filter(run => sideStatus(run.boards.at(-1)!) === 'out').length;
+    totals[name].clears += clears.length; totals[name].lost += lost; totals[name].out += out;
     const m = median(clears);
-    return `${name} cleared ${clears.length}/${SEEDS.length}${m === null ? '' : `, median ${seconds(m)} s`}, ${Math.round(percent.reduce((a, b) => a + b, 0) / percent.length)}% on average, ${lost} balls lost`;
+    return `${name} cleared ${clears.length}/${SEEDS.length}${m === null ? '' : `, median ${seconds(m)} s`}, ${Math.round(percent.reduce((a, b) => a + b, 0) / percent.length)}% on average, ${lost} balls lost, out of balls ${out}`;
   });
   const wins = { landing: 0, aim: 0, tie: 0 };
   SEEDS.forEach((_, i) => {
@@ -115,5 +117,5 @@ for (let level = 0; level < ARENA.levels; level++) {
   console.log(`level ${level + 1}: ${row.join(' | ')}; head to head aim ${wins.aim}, landing ${wins.landing}, tie ${wins.tie}`);
 }
 const n = SEEDS.length * ARENA.levels;
-console.log(`all:     landing cleared ${totals.landing.clears}/${n}, ${totals.landing.lost} balls lost | aim cleared ${totals.aim.clears}/${n}, ${totals.aim.lost} balls lost`);
+console.log(`all:     landing cleared ${totals.landing.clears}/${n}, ${totals.landing.lost} balls lost, out of balls ${totals.landing.out} | aim cleared ${totals.aim.clears}/${n}, ${totals.aim.lost} balls lost, out of balls ${totals.aim.out}`);
 console.log(`levels won head to head: aim ${totals.wins.aim}, landing ${totals.wins.landing}, tie ${totals.wins.tie}`);
