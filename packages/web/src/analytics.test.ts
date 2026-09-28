@@ -1,6 +1,7 @@
 import type { PostHog } from 'posthog-js';
 import { describe, expect, it, vi } from 'vitest';
-import { clientFor, MemoryClient, pageTracker, POSTHOG_SETTINGS, posthogClient, Tracker } from './analytics';
+import { clientFor, MemoryClient, pageTracker, POSTHOG_SETTINGS, posthogClient, Tracker, type Client } from './analytics';
+import { Consent } from './consent';
 
 const ID = '20260927-010000-abcdef';
 
@@ -124,11 +125,11 @@ describe('who hears the events', () => {
 
 describe('the PostHog client', () => {
   const link = { key: 'phc_test_not_real', host: 'https://posthog.invalid' };
-  const fakePostHog = () => ({ init: vi.fn(), capture: vi.fn() });
+  const fakePostHog = (optedOut = false) => ({ init: vi.fn(), capture: vi.fn(), reset: vi.fn(), opt_out_capturing: vi.fn(), opt_in_capturing: vi.fn(), has_opted_out_capturing: vi.fn(() => optedOut) });
 
   it('starts PostHog with the spec\'s privacy settings', async () => {
     const posthog = fakePostHog();
-    posthogClient(link, async () => ({ default: posthog as unknown as PostHog }));
+    posthogClient(link, async () => ({ default: posthog as unknown as PostHog })).capture('session_started', {});
     await vi.waitFor(() => expect(posthog.init).toHaveBeenCalled());
     expect(posthog.init).toHaveBeenCalledWith(link.key, expect.objectContaining({ api_host: link.host }));
     const settings = posthog.init.mock.calls[0][1];
@@ -160,5 +161,108 @@ describe('the PostHog client', () => {
     fail(new Error('blocked'));
     await Promise.resolve();
     expect(() => client.capture('title_shown', {})).not.toThrow();
+  });
+});
+
+describe('opting out', () => {
+  const link = { key: 'phc_test_not_real', host: 'https://posthog.invalid' };
+  const fakePostHog = (optedOut = false) => ({ init: vi.fn(), capture: vi.fn(), reset: vi.fn(), opt_out_capturing: vi.fn(), opt_in_capturing: vi.fn(), has_opted_out_capturing: vi.fn(() => optedOut) });
+  const loader = (posthog: ReturnType<typeof fakePostHog>) => vi.fn(async () => ({ default: posthog as unknown as PostHog }));
+  // localStorage as PostHog leaves it: its id under ph_<key>_…, and a key of the page's own.
+  const storage = () => {
+    const items = new Map([[`ph_${link.key}_posthog`, '{"distinct_id":"0199-anon"}'], ['brick-arena:opt-out', '1']]);
+    return { items, get length() { return items.size; }, key: (i: number) => [...items.keys()][i] ?? null, removeItem: (key: string) => { items.delete(key); } };
+  };
+
+  it('stops the tracker\'s events, and opting back in starts them again', () => {
+    const client = new MemoryClient();
+    const consent = new Consent(null, false);
+    const tracker = new Tracker(client, null, consent);
+    tracker.track('title_shown', { jev_online: true, probe_ms: 600 });
+    consent.optOut();
+    playMatch(tracker);
+    expect(client.sent.map(sent => sent.event)).toEqual(['title_shown']);
+    consent.optIn();
+    tracker.track('rules_opened', {});
+    expect(client.sent.map(sent => sent.event)).toEqual(['title_shown', 'rules_opened']);
+  });
+
+  it('keeps counting a match it does not send, so a level after opting back in has its aim share', () => {
+    const client = new MemoryClient();
+    const consent = new Consent(null, false);
+    const tracker = new Tracker(client, null, consent);
+    consent.optOut();
+    tracker.startMatch(ID, 'live', { seed: 20260919, tuning: 'standard' });
+    tracker.track('jev_decision', { level: 0, question: 'target', choice: 'aim', outcome: 'answered', answer_ms: 700, lead_ticks: 42 });
+    consent.optIn();
+    tracker.track('level_ended', { level: 0, winner: 'jev', you_percent: 1, jev_percent: 2 });
+    expect(client.sent.map(sent => [sent.event, sent.properties.jev_aim_share])).toEqual([['level_ended', 1]]);
+  });
+
+  it('tells the client each time the player opts out or back in', () => {
+    const client: Client = { capture: vi.fn(), optOut: vi.fn(), optIn: vi.fn() };
+    const consent = new Consent(null, false);
+    new Tracker(client, null, consent);
+    consent.optOut();
+    consent.optIn();
+    expect(client.optOut).toHaveBeenCalledTimes(1);
+    expect(client.optIn).toHaveBeenCalledTimes(1);
+  });
+
+  it('never loads PostHog for a page that has opted out', async () => {
+    const posthog = fakePostHog(), load = loader(posthog);
+    const consent = new Consent(null, false);
+    consent.optOut();
+    const tracker = new Tracker(posthogClient(link, load, null), null, consent);
+    playMatch(tracker);
+    await Promise.resolve();
+    expect(load).not.toHaveBeenCalled();
+  });
+
+  it('loads PostHog only on the first event', async () => {
+    const posthog = fakePostHog(), load = loader(posthog);
+    const client = posthogClient(link, load, null);
+    expect(load).not.toHaveBeenCalled();
+    client.capture('session_started', {});
+    client.capture('title_shown', {});
+    await vi.waitFor(() => expect(posthog.capture).toHaveBeenCalledTimes(2));
+    expect(load).toHaveBeenCalledTimes(1);
+  });
+
+  it('opts PostHog out and ends its anonymous id once it is loaded', async () => {
+    const posthog = fakePostHog(), store = storage();
+    const client = posthogClient(link, loader(posthog), store);
+    client.capture('session_started', {});
+    await vi.waitFor(() => expect(posthog.init).toHaveBeenCalled());
+    client.optOut!();
+    expect(posthog.reset).toHaveBeenCalledWith(true);
+    expect(posthog.opt_out_capturing).toHaveBeenCalled();
+    client.capture('title_shown', {});
+    expect(posthog.capture).toHaveBeenCalledTimes(1);
+    client.optIn!();
+    expect(posthog.opt_in_capturing).toHaveBeenCalledWith({ captureEventName: false });
+  });
+
+  it('removes the stored anonymous id when PostHog never loaded, and nothing of the page\'s own', () => {
+    const store = storage();
+    posthogClient(link, loader(fakePostHog()), store).optOut!();
+    expect([...store.items.keys()]).toEqual(['brick-arena:opt-out']);
+  });
+
+  it('opts PostHog out when the player opts out while it loads', async () => {
+    const posthog = fakePostHog();
+    const client = posthogClient(link, loader(posthog), null);
+    client.capture('session_started', {});
+    client.optOut!();
+    await vi.waitFor(() => expect(posthog.init).toHaveBeenCalled());
+    expect(posthog.opt_out_capturing).toHaveBeenCalled();
+    expect(posthog.capture).not.toHaveBeenCalled();
+  });
+
+  it('opts PostHog back in when an earlier visit opted it out and the player has since opted in', async () => {
+    const posthog = fakePostHog(true);
+    posthogClient(link, loader(posthog), null).capture('session_started', {});
+    await vi.waitFor(() => expect(posthog.opt_in_capturing).toHaveBeenCalledWith({ captureEventName: false }));
+    expect(posthog.opt_in_capturing.mock.invocationCallOrder[0]).toBeLessThan(posthog.capture.mock.invocationCallOrder[0]);
   });
 });

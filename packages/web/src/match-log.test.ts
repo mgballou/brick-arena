@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { sendToServer } from './match-log';
+import { Consent } from './consent';
+import { MatchLog, sendToServer, whileRecording } from './match-log';
 
 afterEach(() => { vi.unstubAllGlobals(); });
 
@@ -16,5 +17,24 @@ describe('sending a match record', () => {
     }
     expect(fetch).toHaveBeenCalledTimes(3);
     for (const [, init] of fetch.mock.calls) expect(init.keepalive).toBeFalsy();
+  });
+});
+
+describe('a match record after opting out', () => {
+  it('sends nothing more, not even the closing beacon', async () => {
+    const consent = new Consent(null, false);
+    const send = vi.fn(async () => true);
+    const log = new MatchLog({ seed: 1, tuning: 'standard', opponent: 'live', debug: false }, whileRecording(consent, send));
+    await log.flush();
+    expect(send).toHaveBeenCalledTimes(1);
+    consent.optOut();
+    log.write({ type: 'level', level: 0, name: 'opening' });
+    await log.flush();
+    consent.optIn();
+    log.write({ type: 'level', level: 1, name: 'second' });
+    await log.flush();
+    log.end('left', 0, 0);
+    await log.flush(true);
+    expect(send).toHaveBeenCalledTimes(1);
   });
 });

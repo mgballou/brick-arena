@@ -7,10 +7,12 @@ import {
 } from '../../engine/src/arena';
 import { burst, reducedMotion, Sound, stepParticles } from './feedback';
 import type { AnsweredBy, Down } from '../../jev/src/wire';
+import { newMatchId } from '../../server/src/record';
 import { MemoryClient, pageTracker } from './analytics';
+import { pageConsent, type Consent } from './consent';
 import { Checking, DownPage } from './down';
 import { askJev, DEBUG, probeJev, type Probe } from './jev';
-import { FLUSH_MS, jevLine, lostLines, MatchLog, sideTotal } from './match-log';
+import { FLUSH_MS, jevLine, lostLines, MatchLog, sideTotal, whileRecording } from './match-log';
 import { brickColor, drawBoard, PALETTE, POWER_UPS, type View } from './render';
 import './style.css';
 
@@ -23,8 +25,11 @@ const TICK_MS = 1000 / ARENA.ticksPerSecond;
 // No live Jev, no game. An offline answer pauses the match at once; so do this
 // many timeouts in a row, since a board with no answers is not Jev playing.
 const MISSED_AFTER = 3;
-// The page's PostHog events (analytics.ts). Debug play sends none.
-const analytics = pageTracker(DEBUG);
+// The page's PostHog events (analytics.ts). Debug play sends none, and
+// neither does a browser that has opted out (consent.ts).
+const analytics = pageTracker(DEBUG, pageConsent);
+// The privacy page the title screen's notice links to.
+const PRIVACY_PAGE = '/privacy.html';
 
 type Phase = 'title' | 'banner' | 'playing' | 'paused' | 'offline' | 'levelEnd' | 'final';
 type Who = 'human' | 'jev';
@@ -180,8 +185,10 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
     if (!result.ok || phaseRef.current !== 'title') return;
     endRecord(game.current, 'left');
     game.current = newMatch(result.answeredBy);
-    game.current.log = new MatchLog({ seed: SEED, tuning: TUNING_NAME, opponent: result.answeredBy, debug: DEBUG });
-    analytics.startMatch(game.current.log.id, result.answeredBy, { seed: SEED, tuning: TUNING_NAME });
+    // An opted-out browser keeps no match record, and one that opts out
+    // later stops sending the rest (whileRecording).
+    game.current.log = pageConsent.recording ? new MatchLog({ seed: SEED, tuning: TUNING_NAME, opponent: result.answeredBy, debug: DEBUG }, whileRecording(pageConsent)) : null;
+    analytics.startMatch(game.current.log?.id ?? newMatchId(new Date()), result.answeredBy, { seed: SEED, tuning: TUNING_NAME });
     startLevel(0);
   }, [checkJev, startLevel]);
 
@@ -552,6 +559,7 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
                 <p className="keys">Enter to start · ← → move · Space or ↑ launch · P pause · H scoring · M {muted ? 'unmute' : 'mute'}</p>
               </>
             )}
+            <Notice consent={pageConsent} />
           </Overlay>
         )}
 
@@ -676,6 +684,20 @@ function Rules({ rival, onClose, resumes }: { rival: string; onClose: () => void
 
 function Overlay({ children, compact }: { children: ReactNode; compact?: boolean }) {
   return <div className={`overlay${compact ? ' compact' : ''}`}><div className="card">{children}</div></div>;
+}
+
+// The title screen's notice (docs/specs/data-collection.md, "Privacy"), with
+// the one-click opt-out beside it and, once opted out, the way back in.
+// Enter or Space on either button presses the button and never starts a
+// match; every other key still reaches the game.
+export function Notice({ consent }: { consent: Consent }) {
+  const [choice, setChoice] = useState(consent.choice);
+  useEffect(() => consent.onChange(() => setChoice(consent.choice)), [consent]);
+  const keep = (event: { key: string; stopPropagation(): void }) => { if (event.key === 'Enter' || event.key === ' ') event.stopPropagation(); };
+  const privacy = <a href={PRIVACY_PAGE}>Privacy</a>;
+  if (choice === 'dnt') return <p className="notice">Do Not Track is on, so this browser records nothing. {privacy}</p>;
+  if (choice === 'opted-out') return <p className="notice">You opted out: this browser records nothing. {privacy} · <button className="text" onKeyDown={keep} onClick={() => consent.optIn()}>Opt back in</button></p>;
+  return <p className="notice">This game records how each match plays, using PostHog and Supabase, and never who you are. {privacy} · <button className="text" onKeyDown={keep} onClick={() => consent.optOut()}>Opt out</button></p>;
 }
 
 function JevLink({ probe }: { probe: Probe | 'checking' }) {
