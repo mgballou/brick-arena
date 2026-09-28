@@ -60,6 +60,8 @@ dashboard). Saving one redeploys.
 | `ADMIN_SECRET` | none | The one password that reads match records. Unset, no one reads them. |
 | `SUPABASE_WRITES` | off | `1` writes each live match to Supabase as rows too (see *Match records in Supabase*). |
 | `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | none | The project's URL and its secret key (`sb_secret_…`). Writes need both and the flag. |
+| `VITE_POSTHOG` | off | `1` sends the page's player events to PostHog (see *Player events in PostHog*). Read when the page is built. |
+| `VITE_POSTHOG_KEY`, `VITE_POSTHOG_HOST` | none | The PostHog project's key (`phc_…`, public by design) and its ingestion host, which names the region. Events need both and the flag. |
 
 ## When Jev is down
 
@@ -182,6 +184,20 @@ mode. When Supabase refuses a write, the log says so once per outage
 (`[supabase] refused …`); the server keeps up to 4 MB of rows in memory and
 tries again on the next write or after 30 seconds. A restart empties that
 memory, and matches in play across it send no more rows.
+
+## Player events in PostHog
+
+The page can send what players do, and each Jev choice in brief, to PostHog
+(`docs/specs/data-collection.md`). It is off until the project exists:
+
+1. Choose US or EU Cloud (the spec's last open question) and create the
+   PostHog project. In its settings, turn IP capture off.
+2. On the service set `VITE_POSTHOG_KEY`, `VITE_POSTHOG_HOST` (the project's
+   ingestion host, `https://us.i.posthog.com` or `https://eu.i.posthog.com`)
+   and `VITE_POSTHOG=1`, then redeploy: the page reads them when it is built.
+
+Until then the page keeps its events in memory and loads no PostHog. Debug
+play, stand-in matches and browsers that ask not to be tracked send nothing.
 
 ## Trying the hosted build locally
 

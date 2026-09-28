@@ -63,6 +63,9 @@ function matchRecords(): Plugin {
 
 export default defineConfig({
   plugins: [react(), jevProxy(), matchRecords()],
+  // The commit each PostHog event names as `build`, read as the server's
+  // Supabase rows read it; null off Render.
+  define: { __BUILD__: JSON.stringify(process.env.RENDER_GIT_COMMIT?.trim() || null) },
   // The game, and the page that lists recorded matches.
   build: { rollupOptions: { input: { main: 'index.html', matches: 'matches.html' } } },
 });

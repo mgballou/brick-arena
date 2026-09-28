@@ -20,6 +20,14 @@ never on a player's path: play never waits on it or depends on it. Its
 `SUPABASE_SECRET_KEY` stays on the host like `JEV_API_KEY`. Tests use the
 stub there and never call live Supabase.
 
+The page's one addition is `posthog-js`, loaded only by
+`packages/web/src/analytics.ts` and only when the build sets `VITE_POSTHOG=1`,
+`VITE_POSTHOG_KEY` and `VITE_POSTHOG_HOST`; unset, the bundle holds none of it
+(`bundle.test.ts`). Debug play, stand-in matches and Do Not Track send nothing.
+PostHog keeps a random anonymous id in `localStorage`; never call `identify`,
+and never put that id in the match record. No analytics import belongs in the
+engine. Tests use the in-memory stub and never call live PostHog.
+
 ## The Jev key never reaches the browser
 
 `~/.jev-key` holds a TypeSafe key. Only `packages/jev/src/key.ts` reads it: the
