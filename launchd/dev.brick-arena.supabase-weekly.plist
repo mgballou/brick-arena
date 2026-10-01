@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>dev.brick-arena.supabase-weekly</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>/Users/matthewballou/projects/brick-arena/scripts/supabase-weekly-local.sh</string>
+	</array>
+	<key>StartCalendarInterval</key>
+	<dict>
+		<key>Weekday</key>
+		<integer>1</integer>
+		<key>Hour</key>
+		<integer>14</integer>
+		<key>Minute</key>
+		<integer>17</integer>
+	</dict>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/Users/matthewballou/Library/Application Support/Herd/config/nvm/versions/node/v24.21.0/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+	</dict>
+	<key>StandardOutPath</key>
+	<string>/Users/matthewballou/Library/Logs/brick-arena-supabase-weekly.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Users/matthewballou/Library/Logs/brick-arena-supabase-weekly.log</string>
+</dict>
+</plist>
