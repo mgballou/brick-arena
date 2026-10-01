@@ -18,10 +18,14 @@ Jev plays the right, one closed question at a time, over the network.</p>
 
 <br />
 
-<img src="docs/screens/2026-09-24/scoring-02-playing.png" alt="Level 1 in progress: your board on the left, the opponent's on the right, the score and clock above them." />
+<img src="docs/screens/2026-09-27/level-1.gif" alt="27 seconds of level 1 on a dark page: both balls launch at once, each paddle returns its ball, bricks fall on both boards and the scores climb." />
+
+Level 1: a script on the arrow keys plays the left board, and the right is the local stand-in, not Jev, answering at live Jev's measured 728 ms ([MP4](docs/screens/2026-09-27/level-1.mp4)).
+
+<img src="docs/screens/2026-09-27/readme-playing.png" alt="Level 1 in progress on a dark page: your board on the left, the opponent's on the right, the score and clock above them." />
 
 Level 1, *Multi-hit rows*, in debug mode: the right-hand board is the local stand-in, not Jev,
-and the yellow banner says so. Live Jev draws the same screen with its name on that board.
+and the banner says so. Against live Jev the same screen names Jev on that board.
 
 **Play it: `<hosted URL — filled in after the deploy>`**
 
@@ -69,8 +73,10 @@ count of late and failed calls.
 
 ## What is known so far
 
-One call has gone to live Jev. Every other number comes from the stand-in: a scripted rule
-in Jev's seat, sent through Jev's exact wire, answering at Jev's measured speed. Those
+One call to live Jev is measured. A match against live Jev on 25 September left no record
+([docs/scoring.md](docs/scoring.md#keeping-the-ball)). Every other number comes from the
+stand-in: a scripted rule in Jev's seat, sent through Jev's exact wire, answering at Jev's
+measured speed. Those
 numbers show what the arena rewards and what lag costs. They do not show what Jev does.
 
 **Jev answers in time.** One call through the `smoke` command, 22 September: HTTP 200 in
@@ -117,8 +123,8 @@ The repo records no live match. Until some are played, these stay open:
 - Whether it beats a person, and on which levels.
 - What a call costs in tokens now that the prompt carries the objective and names each catch.
 
-The match record keeps Jev's last choice and its answer counts, not every choice, so the
-first question needs a tally of choices before a match can answer it.
+The server keeps a record of each match, with every Jev call in it, so a few played
+matches can answer these.
 
 ## Play it
 
@@ -128,6 +134,12 @@ Open the link above. The hosted page holds the TypeSafe key as a server secret, 
 none, and a daily cap on Jev calls keeps a bot from spending it. When Jev can't answer or
 the cap is spent, the page says so and shows no board. [docs/deploy.md](docs/deploy.md) sets
 up the host.
+
+The server keeps a record of each match: every launch, lost ball and Jev call, with the board
+Jev was sent, and both boards' clear over time. Only the admin reads them, with the server's
+`ADMIN_SECRET`: `/matches.html` lists recent matches and opens each one's timeline, and
+`npm run match` prints them with a tally of every choice Jev made.
+[docs/deploy.md](docs/deploy.md#match-records) says where they live.
 
 Left and Right move your paddle. After a lost ball, Space or Up serves. P pauses, H shows how
 scoring works, M mutes.
@@ -152,12 +164,13 @@ from the lockfile, as CI does.
 
 ### Debug mode, without Jev
 
-**Not a real match.** A local stand-in answers in Jev's place. It aims every catch at the
-densest bricks (`clearFast` in `packages/jev/src/stand-in.ts`) and marks every reply
+**Not a real match.** A local stand-in answers in Jev's place. It keeps the ball first and
+aims every catch at the densest bricks (`clearFast` in `packages/jev/src/stand-in.ts`) and marks every reply
 `"answered_by": "stand-in"`. No call leaves your machine.
 
 ```sh
 npm run jev:stub &
+until curl -s -o /dev/null --max-time 1 http://127.0.0.1:18787/; do sleep 0.2; done
 printf 'dummy\n' > /tmp/dummy-key
 VITE_DEBUG=1 JEV_KEY_FILE=/tmp/dummy-key JEV_BASE_URL=http://127.0.0.1:18787 npm run dev
 ```
@@ -166,6 +179,25 @@ The screen shows a `DEBUG · stand-in` banner and names the right-hand board Sta
 debug mode, the forwarder and the page both refuse a stand-in's reply. Who answered comes from
 the reply's mark, never the URL.
 
+## The data it collects
+
+How each match plays, never who played it. The title screen says so in one line, with a link
+to the [privacy page](privacy.html) and an **Opt out** beside it; Do Not Track counts as
+opting out.
+
+- **Player events**, sent to PostHog when the page is built with `VITE_POSTHOG=1`: matches,
+  levels, lost balls, pauses and Jev's choices, with screen size and input type. PostHog's
+  random anonymous id stays in the browser's local storage and is never identified.
+- **The match record**, sent to the game server: every Jev call with the board it was sent,
+  every launch and lost ball, both boards' clear over time and each level's result. The
+  server keeps it as a file in `MATCHES_DIR`, and as rows in Supabase with
+  `SUPABASE_WRITES=1`. Only the admin reads it, with the server's `ADMIN_SECRET`.
+- **Never**: an IP address, a name, an account, a fingerprint or a screen recording. Debug
+  play and stand-in matches reach neither PostHog nor Supabase.
+
+[docs/specs/data-collection.md](docs/specs/data-collection.md) has the design, and
+[docs/deploy.md](docs/deploy.md#match-records) says where each piece lives.
+
 ## How it is built
 
 | Package | Holds |
@@ -173,8 +205,8 @@ the reply's mark, never the URL.
 | `packages/engine` | The board, in pure TypeScript: `step`, the five levels, and `askForDecision`, which turns a board into one closed question. `arena.ts` lays the match rules over it: paddle, serves, lives, scoring. |
 | `packages/jev` | Jev's seat: the wire format and prompt (`wire.ts`), the one reader of the key (`key.ts`), the forwarder the browser calls (`proxy.ts`), the daily cap, and the stand-in. |
 | `packages/web` | The React page. It draws both boards and reads the keys; it never holds the TypeSafe key. |
-| `packages/server` | The hosted page's Node server: the built page, plus the same forwarder. |
-| `packages/cli` | The measuring tools below. |
+| `packages/server` | The hosted page's Node server: the built page, the same forwarder, and the match records (`record.ts`, `matches.ts`) behind the admin's password (`admin.ts`), with their rows in Supabase (`supabase.ts`, `rows.ts`). |
+| `packages/cli` | The measuring tools below, and the admin's tools that [docs/deploy.md](docs/deploy.md) runs: `match`, `export`, `weekly` and `smoke:site`. |
 
 The engine is deterministic: the same seed and the same answers give the same board, tick for
 tick. So a recorded session replays exactly, and each number above reruns from its command.
@@ -184,6 +216,17 @@ recorded sessions in `docs/`, checks the forwarder and the cap, and builds the p
 if the bundle holds a key or names a TypeSafe host. No test calls live Jev. The Jev tests
 replay `docs/jev-calls.synthetic.ndjson`, which is **synthetic**: written by hand from the
 documented reply shape, not captured from a call.
+
+```sh
+npm test            # the engine, Jev, server and page tests; none calls live Jev or Supabase
+npm run build       # typecheck (tsc -b), then the production build in dist/
+npx --yes knip      # unused files, exports and dependencies; it should report nothing
+```
+
+On every push and pull request, CI installs from the lockfile with the pnpm that
+`packageManager` pins, on the Node in `.nvmrc`, then runs three jobs: the tests and `tsc -b`,
+the browser specs in Chromium (`pnpm e2e`), and the Supabase path on Postgres and PostgREST
+(`pnpm test:db`). Dependabot proposes updates to the pins once a week.
 
 | Command | What it does |
 |---|---|

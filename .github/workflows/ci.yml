@@ -35,15 +35,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # The repo pins no packageManager; this matches the pnpm that wrote the
-      # lockfile and reads `allowBuilds` in pnpm-workspace.yaml.
+      # The pnpm of packageManager in package.json, which wrote the lockfile
+      # and reads `allowBuilds` in pnpm-workspace.yaml.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 11
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: install
@@ -54,3 +52,71 @@ jobs:
 
       - name: typecheck
         run: pnpm exec tsc -b
+
+  browser:
+    name: browser specs in Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: install
+        run: pnpm install --frozen-lockfile
+
+      # The Chromium that the pinned @playwright/test drives, and the system
+      # libraries it needs.
+      - name: install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      # playwright.config.ts starts the dev server against the stand-in, the
+      # built page on the hosted app with no key, and Render's build on
+      # serve.ts's own options with a fake TypeSafe (e2e/deployed.e2e.ts). None
+      # can reach Jev.
+      - name: e2e
+        run: pnpm e2e
+
+      # Each failed spec's trace, and every spec's screenshot.
+      - name: upload results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-results
+          path: test-results/
+          retention-days: 14
+
+  db:
+    name: Supabase path on Postgres and PostgREST
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: install
+        run: pnpm install --frozen-lockfile
+
+      # The stack of supabase/local/compose.yml, not job service containers:
+      # those start before the checkout, so they can't mount its roles and its
+      # gateway, and the proof would run on a stack no one runs locally.
+      - name: start Postgres and PostgREST
+        run: pnpm db:up
+
+      - name: test:db
+        run: pnpm test:db
+
+      - name: stack logs
+        if: failure()
+        run: docker compose -f supabase/local/compose.yml logs

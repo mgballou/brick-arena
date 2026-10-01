@@ -23,6 +23,7 @@ beforeAll(async () => {
   const saved = { ...process.env };
   // Vitest runs with NODE_ENV=test, which would build React's development copy.
   Object.assign(process.env, { NODE_ENV: 'production', JEV_API_KEY: DUMMY_KEY, TYPESAFE_API_KEY: DUMMY_KEY });
+  for (const name of ['VITE_POSTHOG', 'VITE_POSTHOG_KEY', 'VITE_POSTHOG_HOST']) delete process.env[name];
   try {
     await build({ root, mode: 'production', configFile: join(root, 'vite.config.ts'), logLevel: 'silent', build: { outDir, emptyOutDir: true } });
   } finally {
@@ -40,6 +41,26 @@ describe('the built client', () => {
   it('holds no key', () => {
     // Checked as booleans, so a failure names the file without printing the bundle.
     expect([...shipped].filter(([, text]) => text.includes(DUMMY_KEY)).map(([name]) => name)).toEqual([]);
+  });
+
+  it('names no Supabase secret or its door', () => {
+    const names = ['SUPABASE_SECRET_KEY', 'sb_secret_', '/rest/v1/'];
+    const named = [...shipped].flatMap(([name, text]) => names.filter(word => text.includes(word)).map(word => `${name} names ${word}`));
+    expect(named).toEqual([]);
+  });
+
+  // No PostHog project exists yet, so the flag stays off and the page loads
+  // none of it (analytics.ts). The notice names PostHog in words, so this
+  // looks for strings only posthog-js's own code holds.
+  it('holds no PostHog with the flag off', () => {
+    const code = /posthog-js|__ph_opt_in_out_|i\.posthog\.com/;
+    expect([...shipped].filter(([, text]) => code.test(text)).map(([name]) => name)).toEqual([]);
+  });
+
+  it('ships the privacy page as plain HTML, with no script', () => {
+    const page = shipped.get('privacy.html');
+    expect(page).toContain('never who you are');
+    expect(page).not.toMatch(/<script/i);
   });
 
   it('names no TypeSafe host', () => {

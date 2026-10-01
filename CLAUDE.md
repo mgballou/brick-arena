@@ -2,8 +2,9 @@
 
 This repository contains a deterministic TypeScript breakout simulation, a CLI
 session recorder, and a small React viewer. Run `pnpm test` for the engine
-tests, `pnpm build` for the typecheck/build, and `pnpm session && pnpm compare`
-to refresh and summarize the telemetry in `docs/session.ndjson`.
+tests, `pnpm build` for the typecheck/build, `pnpm e2e` for the browser specs,
+and `pnpm session && pnpm compare` to refresh and summarize the telemetry in
+`docs/session.ndjson`.
 
 The engine is intentionally pure: seed and elapsed ticks are inputs, while
 players answer categorical `Ask` questions. Keep browser concerns in
@@ -13,7 +14,34 @@ the exact state sequence; do not reduce records to only the chosen target.
 
 Do not add model SDKs, network calls, physics engines, or flavor naming. Level
 content belongs in the engine's data tables and must preserve seeded,
-repeatable stepping.
+repeatable stepping. The engine stays pure. The one network call the game
+server adds is its writes to Supabase (`docs/specs/data-collection.md`), made
+only by `packages/server/src/supabase.ts`, behind `SUPABASE_WRITES=1`, and
+never on a player's path: play never waits on it or depends on it. Its
+`SUPABASE_SECRET_KEY` stays on the host like `JEV_API_KEY`. `pnpm test` uses
+the stub there; `pnpm test:db` drives the real client against the local
+Postgres and PostgREST of `supabase/local/` (`docs/deploy.md`). Neither calls
+live Supabase. The same file is the door for
+`pnpm match`, `pnpm export` and the weekly job (`pnpm weekly`), which read the
+key from the shell or a GitHub secret and do nothing when `SUPABASE_URL` is
+unset. `pnpm export` writes the only backup; never make it replace a file
+unasked.
+
+The page's one addition is `posthog-js`, loaded only by
+`packages/web/src/analytics.ts` and only when the build sets `VITE_POSTHOG=1`,
+`VITE_POSTHOG_KEY` and `VITE_POSTHOG_HOST`; unset, the bundle holds none of it
+(`bundle.test.ts`). Debug play, stand-in matches, Do Not Track and an opted-out
+browser send nothing.
+PostHog keeps a random anonymous id in `localStorage`; never call `identify`,
+and never put that id in the match record. No analytics import belongs in the
+engine. Tests use the in-memory stub and never call live PostHog.
+
+The browser specs (`e2e/`, `playwright.config.ts`) play the page in Chromium
+against a stand-in they start themselves. `playwright.config.ts` hands the dev
+server a dummy key file and the stand-in's address, builds the hosted page with
+a PostHog host the specs answer, and never reuses a running server, which might
+hold the real key; keep all three. posthog-js drops events from an automated
+browser, so a spec that expects PostHog to hear something hides that first.
 
 ## The Jev key never reaches the browser
 
@@ -33,6 +61,13 @@ reason and logs the upstream detail; the browser then shows the down page and
 mounts no board. `bundle.test.ts` builds the client and fails if it holds a key
 or names a TypeSafe host.
 
+The key serves the game and nothing else. The proxy forwards only the health
+check and the game's own target, chase and track asks, and refuses any other
+with 400 before it is sent. `askRefusal` in `wire.ts` is that list, read from
+the same `OPTION_TEXT` and board shape that `toRequest` builds, so a change to
+the asks changes what passes; `proxy.test.ts` replays every recorded ask
+against it.
+
 No live Jev, no game. The stand-in plays only in debug mode (`VITE_DEBUG=1`),
 which says so on screen and in the match record. `refusal` in
 `packages/jev/src/wire.ts` is the one gate; the proxy and the browser both
@@ -45,6 +80,21 @@ the definition and change all four. `askForDecision` builds the options, so a
 change to it means regenerating `docs/session.ndjson` and the synthetic
 recording.
 
+Each match of the web game leaves a record on the server: the browser builds
+the lines (`packages/web/src/match-log.ts`), `packages/server/src/matches.ts`
+appends them to one NDJSON file per match in `MATCHES_DIR`, and `pnpm match`
+and `/matches.html` read them. The format is `packages/server/src/record.ts`.
+It holds the game only; never add who played it. The one thing kept about a
+player is PostHog's anonymous id: random, kept in the browser, never
+identified, and never in the match record. The title screen says so in one
+line, links `privacy.html` and offers the opt-out beside it. `consent.ts` is
+the one gate, remembered in `localStorage` and closed by Do Not Track too;
+the events and the match lines both ask it before they send. Change what is
+collected, where or for how long, and change `privacy.html` with it. Only the
+admin reads a record: every route that serves one calls `refuseUnlessAdmin` in
+`packages/server/src/admin.ts` against `ADMIN_SECRET`, and no secret reaches
+the client.
+
 The web game's rules live in `packages/engine/src/arena.ts`, over `step`.
 Change `createBoard` or `step` and the recorded fixtures in `docs/` must be
 regenerated.
@@ -56,7 +106,9 @@ arena's 120 at speed 7 cleared none. After it, neither width clears a level. The
 bot catches the ball dead center, which sends it straight up one column for
 good; the old collision bug turned the ball the wrong way often enough to knock
 it out of that loop. The arena escapes it with `minReturnVx`; `step` has no such
-floor, so `pnpm session` now records only the Human clearing level 1.
+floor. The Human in `pnpm session` catches at the `landing` option, which since
+26 September is where the ball really comes down (`landingOf`), so it loops too,
+and `pnpm session` now records no level cleared.
 
 <!-- block:begin -->
 ## Agents
@@ -70,9 +122,4 @@ Keep two things here: the judgment call, and a single lookup.
 
 Bound what comes back. A tool result is re-read on every later turn, so it
 costs its size times the turns remaining.
-
-You are not alone. Two skills reach the desk from any repo: `/herdr` to see and
-talk to the other agents running, and `/asking-laila` to pin a note or a
-question for Laila. Use them when you are stuck, cannot get further, or would
-otherwise stop to ask Matthew. She wakes on a pin and answers.
 <!-- block:end -->

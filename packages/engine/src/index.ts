@@ -171,12 +171,51 @@ export function aimShot(state: BoardState, ball: Ball, landing: number): { paddl
   return best && { paddleX: paddleForReturn(state, landing, best.vx), x: best.x, hitPoints: best.hitPoints };
 }
 
+// Where a ball will come down to the paddle's line, and how many ticks from
+// now: flown tick by tick as `step` moves it, through the same bricks, which
+// break and heal as they would, with the paddle, the other balls and the
+// power-ups left out. So a rising ball's landing counts every brick it turns
+// off on the way. Null if it clears the level or stays up past `limit`.
+export function landingOf(state: BoardState, ball: Ball, limit = 600): { x: number; ticks: number } | null {
+  const bricks = structuredClone(state.bricks), flying = { ...ball };
+  let tick = state.tick;
+  const damage = (brick: Brick) => { if (brick.unbreakable) return; brick.durability--; brick.lastDamagedTick = tick; };
+  for (let ticks = 1; ticks <= limit; ticks++) {
+    tick++;
+    for (const brick of bricks) if (brick.regenerates && brick.durability > 0 && brick.durability < brick.maxDurability && tick - brick.lastDamagedTick >= 90) brick.durability++;
+    moveThroughBricks(flying, bricks, 1, damage);
+    if (flying.x - flying.radius < 0 || flying.x + flying.radius > W) { flying.x = clamp(flying.x, flying.radius, W - flying.radius); flying.vx *= -1; }
+    if (flying.y - flying.radius < 0) { flying.y = flying.radius; flying.vy = Math.abs(flying.vy); }
+    if (bricks.every(brick => brick.unbreakable || brick.durability === 0)) return null;
+    if (flying.vy > 0 && flying.y >= PADDLE_Y - flying.radius) return { x: flying.x, ticks };
+  }
+  return null;
+}
+
+// The x to catch a ball at: where it comes down, or where it would with no
+// brick in the way if it stays up.
+export const landingX = (state: BoardState, ball: Ball) => landingOf(state, ball)?.x ?? predictPaddleX(ball, state.width);
+
+// Whether the paddle can go for this power-up and still be under the tracked
+// ball when it comes down: the ball lands within the paddle's reach of where
+// the power-up is caught, or late enough for the paddle to get back after it.
+const CATCH_MARGIN = 4;
+export function keepsBall(state: BoardState, power: PowerUp): boolean {
+  const ball = state.balls.find(item => item.tracked) ?? state.balls[0];
+  const landing = landingOf(state, ball);
+  if (!landing) return true;
+  const half = state.paddleWidth / 2;
+  const gap = Math.abs(landing.x - clamp(power.x, half, state.width - half)) - (half + ball.radius - CATCH_MARGIN);
+  if (gap <= 0) return true;
+  return landing.ticks >= (PADDLE_Y - power.y) / power.vy + gap / state.paddleSpeed;
+}
+
 // The target question's four places for the paddle, in the order `targetKeys`
 // names them in packages/jev/src/wire.ts: under the landing point, aimed at the
 // densest bricks the ball can reach (under the landing point if none), and off
 // the landing point so the ball leaves at 45 degrees to the left or right.
-export function targetOptions(state: BoardState, ball: Ball): number[] {
-  const landing = predictPaddleX(ball);
+function targetOptions(state: BoardState, ball: Ball): number[] {
+  const landing = landingX(state, ball);
   const diagonal = Math.abs(ball.vy);
   return [landing, aimShot(state, ball, landing)?.paddleX ?? landing, paddleForReturn(state, landing, -diagonal), paddleForReturn(state, landing, diagonal)];
 }

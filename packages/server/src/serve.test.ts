@@ -7,6 +7,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createCap } from '../../jev/src/cap';
 import { startStandIn } from '../../jev/src/stand-in-server';
 import { DOWN_STATUS, JEV_PATH } from '../../jev/src/wire';
+import { adminHeader } from './admin';
+import { createMatchStore } from './matches';
+import { MATCHES_PATH, newMatchId } from './record';
 import { hostedApp } from './serve';
 
 // The hosted server over a stand-in dist/ and the local stand-in. Nothing here
@@ -20,11 +23,12 @@ beforeAll(async () => {
   const dist = mkdtempSync(join(tmpdir(), 'brick-arena-hosted-'));
   mkdirSync(join(dist, 'assets'));
   writeFileSync(join(dist, 'index.html'), '<!doctype html><div id="root"></div>');
+  writeFileSync(join(dist, 'matches.html'), '<!doctype html><main id="matches"></main>');
   writeFileSync(join(dist, 'assets', 'index-abc123.js'), 'console.log(1)');
   writeFileSync(join(dist, '..', 'brick-arena-secret.txt'), 'outside dist');
   standIn = await startStandIn({ port: 0, ms: 5 });
   // Not in debug mode, as hosted: a stand-in's answer is Jev being down.
-  server = createServer(hostedApp({ dist, proxy: { link: { baseUrl: standIn.url, model: 'jev-test', key: 'test-key-not-real' }, keyFrom: 'the JEV_API_KEY secret', debug: false, cap: createCap({ perVisitor: 100, total: 100 }), log: line => logged.push(line) } }));
+  server = createServer(hostedApp({ dist, proxy: { link: { baseUrl: standIn.url, model: 'jev-test', key: 'test-key-not-real' }, keyFrom: 'the JEV_API_KEY secret', debug: false, cap: createCap({ perVisitor: 100, total: 100 }), log: line => logged.push(line) }, matches: createMatchStore(mkdtempSync(join(tmpdir(), 'brick-arena-matches-'))), admin: null }));
   await new Promise<void>(done => server.listen(0, '127.0.0.1', done));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 });
@@ -54,6 +58,19 @@ describe('the hosted server', () => {
     // fetch folds a bare ../ away, so the escape is spelled inside one segment.
     for (const path of ['/..%2fbrick-arena-secret.txt', '/%2e%2e%2fbrick-arena-secret.txt', '/nope.js']) {
       expect((await fetch(`${base}${path}`)).status, path).toBe(404);
+    }
+  });
+
+  it('has no backstage without ADMIN_SECRET: the records and their page answer 404 to everyone', async () => {
+    const id = newMatchId();
+    const start = { type: 'start', v: 1, id, at: new Date().toISOString(), seed: 1, tuning: 'standard', opponent: 'live', debug: false };
+    expect((await fetch(`${base}${MATCHES_PATH}/${id}`, { method: 'POST', body: JSON.stringify(start) })).status).toBe(200);
+    for (const path of [MATCHES_PATH, `${MATCHES_PATH}/${id}`, '/matches.html']) {
+      for (const headers of [{}, { authorization: adminHeader('') }, { authorization: adminHeader('anything') }] as Array<Record<string, string>>) {
+        const response = await fetch(`${base}${path}`, { headers });
+        expect(response.status, path).toBe(404);
+        expect(await response.text(), path).not.toContain(id);
+      }
     }
   });
 

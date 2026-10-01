@@ -1,0 +1,54 @@
+name: Supabase weekly
+
+# Keeps the Free Supabase project from pausing, tells Matthew when it has, and
+# deletes the full rows of matches older than 90 days (packages/cli/src/upkeep.ts,
+# docs/deploy.md). With the secrets unset each step says so and passes.
+
+on:
+  schedule:
+    # Mondays at 14:17 UTC, off the hour when GitHub's cron runs late.
+    - cron: '17 14 * * 1'
+  workflow_dispatch:
+  # A pull request that changes the job runs it with the secrets unset, as a
+  # fork does, so it never touches the database.
+  pull_request:
+    paths:
+      - .github/workflows/supabase-weekly.yml
+      - packages/cli/src/upkeep.ts
+      - packages/cli/src/weekly.ts
+      - packages/server/src/supabase.ts
+
+permissions:
+  contents: read
+
+concurrency: supabase-weekly
+
+jobs:
+  weekly:
+    name: pause check, keep-awake insert, 90-day prune
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ github.event_name != 'pull_request' && secrets.SUPABASE_URL || '' }}
+      SUPABASE_SECRET_KEY: ${{ github.event_name != 'pull_request' && secrets.SUPABASE_SECRET_KEY || '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: install
+        run: pnpm install --frozen-lockfile
+
+      # Fails when the project doesn't answer, which skips the other two.
+      - name: pause check
+        run: pnpm weekly check
+
+      - name: keep-awake insert
+        run: pnpm weekly awake
+
+      - name: 90-day prune
+        run: pnpm weekly prune

@@ -1,0 +1,20 @@
+# Keeps the exact pins in package.json and the actions in .github/workflows
+# from going stale: one grouped pull request a week per ecosystem, which CI
+# checks like any other.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      npm:
+        patterns: ['*']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']

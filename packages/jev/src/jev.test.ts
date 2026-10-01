@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { askForDecision, botPlayer, createBoard, type Ask, type Decision, type Player } from '../../engine/src/index';
+import { askForDecision, botPlayer, createBoard, landingX, type Ask, type BoardState, type Decision, type Player } from '../../engine/src/index';
 import { JEV_DEFAULTS, parseKeyFile } from './key';
 import { jevPlayer, jevPlayerFromKeyFile } from './player';
 import { raceWithLatency, summarize, TICK_MS } from './race';
@@ -79,13 +79,28 @@ describe('mapping each question onto one Choice', () => {
     expect(OBJECTIVE).toContain(`${POINTS.secondLeft} per second left`);
     expect(OBJECTIVE).toMatch(/first to break every breakable brick wins/);
     expect(OBJECTIVE).toMatch(/lost ball scores nothing/);
+    expect(OBJECTIVE).toMatch(/keep the ball first/);
+  });
+
+  it('shows where each ball comes down, and which power-ups cost the ball', () => {
+    const state = askWith('chase').state;
+    Object.assign(state.balls[0], { x: 400, y: 200, vx: 0, vy: 2.6 });
+    state.powerUps.push({ id: 'power-2', kind: 'extra-ball', x: 380, y: 250, vy: 1.2 });
+    const ask = askForDecision(state);
+    const request = toRequest(ask, 'm');
+    const sent = request.state as { balls: Array<{ landsAt: { x: number; inTicks: number } }>; powerUps: Array<{ id: string; keepsBall: boolean }> };
+    expect(sent.balls[0].landsAt.x).toBeCloseTo(400);
+    expect(sent.balls[0].landsAt.inTicks).toBe(34);
+    expect(sent.powerUps.map(power => [power.id, power.keepsBall])).toEqual([['power-1', false], ['power-2', true]]);
+    expect(request.questions.decision.criteria['power-1']).toMatch(/going for it loses the ball/);
+    expect(request.questions.decision.criteria['power-2']).toMatch(/can still get back under the ball/);
   });
 
   it('chase: each falling power-up by id, plus none', () => {
     const ask = askWith('chase');
     expect(Object.keys(toRequest(ask, 'm').questions.decision.criteria)).toEqual(['power-1', 'none']);
     expect(fromResponse(ask, choose('power-1'))).toEqual({ kind: 'chase', powerUpId: 'power-1' });
-    expect(fromResponse(ask, choose('none'))).toEqual({ kind: 'chase', powerUpId: 'none' });
+    expect(fromResponse(ask, choose('none'))).toEqual({ kind: 'target', x: landingX(ask.state, ask.state.balls[0]) });
   });
 
   it('track: each ball by id', () => {
@@ -102,13 +117,20 @@ describe('mapping each question onto one Choice', () => {
 });
 
 describe('the stand-in rules', () => {
-  it('aims every catch, goes only for power-ups that speed a clear, and plays the lowest falling ball', () => {
+  it('aims every catch, goes only for power-ups that speed a clear and keep the ball, and plays the lowest falling ball', () => {
     expect(clearFast(toRequest(askWith('target'), 'm'))).toBe('aim');
     expect(alwaysLanding(toRequest(askWith('target'), 'm'))).toBe('landing');
     expect(clearFast(toRequest(askWith('chase'), 'm'))).toBe('none');
     const extra = askWith('chase');
-    extra.state.powerUps.push({ id: 'power-2', kind: 'extra-ball', x: 200, y: 100, vy: 1.2 });
+    extra.state.powerUps.push({ id: 'power-2', kind: 'extra-ball', x: 420, y: 100, vy: 1.2 });
     expect(clearFast(toRequest(askForDecision(extra.state), 'm'))).toBe('power-2');
+    const falling = (state: BoardState) => { Object.assign(state.balls[0], { x: 400, y: 200, vx: 0, vy: 2.6 }); return state; };
+    const far = askWith('chase');
+    far.state.powerUps.push({ id: 'power-2', kind: 'extra-ball', x: 60, y: 250, vy: 1.2 });
+    expect(clearFast(toRequest(askForDecision(falling(far.state)), 'm'))).toBe('none');
+    const near = askWith('chase');
+    near.state.powerUps.push({ id: 'power-2', kind: 'extra-ball', x: 380, y: 250, vy: 1.2 });
+    expect(clearFast(toRequest(askForDecision(falling(near.state)), 'm'))).toBe('power-2');
     const track = askWith('track');
     track.state.balls[0].vy = -2;
     track.state.balls[1].vy = 2;

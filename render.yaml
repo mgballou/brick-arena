@@ -7,8 +7,9 @@ services:
     plan: free
     branch: main
     # Render's docs name neither the pnpm it preloads nor NODE_ENV at build
-    # time, so pin the pnpm that wrote the lockfile and keep devDependencies
-    # (typescript, for `tsc -b`) whatever NODE_ENV says.
+    # time, so start pnpm 11, which hands over to the pnpm that package.json's
+    # packageManager pins, and keep devDependencies (typescript, for `tsc -b`)
+    # whatever NODE_ENV says.
     buildCommand: NODE_ENV=development npx --yes pnpm@11 install --frozen-lockfile && npx --yes pnpm@11 build
     startCommand: node packages/server/src/serve.ts
     healthCheckPath: /healthz
@@ -18,6 +19,16 @@ services:
       # The TypeSafe key. Render asks for it when the Blueprint is created;
       # it is never in the repo.
       - key: JEV_API_KEY
+        sync: false
+      # The one password that reads match records (/matches.html and
+      # /api/matches). Render asks for it too; unset, no one reads them.
+      - key: ADMIN_SECRET
+        sync: false
+      # Supabase, for match records as rows. Writes stay off until
+      # SUPABASE_WRITES=1 is set in the dashboard (docs/deploy.md).
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
         sync: false
       # Jev calls allowed per visitor, and in all, per UTC day. A full match
       # is at most about 900 calls.

@@ -4,6 +4,8 @@ import { capFromEnv } from './packages/jev/src/cap.ts';
 import { JEV_DEFAULTS, readJevLink, type JevLink } from './packages/jev/src/key.ts';
 import { jevMiddleware } from './packages/jev/src/proxy.ts';
 import { JEV_PATH } from './packages/jev/src/wire.ts';
+import { adminSecretFromEnv, BACKSTAGE_PAGE, refuseUnlessAdmin } from './packages/server/src/admin.ts';
+import { MATCHES_PATH, matchesMiddleware, storeFromEnv } from './packages/server/src/matches.ts';
 
 // Reads ~/.jev-key once, when the dev server starts, and hands it to the same
 // forwarder the hosted server mounts (see packages/jev/src/proxy.ts).
@@ -36,4 +38,47 @@ function jevProxy(): Plugin {
   };
 }
 
-export default defineConfig({ plugins: [react(), jevProxy()] });
+// The same match store the hosted server keeps, so a match played on the dev
+// server leaves its record in var/matches (or MATCHES_DIR).
+function matchRecords(): Plugin {
+  return {
+    name: 'match-records',
+    apply: 'serve',
+    configureServer(server: ViteDevServer) {
+      if (process.env.VITEST) return;
+      const store = storeFromEnv(process.env);
+      server.config.logger.info(`  [matches] records in ${store.dir}`);
+      // Only the admin reads them, here as on the host (admin.ts). Vite serves
+      // the page itself, so the gate runs ahead of it, for /matches too.
+      const admin = adminSecretFromEnv(process.env);
+      server.middlewares.use((req, res, next) => {
+        const path = new URL(req.url ?? '/', 'http://host').pathname;
+        if ((path === BACKSTAGE_PAGE || path === BACKSTAGE_PAGE.slice(0, -'.html'.length)) && refuseUnlessAdmin(req, res, admin)) return;
+        next();
+      });
+      server.middlewares.use(MATCHES_PATH, matchesMiddleware(store, admin, line => server.config.logger.warn(`  [matches] ${line}`)));
+    },
+  };
+}
+
+// The hosted server's health check (serve.ts), here too, so `pnpm smoke:site`
+// and the browser specs can ask the dev server whether it is up.
+function healthCheck(): Plugin {
+  return {
+    name: 'health-check',
+    apply: 'serve',
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use('/healthz', (_req, res) => res.end('ok'));
+    },
+  };
+}
+
+export default defineConfig({
+  plugins: [react(), jevProxy(), matchRecords(), healthCheck()],
+  // The commit each PostHog event names as `build`, read as the server's
+  // Supabase rows read it; null off Render.
+  define: { __BUILD__: JSON.stringify(process.env.RENDER_GIT_COMMIT?.trim() || null) },
+  // The game, the page that lists recorded matches, and the privacy page the
+  // title screen links to.
+  build: { rollupOptions: { input: { main: 'index.html', matches: 'matches.html', privacy: 'privacy.html' } } },
+});

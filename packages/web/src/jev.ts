@@ -1,10 +1,10 @@
 import type { Ask, Decision } from '../../engine/src/index';
-import { answeredBy, downOf, fromResponse, JEV_PATH, refusal, toRequest, type AnsweredBy, type Down, type SystemOneResponse } from '../../jev/src/wire';
+import { answeredBy, ASK_MODEL, downOf, fromResponse, JEV_PATH, refusal, toRequest, type AnsweredBy, type Down, type SystemOneResponse } from '../../jev/src/wire';
 
 // The browser only ever talks to its own origin's /api/jev, which holds the
 // key and forwards to TypeSafe (packages/jev/src/proxy.ts, on the dev server
 // and the hosted one). No key and no TypeSafe address exist on this side.
-export const DEADLINE_MS = 2000;
+const DEADLINE_MS = 2000;
 
 // Debug mode is one switch, set when the dev server starts: VITE_DEBUG=1. Only
 // then may the stand-in play, and the screen says so for the whole match.
@@ -48,8 +48,8 @@ export async function askJev(ask: Ask): Promise<JevAnswer> {
     response = await fetch(JEV_PATH, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      // The proxy sets the model; this one is a placeholder.
-      body: JSON.stringify(toRequest(ask, 'jev')),
+      // The proxy checks this model and sends the key's own in its place.
+      body: JSON.stringify(toRequest(ask, ASK_MODEL)),
       signal: AbortSignal.timeout(DEADLINE_MS),
     });
   } catch (error) {

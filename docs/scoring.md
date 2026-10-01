@@ -61,12 +61,22 @@ first and won, while the running score had them behind.
 
 Every question opens with the objective and this scoring (`OBJECTIVE` in
 `wire.ts`, built from `ARENA` and `POINTS`, so the numbers cannot drift). It
-ends: "Choose whatever breaks bricks soonest, and risk the ball when that
-speeds the clear."
+ends: "So keep the ball first: never choose an option that lets a ball past the
+paddle, for bricks or for a power-up. Among the options that keep the ball,
+choose whatever breaks bricks soonest." Keeping the ball is not a second
+measure of performance. It follows from this one: the third lost ball ends your
+level with every brick left standing unbroken.
+
+The board Jev is sent shows what a choice costs. Each ball carries `landsAt`,
+where and in how many ticks it comes down to the paddle's line, and each
+power-up carries `keepsBall`, whether the paddle can go for it and still get
+under the ball (`landingOf` and `keepsBall` in `packages/engine/src/index.ts`).
 
 The `target` question asks where to catch the ball, and so where it goes next.
 Its four options are paddle positions, built by `targetOptions` in
-`packages/engine/src/index.ts`:
+`packages/engine/src/index.ts`, around where the ball comes down. `landingOf`
+finds that point by flying the ball tick by tick as `step` would, through the
+bricks, so a rising ball has a landing point too:
 
 - `landing`: catch it dead center. The safest catch; the ball goes back up
   almost straight.
@@ -78,9 +88,10 @@ Its four options are paddle positions, built by `targetOptions` in
   `minReturnVx`, since the arena would steepen those and miss.
 - `angle-left`, `angle-right`: catch it so the ball leaves at 45 degrees.
 
-`chase` says what each power-up does to the pace of a clear, and `track`
-asks which ball to play. The choice stays categorical, one call per ask, with
-the same deadline.
+`chase` says what each power-up does to the pace of a clear, and whether going
+for it loses the ball. Its `none` option plays the ball: the paddle goes to
+where it comes down. `track` asks which ball to play. The choice stays
+categorical, one call per ask, with the same deadline.
 
 ## What the new objective did
 
@@ -104,7 +115,7 @@ spread, most seeds play the same game.
 | 421 ± 150 ms | landing | 7 of 250 | 329 | 30 |
 | | aim | 91 of 250 | 436 | 215 (5 ties) |
 
-728 ms is the one live Jev call (22 September); 421 ms is the stand-in's median
+728 ms is the first live Jev call (22 September); 421 ms is the stand-in's median
 in the browser. By level, at 728 ms:
 
 | Level | landing cleared | aim cleared | aim median clear | aim's share cleared at 90 s, mean |
@@ -123,6 +134,49 @@ browser, against `pnpm jev:stub` at a 406 ms median, the stand-in cleared level
 
 These are scripted rules, not Jev. The prompt now tells Jev the objective and
 offers it the aimed catch; whether it takes it, and whether it beats a person
-with it, the next match against live Jev will show. That match is the real test.
+with it, only a match against live Jev shows. *Keeping the ball* has the first.
 
 To run it again: `pnpm objective` (`--seeds`, `--ms`, `--jitter` to change).
+
+## Keeping the ball
+
+On 25 September Matthew played live Jev and saw it lose all three balls on one
+level. Measured 26 September with `pnpm objective`, 50 seeds from 20260919, the
+stand-in's `aim` rule before and after this change. No call left the machine.
+
+Before, two things lost the balls. While a power-up fell, every question was
+`chase`, and answering `none` left the paddle where it stood; going for one
+dragged it off the ball. That cost 314 of the 461 balls lost at 728 ms. Most of
+the rest were answers that landed too late to reach a ball that had turned off
+a brick, since the landing option assumed the ball fell straight from where it
+was, or, while it rose, sent the paddle to the middle. The prompt said a lost
+ball "costs nothing but the time to serve again", and nothing sent showed that
+a choice would lose one.
+
+| Answers in | | Balls lost | Levels out of balls | Levels cleared | Won head to head of 250 |
+|---|---|---|---|---|---|
+| 728 ± 150 ms | before | 461 | 91 | 78 | 214 |
+| | after | 63 | 0 | 160 | 195 |
+| 421 ± 150 ms | before | 436 | 64 | 91 | 215 |
+| | after | 62 | 2 | 139 | 185 |
+
+By level, at 728 ms, before and after:
+
+| Level | Balls lost | Out of balls, of 50 | Cleared, of 50 | Median clear |
+|---|---|---|---|---|
+| 1 Multi-hit rows | 67, 4 | 12, 0 | 31, 41 | 52.6 s, 70.0 s |
+| 2 Split walls | 121, 14 | 27, 0 | 1, 41 | 65.0 s, 71.3 s |
+| 3 Narrow gap | 69, 5 | 9, 0 | 16, 44 | 53.0 s, 77.0 s |
+| 4 Regenerating perimeter | 124, 3 | 30, 0 | 0, 0 | |
+| 5 Power-up hazards | 80, 37 | 13, 0 | 30, 34 | 51.5 s, 79.2 s |
+
+Split walls and the regenerating perimeter were the worst levels, out of balls
+on more than half the seeds; now neither runs out. Clears come later, since
+the rule passes on power-ups it cannot reach safely, and on level 5 at 421 ms it
+clears 19 seeds where it cleared 35. "Won head to head" plays each rule against
+the old `landing` rule, which changed too, so that column compares less
+cleanly than the others.
+
+These are scripted rules, not Jev. The prompt now tells Jev to keep the ball
+first and shows it which choices lose one; whether it does, only a match
+against live Jev will show.

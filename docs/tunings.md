@@ -109,9 +109,11 @@ What the numbers say:
   bricks, and finding them is luck. A fix belongs in the level table in
   `createBoard`, which means regenerating the recorded fixtures. That is a
   separate change.
-- The stand-in's lost balls come mostly from chasing power-ups
-  (`clearFast` in `packages/jev/src/stand-in.ts`), as `pnpm fair` found on
-  24 September. No tuning touches that rule.
+- The stand-in's lost balls came mostly from chasing power-ups, as
+  `pnpm fair` found on 24 September. No tuning touches that rule. Since
+  26 September `clearFast` (`packages/jev/src/stand-in.ts`) goes for a
+  power-up only when the paddle can still get back under the ball, so these
+  counts predate that change (`docs/scoring.md`, *Keeping the ball*).
 
 To re-measure one tuning: `pnpm tunings --tuning angled`. Other flags:
 `--seeds 3`, `--ms 728`, `--react 250`. A full run of all three takes about 95 s.

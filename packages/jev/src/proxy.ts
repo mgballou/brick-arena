@@ -1,14 +1,16 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Cap } from './cap.ts';
 import type { JevLink } from './key.ts';
-import { answeredBy, DOWN_STATUS, refusal, type AnsweredBy, type Down, type DownReply } from './wire.ts';
+import { answeredBy, ASK_MODEL, askRefusal, DOWN_STATUS, healthRequest, refusal, type AnsweredBy, type Down, type DownReply } from './wire.ts';
 
 // The one Jev forwarder behind /api/jev. The dev server (vite.config.ts) and
 // the hosted server (packages/server/src/serve.ts) both mount jevMiddleware;
 // they differ only in where `link` comes from. The key is added as a header on
 // the way out and nothing else: it never reaches a log line or the browser.
 // When Jev can't answer, the browser gets DOWN_STATUS and a `down` reason and
-// nothing more; the upstream detail goes to the server log alone.
+// nothing more; the upstream detail goes to the server log alone. It forwards
+// only the game's own asks (askRefusal in wire.ts) and refuses the rest with
+// 400, so the key serves the game and nothing else.
 const UPSTREAM_TIMEOUT_MS = 8000;
 // An ask is one board and a few options, a few KB. Far past that is not the game.
 const MAX_ASK_BYTES = 256 * 1024;
@@ -20,10 +22,13 @@ export type Health = { ok: true; ms: number; answeredBy: AnsweredBy } | { ok: fa
 // visitor and per day (cap.ts). `log` receives the upstream detail.
 export type ProxyOptions = { link: JevLink; keyFrom: string; debug: boolean; timeoutMs?: number; cap?: Cap; log?: (line: string) => void };
 
-// One call upstream. A stand-in's answer is refused here unless in debug mode.
+// One call upstream, and the last place an ask is checked before it leaves. A
+// stand-in's answer is refused here unless in debug mode.
 export async function askUpstream(options: ProxyOptions, request: unknown): Promise<Outcome> {
   const { link } = options;
   if (!link.key) return { ok: false, offline: `No key in ${options.keyFrom}.` };
+  const refused = askRefusal(request, link.model);
+  if (refused) return { ok: false, offline: `Not sent: ${refused}` };
   const timeoutMs = options.timeoutMs ?? UPSTREAM_TIMEOUT_MS;
   let body: string;
   try {
@@ -46,22 +51,22 @@ export async function askUpstream(options: ProxyOptions, request: unknown): Prom
   } catch {
     return { ok: false, offline: 'Jev answered with something that is not JSON.' };
   }
-  const refused = refusal(by, options.debug);
-  return refused ? { ok: false, offline: refused, answeredBy: by } : { ok: true, body, answeredBy: by };
+  const standIn = refusal(by, options.debug);
+  return standIn ? { ok: false, offline: standIn, answeredBy: by } : { ok: true, body, answeredBy: by };
 }
 
 // The check the title screen runs before a match: one real call, whose reply
 // says who answered.
 export async function checkHealth(options: ProxyOptions): Promise<Health> {
   const started = Date.now();
-  const outcome = await askUpstream(options, { model: options.link.model, state: { tick: 0 }, questions: { decision: { type: 'choice', instructions: 'Reply with ready.', criteria: { ready: 'The link is up' } } } });
+  const outcome = await askUpstream(options, healthRequest(options.link.model));
   return outcome.ok ? { ok: true, ms: Date.now() - started, answeredBy: outcome.answeredBy } : outcome;
 }
 
 // Who is asking, for the cap. Behind the host's proxy that is the first
 // X-Forwarded-For address; a client can forge it, so the daily total is the
 // ceiling that holds.
-export function visitorOf(req: IncomingMessage): string {
+function visitorOf(req: IncomingMessage): string {
   const forwarded = req.headers['x-forwarded-for'];
   const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(',')[0]?.trim();
   return first || req.socket.remoteAddress || 'unknown';
@@ -104,6 +109,11 @@ export function jevMiddleware(options: ProxyOptions) {
       const read = await readAsk(req);
       if (read === 'too-big') return send(413, { ok: false, error: 'That ask is too large.' });
       if (!read) return send(400, { ok: false, error: 'That ask was not JSON.' });
+      const refused = askRefusal(read, ASK_MODEL);
+      if (refused) {
+        log(`refused an ask: ${refused}`);
+        return send(400, { ok: false, error: `Jev answers only the game's own asks. ${refused}` });
+      }
       ask = read;
     }
 

@@ -3,5 +3,10 @@ dist
 .DS_Store
 .pnpm-store
 docs/jev-race.ndjson
+docs/jev-calls.ndjson
 tsconfig.tsbuildinfo
 .playwright-mcp
+var
+e2e/.out
+test-results
+playwright-report
