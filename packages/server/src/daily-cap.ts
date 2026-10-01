@@ -70,3 +70,14 @@ export async function createSupabaseCap(client: TableClient, limits: CapLimits, 
   const day = today();
   return createCap(limits, today, await supabaseDailyCount(client, day));
 }
+
+// The Supabase count, or, when Supabase can't be read at boot (paused, or not
+// answering), the count kept in `directory`, so the server still starts.
+export async function createBootCap(client: TableClient, directory: string, limits: CapLimits, log: (line: string) => void, today: () => string = utcDay): Promise<Cap> {
+  try {
+    return await createSupabaseCap(client, limits, today);
+  } catch (error) {
+    log(`${error instanceof Error ? error.message : String(error)}, so the cap counts in ${directory}`);
+    return createFileCap(directory, limits, today);
+  }
+}

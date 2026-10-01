@@ -9,7 +9,7 @@ import { JEV_PATH } from '../../jev/src/wire.ts';
 import { adminSecretFromEnv, BACKSTAGE_PAGE, refuseUnlessAdmin } from './admin.ts';
 import { MATCHES_PATH, matchReadSourceFromEnv, matchesMiddleware, storeFromEnv, type MatchReadSource, type MatchStore } from './matches.ts';
 import { createRowWriter } from './rows.ts';
-import { createFileCap, createSupabaseCap } from './daily-cap.ts';
+import { createBootCap, createFileCap } from './daily-cap.ts';
 import { clientFromEnv, tableClientFromEnv } from './supabase.ts';
 
 // The hosted page (docs/deploy.md): the static build in dist/, plus the same
@@ -48,7 +48,7 @@ export async function hostedFromEnv(env: Record<string, string | undefined>, dis
   const matches = storeFromEnv(env, writer?.take);
   const tableClient = writer && env.SUPABASE_URL?.trim() && env.SUPABASE_SECRET_KEY?.trim() ? tableClientFromEnv(env) : null;
   const cap = tableClient
-    ? await createSupabaseCap(tableClient, configured.limits)
+    ? await createBootCap(tableClient, matches.dir, configured.limits, line => console.error(`[jev] ${line}`))
     : createFileCap(matches.dir, configured.limits);
   const matchReadSource = matchReadSourceFromEnv(env, matches);
   const admin = adminSecretFromEnv(env);

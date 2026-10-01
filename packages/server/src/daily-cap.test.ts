@@ -2,7 +2,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { createFileCap, createSupabaseCap, supabaseDailyCount } from './daily-cap';
+import { createBootCap, createFileCap, createSupabaseCap, supabaseDailyCount } from './daily-cap';
 import { stubClient } from './supabase';
 
 describe('the persisted daily cap', () => {
@@ -33,5 +33,19 @@ describe('the persisted daily cap', () => {
     expect(await supabaseDailyCount(client, '2026-10-01')).toBe(2);
     const restarted = await createSupabaseCap(client, { perVisitor: 10, total: 2 }, () => '2026-10-01');
     expect(restarted.take('a')).toBe('total');
+  });
+
+  it('counts in the data directory when Supabase cannot be read at boot', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'brick-arena-cap-'));
+    const client = stubClient();
+    client.refuse({ ok: false, status: 540, message: 'project paused' });
+    const logged: string[] = [];
+    const limits = { perVisitor: 10, total: 1 };
+    const cap = await createBootCap(client, dir, limits, line => logged.push(line), () => '2026-10-01');
+    expect(cap.take('a')).toBe('ok');
+    expect(logged.join('\n')).toMatch(/project paused/);
+
+    const restarted = await createBootCap(client, dir, limits, () => {}, () => '2026-10-01');
+    expect(restarted.take('b')).toBe('total');
   });
 });
