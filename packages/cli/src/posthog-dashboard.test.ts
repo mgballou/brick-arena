@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ARENA } from '../../engine/src/arena.ts';
 import { readConfig, syncDashboard, type PostHogConfig } from './posthog-dashboard';
 
 type Resource = { id: number; name: string; description?: string; query?: unknown; dashboards?: number[] };
@@ -62,6 +63,15 @@ describe('PostHog dashboard setup', () => {
     expect(fake.writes).toEqual(initialWrites);
     expect(fake.dashboards).toHaveLength(1);
     expect(fake.insights).toHaveLength(4);
+  });
+
+  it('filters level_started on every level the engine emits, counted from 0', async () => {
+    const fake = fakePostHog();
+    await syncDashboard(config, fake.fetcher);
+
+    const levels = JSON.stringify(fake.insights.map(({ query }) => query))
+      .match(/"key":"level","value":\[[^\]]*\]/g) ?? [];
+    expect(levels).toContain(`"key":"level","value":${JSON.stringify(Array.from({ length: ARENA.levels }, (_, i) => i))}`);
   });
 
   it('reports the missing environment variable by name', () => {

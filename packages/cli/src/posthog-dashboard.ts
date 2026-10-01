@@ -1,5 +1,6 @@
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
+import { ARENA } from '../../engine/src/arena.ts';
 
 type JsonObject = Record<string, unknown>;
 type PostHogResource = {
@@ -121,7 +122,7 @@ const definitions: InsightDefinition[] = [
   },
   {
     name: 'How long do sessions last, and where do people stop?',
-    description: 'Session-start to match-end funnel, split into PostHog session-duration bins; level_started accepts levels 1 through 5.',
+    description: `Session-start to match-end funnel, split into PostHog session-duration bins; level_started accepts levels 0 through ${ARENA.levels - 1}.`,
     query: {
       kind: 'InsightVizNode',
       source: {
@@ -129,7 +130,7 @@ const definitions: InsightDefinition[] = [
         series: [
           event('session_started'),
           event('match_started'),
-          event('level_started', undefined, undefined, undefined, [eventFilter('level', [1, 2, 3, 4, 5])]),
+          event('level_started', undefined, undefined, undefined, [eventFilter('level', Array.from({ length: ARENA.levels }, (_, level) => level))]),
           event('match_ended'),
         ],
         interval: 'week',
