@@ -85,10 +85,19 @@ Blueprint. After the stack merges there are four, and `docs/deploy.md` step 3
 
 31. Create the project on US Cloud, the spec's plan (<https://us.posthog.com>).
 32. Turn IP capture off (PostHog → Project settings).
-33. On the service set `VITE_POSTHOG_KEY` (`phc_…`), `VITE_POSTHOG_HOST=https://us.i.posthog.com` and `VITE_POSTHOG=1` (Render → brick-arena → Environment).
-34. Run **Manual Deploy → Deploy latest commit**, since the page reads the three `VITE_` values when it is built (Render dashboard).
-35. Play one match and see its events arrive (PostHog → Activity).
-36. In a PR, replace the two *pending* lines in `privacy.html` with the real PostHog region and Supabase state, and state PostHog's free-plan event retention (`privacy.html`).
+33. Create a personal API key with `dashboard:read`, `dashboard:write`, `insight:read` and `insight:write` scopes. From the repo root, run this once to create the four insights and the Brick Arena dashboard; use `https://eu.posthog.com` if the project is in EU Cloud:
+
+    ```sh
+    POSTHOG_HOST=https://us.posthog.com \
+    POSTHOG_PROJECT_ID=<numeric-project-id> \
+    POSTHOG_PERSONAL_API_KEY=<personal-api-key> \
+    pnpm posthog:dashboard
+    ```
+
+34. On the service set `VITE_POSTHOG_KEY` (`phc_…`), `VITE_POSTHOG_HOST=https://us.i.posthog.com` and `VITE_POSTHOG=1` (Render → brick-arena → Environment).
+35. Run **Manual Deploy → Deploy latest commit**, since the page reads the three `VITE_` values when it is built (Render dashboard).
+36. Play one match and see its events arrive (PostHog → Activity).
+37. In a PR, replace the two *pending* lines in `privacy.html` with the real PostHog region and Supabase state, and state PostHog's free-plan event retention (`privacy.html`).
 
 ### Play it
 
