@@ -52,7 +52,7 @@ harder to squash than one PR:
 13. #17 `ba-jev-asks-only-its-questions`: base to `main`, merge `main` (below: `ba-pinned-and-current-docs`), squash.
 14. #18 `ba-title-checked-as-deployed`: base to `main`, merge `main` (below: `ba-jev-asks-only-its-questions`), squash.
 15. #11 `ba-go-live`, this list's own PR: squash it last; it is based on `main` and merges over the stack with no conflict.
-16. Check that CI passes on `main` (GitHub → Actions → `ci.yml`).
+16. Check that #11's checks passed (`gh pr checks 11`, or the PR's **Checks** tab); CI runs only on pull requests, so `main` has no run of its own.
 
 ### Render
 
