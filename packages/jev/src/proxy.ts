@@ -63,13 +63,16 @@ export async function checkHealth(options: ProxyOptions): Promise<Health> {
   return outcome.ok ? { ok: true, ms: Date.now() - started, answeredBy: outcome.answeredBy } : outcome;
 }
 
-// Who is asking, for the cap. Behind the host's proxy that is the first
-// X-Forwarded-For address; a client can forge it, so the daily total is the
-// ceiling that holds.
-function visitorOf(req: IncomingMessage): string {
-  const forwarded = req.headers['x-forwarded-for'];
-  const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(',')[0]?.trim();
-  return first || req.socket.remoteAddress || 'unknown';
+// Render appends the client address to X-Forwarded-For. Trust the one proxy
+// hop and take the rightmost untrusted entry; values farther left are caller
+// controlled. The socket address is the fallback if the header is absent.
+export function clientAddress(headers: IncomingMessage['headers'], remoteAddress?: string): string {
+  const forwarded = headers['x-forwarded-for'];
+  const addresses = (Array.isArray(forwarded) ? forwarded : [forwarded])
+    .flatMap(value => value?.split(',') ?? [])
+    .map(value => value.trim())
+    .filter(Boolean);
+  return addresses.at(-1) || remoteAddress || 'unknown';
 }
 
 async function readAsk(req: IncomingMessage): Promise<Record<string, unknown> | 'too-big' | null> {
@@ -117,7 +120,7 @@ export function jevMiddleware(options: ProxyOptions) {
       ask = read;
     }
 
-    const taken = options.cap?.take(visitorOf(req)) ?? 'ok';
+    const taken = options.cap?.take(clientAddress(req.headers, req.socket.remoteAddress)) ?? 'ok';
     if (taken !== 'ok') {
       const limits = options.cap!.limits;
       return down('used-up', taken === 'visitor' ? `a visitor reached ${limits.perVisitor} calls today` : `the day's ${limits.total} calls are spent`);
