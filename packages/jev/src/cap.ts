@@ -12,9 +12,9 @@ export type Cap = { limits: CapLimits; take: (visitor: string) => Take };
 
 const utcDay = () => new Date().toISOString().slice(0, 10);
 
-export function createCap(limits: CapLimits, today: () => string = utcDay): Cap {
-  let day = '';
-  let total = 0;
+export function createCap(limits: CapLimits, today: () => string = utcDay, initialTotal = 0): Cap {
+  let day = today();
+  let total = initialTotal;
   const visitors = new Map<string, number>();
   return {
     limits,

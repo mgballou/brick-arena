@@ -10,7 +10,7 @@ import { DOWN_STATUS, JEV_PATH } from '../../jev/src/wire';
 import { adminHeader } from './admin';
 import { createMatchStore } from './matches';
 import { MATCHES_PATH, newMatchId } from './record';
-import { hostedApp } from './serve';
+import { hostedApp, hostedFromEnv } from './serve';
 
 // The hosted server over a stand-in dist/ and the local stand-in. Nothing here
 // reaches live Jev, and the key is a dummy.
@@ -79,5 +79,18 @@ describe('the hosted server', () => {
     expect(response.status).toBe(DOWN_STATUS);
     expect(await response.json()).toEqual({ ok: false, down: 'unreachable', answeredBy: 'stand-in' });
     expect(logged.at(-1)).toMatch(/stand-in answered, not Jev/);
+  });
+});
+
+describe('the hosted server at boot', () => {
+  it('starts when Supabase does not answer', async () => {
+    // A port that was open a moment ago and is closed now: nothing answers.
+    const gone = createServer();
+    await new Promise<void>(done => gone.listen(0, '127.0.0.1', done));
+    const port = (gone.address() as AddressInfo).port;
+    await new Promise(done => gone.close(done));
+    const env = { SUPABASE_WRITES: '1', SUPABASE_URL: `http://127.0.0.1:${port}`, SUPABASE_SECRET_KEY: 'sb_secret_not_real', MATCHES_DIR: mkdtempSync(join(tmpdir(), 'brick-arena-matches-')) };
+    const options = await hostedFromEnv(env, mkdtempSync(join(tmpdir(), 'brick-arena-hosted-')));
+    expect(options.proxy.cap.take('a')).toBe('ok');
   });
 });

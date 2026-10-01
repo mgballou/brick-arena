@@ -9,7 +9,8 @@ import { JEV_PATH } from '../../jev/src/wire.ts';
 import { adminSecretFromEnv, BACKSTAGE_PAGE, refuseUnlessAdmin } from './admin.ts';
 import { MATCHES_PATH, matchReadSourceFromEnv, matchesMiddleware, storeFromEnv, type MatchReadSource, type MatchStore } from './matches.ts';
 import { createRowWriter } from './rows.ts';
-import { clientFromEnv } from './supabase.ts';
+import { createBootCap, createFileCap } from './daily-cap.ts';
+import { clientFromEnv, tableClientFromEnv } from './supabase.ts';
 
 // The hosted page (docs/deploy.md): the static build in dist/, plus the same
 // Jev forwarder the dev server mounts, at the same path. The key is the host's
@@ -38,13 +39,17 @@ export type HostedOptions = { dist: string; proxy: ProxyOptions; matches: MatchS
 // nothing else: the Render service (render.yaml) and e2e/deployed.ts, which
 // plays its title screen against a fake TypeSafe, both start from here. Debug
 // is off, always. `rows` says whether live matches go to Supabase as rows.
-export function hostedFromEnv(env: Record<string, string | undefined>, dist: string): HostedOptions & { proxy: { cap: Cap }; rows: boolean } {
+export async function hostedFromEnv(env: Record<string, string | undefined>, dist: string): Promise<HostedOptions & { proxy: { cap: Cap }; rows: boolean }> {
   const link = linkFromEnv(env);
-  const cap = capFromEnv(env);
+  const configured = capFromEnv(env);
   const client = clientFromEnv(env, line => console.error(`[supabase] ${line}`));
   // Render names the commit it built; elsewhere the build goes unnamed.
   const writer = client && createRowWriter(client, { build: env.RENDER_GIT_COMMIT?.trim() || null });
   const matches = storeFromEnv(env, writer?.take);
+  const tableClient = writer && env.SUPABASE_URL?.trim() && env.SUPABASE_SECRET_KEY?.trim() ? tableClientFromEnv(env) : null;
+  const cap = tableClient
+    ? await createBootCap(tableClient, matches.dir, configured.limits, line => console.error(`[jev] ${line}`))
+    : createFileCap(matches.dir, configured.limits);
   const matchReadSource = matchReadSourceFromEnv(env, matches);
   const admin = adminSecretFromEnv(env);
   return { dist, proxy: { link, keyFrom: 'the JEV_API_KEY secret', debug: false, cap }, matches, matchReadSource, admin, rows: !!writer };
@@ -92,7 +97,7 @@ export function hostedApp(options: HostedOptions) {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const options = hostedFromEnv(process.env, fileURLToPath(new URL('../../../dist', import.meta.url)));
+  const options = await hostedFromEnv(process.env, fileURLToPath(new URL('../../../dist', import.meta.url)));
   const port = Number(process.env.PORT) || 8080;
   const { link, cap } = options.proxy;
   if (link.key) console.log(`[jev] ${link.model} at ${link.baseUrl}, key from the JEV_API_KEY secret`);
