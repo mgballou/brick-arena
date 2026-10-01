@@ -56,7 +56,8 @@ function matchRecords(): Plugin {
         if ((path === BACKSTAGE_PAGE || path === BACKSTAGE_PAGE.slice(0, -'.html'.length)) && refuseUnlessAdmin(req, res, admin)) return;
         next();
       });
-      server.middlewares.use(MATCHES_PATH, matchesMiddleware(store, admin, line => server.config.logger.warn(`  [matches] ${line}`)));
+      // This server writes no Supabase rows, so the admin reads its own files.
+      server.middlewares.use(MATCHES_PATH, matchesMiddleware(store, admin, store, line =>server.config.logger.warn(`  [matches] ${line}`)));
     },
   };
 }
