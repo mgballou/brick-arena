@@ -10,7 +10,6 @@
 Jev plays the right, one closed question at a time, over the network.</p>
 
 <p>
-<a href="https://github.com/mgballou/brick-arena/actions/workflows/ci.yml"><img src="https://github.com/mgballou/brick-arena/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
 <img src="https://img.shields.io/badge/license-MIT-5b8def" alt="MIT" />
 </p>
 
