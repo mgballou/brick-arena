@@ -67,10 +67,10 @@ Blueprint. After the stack merges there are four, and `docs/deploy.md` step 3
 
 19. `JEV_API_KEY`: paste the token in `~/.jev-key`, the value only (Render's Blueprint form).
 20. `ADMIN_SECRET`: paste the output of `openssl rand -base64 24`, and keep a copy in your password manager (Render's Blueprint form).
-21. `SUPABASE_URL` and `SUPABASE_SECRET_KEY`: leave them empty for now; writes stay off without `SUPABASE_WRITES=1`. If Render refuses an empty value, first create the Supabase project and run its two migrations (the first two steps under *Supabase*), then paste the real ones (Render's Blueprint form). The dry run could not test this form.
+21. `SUPABASE_URL` and `SUPABASE_SECRET_KEY`: leave them empty for now; the admin page then reads match files on the server. Set both to make `/matches.html` and `/api/matches` read from Supabase. `SUPABASE_WRITES=1` is separately required to save new live matches there. If Render refuses empty values, first create the Supabase project and run its two migrations (the first two steps under *Supabase*), then paste the real values (Render's Blueprint form). The dry run could not test this form.
 22. Choose **Apply**, and watch the build log end in `✓ built` (Render → brick-arena → Events).
 23. Run `pnpm smoke:site https://brick-arena.onrender.com` and see `every check passed`: `/healthz` answers `ok`, and `/` shows *Jev is online* on the title screen, with the data notice and its Privacy link (terminal; it needs `pnpm exec playwright install chromium` once).
-24. Decide whether match records on disk must last. On the free plan they vanish when the service sleeps, 15 minutes after the last visit. Keeping them means `plan: starter`, a 1 GB disk and `MATCHES_DIR` in `render.yaml`, about $7.25 a month (`docs/deploy.md`, *Where they live, and why a disk*). Once Supabase holds the rows, free is enough.
+24. Decide whether match records on disk must last. On the free plan they vanish when the service sleeps, 15 minutes after the last visit. With both Supabase read settings present, the admin page reads persisted rows there; keep `SUPABASE_WRITES=1` set so new live matches are saved. Keeping local files instead means `plan: starter`, a 1 GB disk and `MATCHES_DIR` in `render.yaml`, about $7.25 a month (`docs/deploy.md`, *Where they live, and why a disk*).
 
 ### Supabase
 
