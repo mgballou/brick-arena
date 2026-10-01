@@ -1,19 +1,21 @@
 name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
 
 jobs:
   gate:
-    if: github.event.pull_request.draft == false
+    if: github.event_name == 'push' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -24,6 +26,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if [ "${{ github.event_name }}" = "push" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
           behind=$(gh api "repos/${{ github.repository }}/compare/${{ github.base_ref }}...${{ github.event.pull_request.head.sha }}" --jq .behind_by)
           if [ "$behind" = "0" ]; then echo "run=true" >> "$GITHUB_OUTPUT"
           else echo "::notice::This branch is $behind commits behind ${{ github.base_ref }}. Update it to run CI."; echo "run=false" >> "$GITHUB_OUTPUT"; fi
@@ -54,6 +57,8 @@ jobs:
         run: pnpm exec tsc -b
 
   browser:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     name: browser specs in Chromium
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -92,6 +97,8 @@ jobs:
           retention-days: 14
 
   db:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     name: Supabase path on Postgres and PostgREST
     runs-on: ubuntu-latest
     timeout-minutes: 10
