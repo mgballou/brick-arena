@@ -17,7 +17,6 @@
       a { color: var(--ink); }
       code { font: 14px ui-monospace, Menlo, monospace; }
       .lede { color: #c9ccdb; font-size: 18px; }
-      .pending { color: var(--warn); font-size: 14px; }
       .back { font-size: 14px; color: var(--muted); }
     </style>
   </head>
@@ -25,36 +24,39 @@
     <main>
       <p class="back"><a href="/">Back to Brick Arena</a></p>
       <h1>Privacy</h1>
-      <p class="lede">This game records how each match plays, using PostHog and Supabase, and never who you are.</p>
+      <p class="lede">Brick Arena records how matches play so its maker can understand player behavior and Jev's choices, never who you are.</p>
 
       <h2>What is recorded</h2>
       <ul>
-        <li><b>How you play</b>, as events sent to PostHog: the session starting, the title screen, the scoring rules opened, each match and level starting and ending, each ball lost, each pause, and each of Jev's choices in brief. Each event carries your screen size, whether you use a mouse or touch, the level, the score and the time into the level.</li>
-        <li><b>The match record</b>, sent to the game server and kept in Supabase: every question Jev was asked with the board it was shown, every launch and lost ball, how much each side had cleared once a second, and each level's result.</li>
-        <li><b>One anonymous id</b>: a random id PostHog makes on your first visit and keeps in this browser's local storage, so a returning player counts once. It is linked to nothing, never names you, and never goes into the match record. Clearing this site's data or opting out ends it.</li>
+        <li><b>Player events</b>, sent to PostHog when analytics is enabled: session and title-screen activity, rules opened, matches and levels started and ended, balls lost, pauses and resumes, and brief records of Jev's choices. Event-specific details can include screen size and input type, level, score, and timing. These events help measure where players lose balls and how Jev performs.</li>
+        <li><b>The match record</b>, sent to the game server and stored as rows in Supabase: each question sent to Jev with its board, every launch and lost ball, each side's progress about once a second, and each level's result. This supports replaying and analyzing matches.</li>
+        <li><b>One anonymous id</b>: PostHog creates a random id on your first visit and keeps it in this browser's local storage, so returning visits can be counted together. Brick Arena never identifies it or puts it in a match record. Clearing this site's data or opting out ends it.</li>
       </ul>
 
       <h2>What is never recorded</h2>
       <ul>
-        <li>Your IP address. PostHog's IP capture is off, and the server writes none to Supabase. To share out the day's Jev calls fairly, the server reads your address in memory for the current day and never writes it down.</li>
+        <li>Your IP address in Brick Arena's records. PostHog IP capture is off. The game server reads the request address in memory to enforce its daily Jev call limit, but does not write it to match records.</li>
         <li>Names, emails or accounts. The game has none and takes no typed text.</li>
         <li>A fingerprint or a profile of you. PostHog keeps no person profiles.</li>
         <li>A recording of your screen. Session replay is off.</li>
         <li>Debug play, or a match the stand-in plays in Jev's place.</li>
       </ul>
 
+      <h2>What Jev receives</h2>
+      <p>The game server sends TypeSafe's Jev the current game board, the game's rules, and one question with a closed list of choices: where to catch the ball, which falling power-up to chase, or which ball to play. The request contains game state, not your name, account, or PostHog id. The browser sends the request to Brick Arena's server; the server forwards it to TypeSafe.</p>
+
       <h2>Who keeps it, and where</h2>
       <ul>
-        <li><b>PostHog</b> keeps the events. <span class="pending">Region pending: the PostHog project is not set up yet. US Cloud is the plan.</span></li>
-        <li><b>Supabase</b> keeps the match record, in West US (Oregon). <span class="pending">Pending: the Supabase project is not set up yet. Until it is, the game server keeps match records as files on its own disk.</span></li>
+        <li><b>PostHog</b> stores the player events. Region: <b>US Cloud</b>.</li>
+        <li><b>Supabase</b> stores match rows in West US (Oregon). The game server also keeps one match file on its hosting disk.</li>
         <li>Only the game's maker reads either, through PostHog's and Supabase's own sign-ins.</li>
       </ul>
 
       <h2>How long</h2>
       <ul>
-        <li>PostHog events: as long as PostHog's free plan keeps them.</li>
-        <li>Full match records: 90 days. A weekly job then deletes them, keeping only each match's summary: when it was played, the final score and a count of Jev's choices.</li>
-        <li>A monthly copy of the records, made before that deletion, stays on the game's maker's own computer as its backup.</li>
+        <li>PostHog events: one year on PostHog's free plan.</li>
+        <li>In Supabase, detailed Jev calls, match events, and level-progress rows are deleted by a weekly job after the match has been started for more than 90 days. The match summary row, including its dates, result, and Jev tally, remains; the job does not give it an expiry.</li>
+        <li>The server-side match file follows the hosting disk's lifetime. The game's maker can run a monthly export to create a local backup; it is manual, and the maker controls how long that file is kept.</li>
       </ul>
 
       <h2>How to opt out</h2>

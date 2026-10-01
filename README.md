@@ -26,7 +26,7 @@ Level 1: a script on the arrow keys plays the left board, and the right is the l
 Level 1, *Multi-hit rows*, in debug mode: the right-hand board is the local stand-in, not Jev,
 and the banner says so. Against live Jev the same screen names Jev on that board.
 
-**Play it: `<hosted URL — filled in after the deploy>`**
+**Play it: [live URL]**
 
 ## The question
 
