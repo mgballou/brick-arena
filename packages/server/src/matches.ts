@@ -4,6 +4,8 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { refuseUnlessAdmin } from './admin.ts';
 import { foldSummary, idTime, isMatchId, MATCHES_PATH, parseLine, parseRecord, startSummary, summarize, type MatchLine, type MatchSummary } from './record.ts';
+import { matchRecord, recentMatches } from './supabase-read.ts';
+import { restClient, type TableClient } from './supabase.ts';
 
 // Where the hosted server keeps match records (record.ts): one NDJSON file per
 // match in one directory, appended to and never rewritten. This process is the
@@ -36,6 +38,10 @@ export type MatchStore = {
   append: (id: string, lines: MatchLine[]) => 'ok' | Refused;
   read: (id: string) => string | null;
   list: (limit?: number) => MatchSummary[];
+};
+export type MatchReadSource = {
+  read: (id: string) => string | null | Promise<string | null>;
+  list: (limit?: number) => MatchSummary[] | Promise<MatchSummary[]>;
 };
 
 // A new match's id must name a start within this much of the server's clock,
@@ -100,6 +106,20 @@ export function storeFromEnv(env: Record<string, string | undefined>, written?: 
   return createMatchStore(env.MATCHES_DIR?.trim() || MATCHES_DEFAULTS.dir, MATCHES_DEFAULTS, Date.now, written);
 }
 
+export function matchReadSourceFromEnv(env: Record<string, string | undefined>, fallback: MatchStore, client?: TableClient): MatchReadSource {
+  const url = env.SUPABASE_URL?.trim();
+  const key = env.SUPABASE_SECRET_KEY?.trim();
+  if (!url || !key) return fallback;
+  const reader = client ?? restClient({ url, key });
+  return {
+    async read(id) {
+      const record = await matchRecord(reader, id);
+      return record ? record.lines.map(line => JSON.stringify(line)).join('\n') + '\n' : null;
+    },
+    list: () => recentMatches(reader, MATCHES_DEFAULTS.recent),
+  };
+}
+
 async function readBody(req: IncomingMessage, max: number): Promise<string | null> {
   const chunks: Buffer[] = [];
   let size = 0;
@@ -114,7 +134,7 @@ async function readBody(req: IncomingMessage, max: number): Promise<string | nul
 // Mounted at MATCHES_PATH by the hosted server and the dev server; the dev
 // server strips the mount from the URL and the hosted one doesn't. `admin` is
 // the ADMIN_SECRET; without it no one reads a record.
-export function matchesMiddleware(store: MatchStore, admin: string | null, log: (line: string) => void = line => console.error(`[matches] ${line}`)) {
+export function matchesMiddleware(store: MatchStore, admin: string | null, readSource: MatchReadSource = store, log: (line: string) => void = line => console.error(`[matches] ${line}`)) {
   const handle = async (req: IncomingMessage, res: ServerResponse) => {
     const send = (status: number, body: unknown, type = 'application/json') => {
       res.statusCode = status;
@@ -127,12 +147,12 @@ export function matchesMiddleware(store: MatchStore, admin: string | null, log: 
     if (rest === '') {
       if (req.method !== 'GET') return send(405, { ok: false, error: 'List matches with GET.' });
       if (refuseUnlessAdmin(req, res, admin)) return;
-      return send(200, { ok: true, matches: store.list() });
+      return send(200, { ok: true, matches: await readSource.list() });
     }
     if (!isMatchId(rest)) return send(404, { ok: false, error: 'No such match.' });
     if (req.method === 'GET') {
       if (refuseUnlessAdmin(req, res, admin)) return;
-      const text = store.read(rest);
+      const text = await readSource.read(rest);
       return text === null ? send(404, { ok: false, error: 'No such match.' }) : send(200, text, 'application/x-ndjson; charset=utf-8');
     }
     if (req.method !== 'POST') return send(405, { ok: false, error: 'Write a match with POST.' });

@@ -138,7 +138,10 @@ up the host.
 The server keeps a record of each match: every launch, lost ball and Jev call, with the board
 Jev was sent, and both boards' clear over time. Only the admin reads them, with the server's
 `ADMIN_SECRET`: `/matches.html` lists recent matches and opens each one's timeline, and
-`npm run match` prints them with a tally of every choice Jev made.
+`npm run match` prints them with a tally of every choice Jev made. The hosted page reads
+from Supabase when both `SUPABASE_URL` and `SUPABASE_SECRET_KEY` are set; otherwise it
+reads the server's local match files. The secret key stays on the server. `SUPABASE_WRITES=1`
+is also needed to save new live matches to Supabase.
 [docs/deploy.md](docs/deploy.md#match-records) says where they live.
 
 Left and Right move your paddle. After a lost ball, Space or Up serves. P pauses, H shows how
