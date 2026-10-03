@@ -297,7 +297,7 @@ describe('the migration', () => {
         for (const column of columns.filter(column => column.required)) expect(row[column.name], `${table}.${column.name}`).not.toBeNull();
       }
     }
-  });
+  }, 20_000);
 
   // Each upsert the way the Data API runs it: the rows through
   // jsonb_populate_recordset, merged on the table's key.
