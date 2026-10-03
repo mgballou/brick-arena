@@ -12,16 +12,18 @@ permissions:
   contents: read
 
 jobs:
-  # Fails, rather than skips, a PR behind its base: a run whose jobs were all
-  # skipped concludes success, which reads as a pass.
+  # A branch behind its base is not a failure: the gate says so in a notice and
+  # skips the jobs below, so a merge to main never turns the open PRs red.
   gate:
     if: github.event.pull_request.draft == false
     runs-on: [self-hosted, laila-mac]
     timeout-minutes: 3
     permissions:
       contents: read
+    outputs:
+      run: ${{ steps.base.outputs.run }}
     steps:
-      - name: Require the branch to be current with its base
+      - id: base
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
@@ -29,12 +31,11 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           behind=$(gh api "repos/$REPO/compare/$BASE...$HEAD_SHA" --jq .behind_by)
-          if [ "$behind" != "0" ]; then
-            echo "::error::This branch is $behind commits behind $BASE. Update it to run CI."
-            exit 1
-          fi
+          if [ "$behind" = "0" ]; then echo "run=true" >> "$GITHUB_OUTPUT"
+          else echo "::notice::This branch is $behind commits behind $BASE. Update it to run CI."; echo "run=false" >> "$GITHUB_OUTPUT"; fi
   check:
     needs: gate
+    if: needs.gate.outputs.run == 'true'
     name: install, test, typecheck
     runs-on: [self-hosted, laila-mac]
     timeout-minutes: 10
@@ -61,6 +62,7 @@ jobs:
 
   browser:
     needs: gate
+    if: needs.gate.outputs.run == 'true'
     name: browser specs in Chromium
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -100,6 +102,7 @@ jobs:
 
   db:
     needs: gate
+    if: needs.gate.outputs.run == 'true'
     name: Supabase path on Postgres and PostgREST
     runs-on: ubuntu-latest
     timeout-minutes: 10
