@@ -105,6 +105,12 @@ jobs:
     name: Supabase path on Postgres and PostgREST
     runs-on: [self-hosted, macOS]
     timeout-minutes: 10
+    # Its own compose project and host ports, so a run never touches a stack
+    # someone started with `pnpm db:up` on this Mac.
+    env:
+      COMPOSE_PROJECT_NAME: brick-arena-ci
+      SUPABASE_LOCAL_API_PORT: 55321
+      SUPABASE_LOCAL_DB_PORT: 55322
     steps:
       - uses: actions/checkout@v7
 
@@ -131,7 +137,9 @@ jobs:
         if: failure()
         run: docker compose -f supabase/local/compose.yml logs
 
-      # The runner is a Mac that stays up, so the stack must not outlive the job.
+      # The runner is a Mac that stays up, so the stack and its anonymous data
+      # volume must not outlive the job. -p names this job's project, never
+      # the default one.
       - name: stop Postgres and PostgREST
         if: always()
-        run: pnpm db:down
+        run: docker compose -p brick-arena-ci -f supabase/local/compose.yml down -v --remove-orphans

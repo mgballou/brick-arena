@@ -254,6 +254,8 @@ pnpm test:db    # also a CI job on every push
 pnpm db:down    # stops it and drops the data
 ```
 
+CI starts its own copy with `COMPOSE_PROJECT_NAME=brick-arena-ci`, `SUPABASE_LOCAL_API_PORT=55321` and `SUPABASE_LOCAL_DB_PORT=55322`, so it never touches a stack you started with `pnpm db:up`.
+
 The stack runs Postgres 17 and the PostgREST version Supabase pins, capped at
 1000 rows a read as Supabase is. An nginx gateway takes a fixed, public secret
 key on `apikey` and hands PostgREST the `service_role` JWT, as Supabase's
