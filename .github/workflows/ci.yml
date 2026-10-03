@@ -64,7 +64,7 @@ jobs:
     needs: gate
     if: needs.gate.outputs.run == 'true'
     name: browser specs in Chromium
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS]
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
@@ -79,10 +79,9 @@ jobs:
       - name: install
         run: pnpm install --frozen-lockfile
 
-      # The Chromium that the pinned @playwright/test drives, and the system
-      # libraries it needs.
+      # The Chromium that the pinned @playwright/test drives.
       - name: install Chromium
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install chromium
 
       # playwright.config.ts starts the dev server against the stand-in, the
       # built page on the hosted app with no key, and Render's build on
@@ -104,7 +103,7 @@ jobs:
     needs: gate
     if: needs.gate.outputs.run == 'true'
     name: Supabase path on Postgres and PostgREST
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS]
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -131,3 +130,8 @@ jobs:
       - name: stack logs
         if: failure()
         run: docker compose -f supabase/local/compose.yml logs
+
+      # The runner is a Mac that stays up, so the stack must not outlive the job.
+      - name: stop Postgres and PostgREST
+        if: always()
+        run: pnpm db:down
