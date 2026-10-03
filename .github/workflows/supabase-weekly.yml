@@ -12,6 +12,7 @@ on:
   # A pull request that changes the job runs it with the secrets unset, as a
   # fork does, so it never touches the database.
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - .github/workflows/supabase-weekly.yml
       - packages/cli/src/upkeep.ts
@@ -21,12 +22,16 @@ on:
 permissions:
   contents: read
 
-concurrency: supabase-weekly
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   weekly:
     name: pause check, keep-awake insert, 90-day prune
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       SUPABASE_URL: ${{ github.event_name != 'pull_request' && secrets.SUPABASE_URL || '' }}
       SUPABASE_SECRET_KEY: ${{ github.event_name != 'pull_request' && secrets.SUPABASE_SECRET_KEY || '' }}
