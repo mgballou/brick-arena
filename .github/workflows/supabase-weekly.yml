@@ -23,7 +23,7 @@ concurrency:
 jobs:
   weekly:
     name: pause check, keep-awake insert, 90-day prune
-    runs-on: [self-hosted, laila-mac]
+    runs-on: [self-hosted, macOS]
     timeout-minutes: 15
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

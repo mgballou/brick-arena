@@ -16,7 +16,7 @@ jobs:
   # skips the jobs below, so a merge to main never turns the open PRs red.
   gate:
     if: github.event.pull_request.draft == false
-    runs-on: [self-hosted, laila-mac]
+    runs-on: [self-hosted, macOS]
     timeout-minutes: 3
     permissions:
       contents: read
@@ -37,7 +37,7 @@ jobs:
     needs: gate
     if: needs.gate.outputs.run == 'true'
     name: install, test, typecheck
-    runs-on: [self-hosted, laila-mac]
+    runs-on: [self-hosted, macOS]
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
