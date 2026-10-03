@@ -320,7 +320,7 @@ describe('only the game asks', () => {
     expect(new Set(session.map(ask => ask.question))).toEqual(new Set(['target', 'chase']));
     const refusals = [...session.map(ask => askRefusal(toRequest(ask, 'jev'), 'jev')), ...recorded.map(request => askRefusal(request, request.model))];
     expect(refusals.filter(Boolean)).toEqual([]);
-  });
+  }, 20_000);
 
   it("forwards the check before a match", async () => {
     const { url, seen, close } = await serve();

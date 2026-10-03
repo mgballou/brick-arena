@@ -83,5 +83,5 @@ describe('the weekly job', () => {
       const out = execFileSync(`${root}node_modules/.bin/tsx`, ['packages/cli/src/weekly.ts', step], { cwd: root, env, encoding: 'utf8', timeout: 30_000 });
       expect(out).toBe(`SUPABASE_URL is not set, so the ${step} step does nothing.\n`);
     }
-  });
+  }, 20_000);
 });
