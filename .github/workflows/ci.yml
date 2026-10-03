@@ -14,8 +14,8 @@ permissions:
 jobs:
   gate:
     if: github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+    runs-on: [self-hosted, laila-mac]
+    timeout-minutes: 3
     permissions:
       contents: read
     outputs:
@@ -32,8 +32,8 @@ jobs:
     needs: gate
     if: needs.gate.outputs.run == 'true'
     name: install, test, typecheck
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    runs-on: [self-hosted, laila-mac]
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
 

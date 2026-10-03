@@ -110,6 +110,11 @@ floor. The Human in `pnpm session` catches at the `landing` option, which since
 26 September is where the ball really comes down (`landingOf`), so it loops too,
 and `pnpm session` now records no level cleared.
 
+CI runs on the laila-mac self-hosted runner; a job stuck at Queued means the
+runner is down, check `~/projects/laila/scripts/gh_runner.sh status`. The
+`browser` and `db` jobs stay on `ubuntu-latest`: Playwright installs with
+`--with-deps` (apt) and `db` needs Docker.
+
 <!-- block:begin -->
 ## Agents
 

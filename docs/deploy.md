@@ -215,7 +215,7 @@ and only the dashboard's **Resume project** brings it back. Every Monday
 
 It needs two repository secrets (Settings → Secrets and variables →
 Actions): `SUPABASE_URL` and `SUPABASE_SECRET_KEY`, the same values as the
-service's. Until they are set, and on a fork or a pull request, each step logs
+service's. Until they are set, and on a fork, each step logs
 `SUPABASE_URL is not set, so the … step does nothing.` and passes. Run it by
 hand from the Actions tab with **Run workflow**. If the repository goes public,
 GitHub turns scheduled workflows off after 60 days without repository
