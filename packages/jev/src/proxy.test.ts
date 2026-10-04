@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { askForDecision, createBoard, type Ask } from '../../engine/src/index';
 import { CAP_DEFAULTS, capFromEnv, createCap } from './cap';
 import { linkFromEnv } from './key';
-import { askUpstream, checkHealth, jevMiddleware, type ProxyOptions } from './proxy';
+import { askUpstream, checkHealth, clientAddress, jevMiddleware, type ProxyOptions } from './proxy';
 import { startStandIn } from './stand-in-server';
 import { httpTransport, readRecording, recordingTransport } from './transport';
 import { answeredBy, askRefusal, DOWN_STATUS, healthRequest, refusal, toRequest, type SystemOneRequest } from './wire';
@@ -177,7 +177,19 @@ describe('the daily cap', () => {
     await new Promise<void>(done => server.listen(0, '127.0.0.1', done));
     return { url: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, close: () => server.close() };
   }
-  const as = (visitor: string) => ({ method: 'POST', body: ask(), headers: { 'x-forwarded-for': `${visitor}, 10.0.0.1` } });
+  const as = (visitor: string, forged = '198.51.100.7') => ({ method: 'POST', body: ask(), headers: { 'x-forwarded-for': `${forged}, ${visitor}` } });
+
+  it('uses the rightmost untrusted address and ignores a forged leftmost address', async () => {
+    expect(clientAddress({ 'x-forwarded-for': '198.51.100.7, 203.0.113.9' }, '127.0.0.1')).toBe('203.0.113.9');
+  });
+
+  it('handles repeated forwarded-for values from the right', () => {
+    expect(clientAddress({ 'x-forwarded-for': ['198.51.100.7, 203.0.113.8', '203.0.113.9'] }, '127.0.0.1')).toBe('203.0.113.9');
+  });
+
+  it('falls back to the socket address when the forwarded-for header is empty', () => {
+    expect(clientAddress({ 'x-forwarded-for': ' , ' }, '127.0.0.1')).toBe('127.0.0.1');
+  });
 
   it('counts calls per visitor and sends the down status past the limit', async () => {
     const logged: string[] = [];
@@ -189,6 +201,13 @@ describe('the daily cap', () => {
     expect(await refused.json()).toEqual({ ok: false, down: 'used-up' });
     expect(logged).toEqual(['down (used-up): a visitor reached 2 calls today']);
     expect((await fetch(url, as('2.2.2.2'))).status).toBe(200);
+    close();
+  });
+
+  it('does not let callers rotate forged leftmost addresses to reset their visitor limit', async () => {
+    const { url, close } = await serve({ ...options(standIn.url, true), cap: createCap({ perVisitor: 1, total: 100 }) });
+    expect((await fetch(url, as('203.0.113.9', '198.51.100.7'))).status).toBe(200);
+    expect((await fetch(url, as('203.0.113.9', '198.51.100.8'))).status).toBe(DOWN_STATUS);
     close();
   });
 

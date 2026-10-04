@@ -12,5 +12,5 @@ const env = {
   JEV_BASE_URL: `http://127.0.0.1:${FAKE_TYPESAFE_PORT}`,
   MATCHES_DIR: `${OUT}/deployed-matches`,
 };
-createServer(hostedApp(hostedFromEnv(env, `${OUT}/render-dist`)))
+createServer(hostedApp(await hostedFromEnv(env, `${OUT}/render-dist`)))
   .listen(Number(new URL(DEPLOYED_URL).port), '127.0.0.1', () => console.log(`e2e deployed server on ${DEPLOYED_URL}`));
