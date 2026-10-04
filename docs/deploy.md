@@ -215,7 +215,7 @@ and only the dashboard's **Resume project** brings it back. Every Monday
 
 It needs two repository secrets (Settings → Secrets and variables →
 Actions): `SUPABASE_URL` and `SUPABASE_SECRET_KEY`, the same values as the
-service's. Until they are set, and on a fork or a pull request, each step logs
+service's. Until they are set, and on a fork, each step logs
 `SUPABASE_URL is not set, so the … step does nothing.` and passes. Run it by
 hand from the Actions tab with **Run workflow**. If the repository goes public,
 GitHub turns scheduled workflows off after 60 days without repository
@@ -253,6 +253,8 @@ pnpm db:up      # supabase/local/compose.yml; waits until it answers
 pnpm test:db    # also a CI job on every push
 pnpm db:down    # stops it and drops the data
 ```
+
+CI starts its own copy with `COMPOSE_PROJECT_NAME=brick-arena-ci`, `SUPABASE_LOCAL_API_PORT=55321` and `SUPABASE_LOCAL_DB_PORT=55322`, so it never touches a stack you started with `pnpm db:up`.
 
 The stack runs Postgres 17 and the PostgREST version Supabase pins, capped at
 1000 rows a read as Supabase is. An nginx gateway takes a fixed, public secret

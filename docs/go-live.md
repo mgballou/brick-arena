@@ -52,7 +52,7 @@ harder to squash than one PR:
 13. #17 `ba-jev-asks-only-its-questions`: base to `main`, merge `main` (below: `ba-pinned-and-current-docs`), squash.
 14. #18 `ba-title-checked-as-deployed`: base to `main`, merge `main` (below: `ba-jev-asks-only-its-questions`), squash.
 15. #11 `ba-go-live`, this list's own PR: squash it last; it is based on `main` and merges over the stack with no conflict.
-16. Check that CI passes on `main` (GitHub → Actions → `ci.yml`).
+16. Check that #11's checks passed (`gh pr checks 11`, or the PR's **Checks** tab); CI runs only on pull requests, so `main` has no run of its own.
 
 ### Render
 
@@ -67,10 +67,10 @@ Blueprint. After the stack merges there are four, and `docs/deploy.md` step 3
 
 19. `JEV_API_KEY`: paste the token in `~/.jev-key`, the value only (Render's Blueprint form).
 20. `ADMIN_SECRET`: paste the output of `openssl rand -base64 24`, and keep a copy in your password manager (Render's Blueprint form).
-21. `SUPABASE_URL` and `SUPABASE_SECRET_KEY`: leave them empty for now; writes stay off without `SUPABASE_WRITES=1`. If Render refuses an empty value, first create the Supabase project and run its two migrations (the first two steps under *Supabase*), then paste the real ones (Render's Blueprint form). The dry run could not test this form.
+21. `SUPABASE_URL` and `SUPABASE_SECRET_KEY`: leave them empty for now; the admin page then reads match files on the server. Set both to make `/matches.html` and `/api/matches` read from Supabase. `SUPABASE_WRITES=1` is separately required to save new live matches there. If Render refuses empty values, first create the Supabase project and run its two migrations (the first two steps under *Supabase*), then paste the real values (Render's Blueprint form). The dry run could not test this form.
 22. Choose **Apply**, and watch the build log end in `✓ built` (Render → brick-arena → Events).
 23. Run `pnpm smoke:site https://brick-arena.onrender.com` and see `every check passed`: `/healthz` answers `ok`, and `/` shows *Jev is online* on the title screen, with the data notice and its Privacy link (terminal; it needs `pnpm exec playwright install chromium` once).
-24. Decide whether match records on disk must last. On the free plan they vanish when the service sleeps, 15 minutes after the last visit. Keeping them means `plan: starter`, a 1 GB disk and `MATCHES_DIR` in `render.yaml`, about $7.25 a month (`docs/deploy.md`, *Where they live, and why a disk*). Once Supabase holds the rows, free is enough.
+24. Decide whether match records on disk must last. On the free plan they vanish when the service sleeps, 15 minutes after the last visit. With both Supabase read settings present, the admin page reads persisted rows there; keep `SUPABASE_WRITES=1` set so new live matches are saved. Keeping local files instead means `plan: starter`, a 1 GB disk and `MATCHES_DIR` in `render.yaml`, about $7.25 a month (`docs/deploy.md`, *Where they live, and why a disk*).
 
 ### Supabase
 
@@ -108,10 +108,19 @@ Blueprint. After the stack merges there are four, and `docs/deploy.md` step 3
 
 31. Create the project on US Cloud, the spec's plan (<https://us.posthog.com>).
 32. Turn IP capture off (PostHog → Project settings).
-33. On the service set `VITE_POSTHOG_KEY` (`phc_…`), `VITE_POSTHOG_HOST=https://us.i.posthog.com` and `VITE_POSTHOG=1` (Render → brick-arena → Environment).
-34. Run **Manual Deploy → Deploy latest commit**, since the page reads the three `VITE_` values when it is built (Render dashboard).
-35. Play one match and see its events arrive (PostHog → Activity).
-36. In a PR, replace the two *pending* lines in `privacy.html` with the real PostHog region and Supabase state, and state PostHog's free-plan event retention (`privacy.html`).
+33. Create a personal API key with `dashboard:read`, `dashboard:write`, `insight:read` and `insight:write` scopes. From the repo root, run this once to create the four insights and the Brick Arena dashboard; use `https://eu.posthog.com` if the project is in EU Cloud:
+
+    ```sh
+    POSTHOG_HOST=https://us.posthog.com \
+    POSTHOG_PROJECT_ID=<numeric-project-id> \
+    POSTHOG_PERSONAL_API_KEY=<personal-api-key> \
+    pnpm posthog:dashboard
+    ```
+
+34. On the service set `VITE_POSTHOG_KEY` (`phc_…`), `VITE_POSTHOG_HOST=https://us.i.posthog.com` and `VITE_POSTHOG=1` (Render → brick-arena → Environment).
+35. Run **Manual Deploy → Deploy latest commit**, since the page reads the three `VITE_` values when it is built (Render dashboard).
+36. Play one match and see its events arrive (PostHog → Activity).
+37. In a PR, replace the two *pending* lines in `privacy.html` with the real PostHog region and Supabase state, and state PostHog's free-plan event retention (`privacy.html`).
 
 ### Play it
 

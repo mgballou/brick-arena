@@ -9,7 +9,11 @@
 #
 # The versions are Supabase's: Postgres 17 and the PostgREST that
 # github.com/supabase/postgres pins (ansible/vars.yml, postgrest_release).
-name: brick-arena-db
+#
+# CI runs its own copy beside any stack of yours: COMPOSE_PROJECT_NAME and the
+# two port variables below move it to another project and other host ports. With
+# none set, nothing changes.
+name: ${COMPOSE_PROJECT_NAME:-brick-arena-db}
 
 services:
   db:
@@ -17,7 +21,7 @@ services:
     environment:
       POSTGRES_PASSWORD: postgres
     ports:
-      - 127.0.0.1:54322:5432
+      - 127.0.0.1:${SUPABASE_LOCAL_DB_PORT:-54322}:5432
     volumes:
       # The roles exist before PostgREST first logs in; `pnpm test:db` runs
       # this again after it resets the schema.
@@ -50,7 +54,7 @@ services:
       rest:
         condition: service_started
     ports:
-      - 127.0.0.1:54321:8000
+      - 127.0.0.1:${SUPABASE_LOCAL_API_PORT:-54321}:8000
     volumes:
       - ./gateway.conf:/etc/nginx/conf.d/default.conf:ro
     healthcheck:

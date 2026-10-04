@@ -1,24 +1,52 @@
 name: CI
 
 on:
-  push:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event.pull_request.draft }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  check:
-    name: install, test, typecheck
-    runs-on: ubuntu-latest
+  # A branch behind its base is not a failure: the gate says so in a notice and
+  # skips the jobs below, so a merge to main never turns the open PRs red.
+  gate:
+    if: github.event.pull_request.draft == false
+    runs-on: [self-hosted, macOS]
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    outputs:
+      run: ${{ steps.base.outputs.run }}
     steps:
-      - uses: actions/checkout@v4
+      - id: base
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BASE: ${{ github.base_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          behind=$(gh api "repos/$REPO/compare/$BASE...$HEAD_SHA" --jq .behind_by)
+          if [ "$behind" = "0" ]; then echo "run=true" >> "$GITHUB_OUTPUT"
+          else echo "::notice::This branch is $behind commits behind $BASE. Update it to run CI."; echo "run=false" >> "$GITHUB_OUTPUT"; fi
+  check:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    name: install, test, typecheck
+    runs-on: [self-hosted, macOS]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
 
       # The pnpm of packageManager in package.json, which wrote the lockfile
       # and reads `allowBuilds` in pnpm-workspace.yaml.
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -33,15 +61,17 @@ jobs:
         run: pnpm exec tsc -b
 
   browser:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     name: browser specs in Chromium
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS]
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -49,10 +79,9 @@ jobs:
       - name: install
         run: pnpm install --frozen-lockfile
 
-      # The Chromium that the pinned @playwright/test drives, and the system
-      # libraries it needs.
+      # The Chromium that the pinned @playwright/test drives.
       - name: install Chromium
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install chromium
 
       # playwright.config.ts starts the dev server against the stand-in, the
       # built page on the hosted app with no key, and Render's build on
@@ -64,22 +93,30 @@ jobs:
       # Each failed spec's trace, and every spec's screenshot.
       - name: upload results
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: browser-results
           path: test-results/
           retention-days: 14
 
   db:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     name: Supabase path on Postgres and PostgREST
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS]
     timeout-minutes: 10
+    # Its own compose project and host ports, so a run never touches a stack
+    # someone started with `pnpm db:up` on this Mac.
+    env:
+      COMPOSE_PROJECT_NAME: brick-arena-ci
+      SUPABASE_LOCAL_API_PORT: 55321
+      SUPABASE_LOCAL_DB_PORT: 55322
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -99,3 +136,10 @@ jobs:
       - name: stack logs
         if: failure()
         run: docker compose -f supabase/local/compose.yml logs
+
+      # The runner is a Mac that stays up, so the stack and its anonymous data
+      # volume must not outlive the job. -p names this job's project, never
+      # the default one.
+      - name: stop Postgres and PostgREST
+        if: always()
+        run: docker compose -p brick-arena-ci -f supabase/local/compose.yml down -v --remove-orphans

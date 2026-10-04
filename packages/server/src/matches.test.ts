@@ -13,9 +13,10 @@ import { startStandIn } from '../../jev/src/stand-in-server';
 import { fromResponse, JEV_PATH, toRequest, type SystemOneResponse } from '../../jev/src/wire';
 import { jevLine, lostLines, MatchLog, sideTotal, type Sender } from '../../web/src/match-log';
 import { adminHeader } from './admin';
-import { createMatchStore, type MatchStore } from './matches';
+import { createMatchStore, matchReadSourceFromEnv, type MatchStore } from './matches';
 import { MATCHES_PATH, newMatchId, parseRecord, tallyJev, tallyLine, tallyRows, timeline, type MatchLine, type MatchSummary } from './record';
 import { hostedApp } from './serve';
+import { stubClient } from './supabase';
 
 // The hosted server over the local stand-in, in debug mode so the stand-in may
 // play, with its match store in a temporary directory. Nothing reaches live Jev.
@@ -225,5 +226,35 @@ describe('a match record', () => {
     expect(again.append(b, [level])).toBe('full');
     expect(again.list().map(match => match.id)).toEqual([b, a]);
     expect(again.list()).toEqual(small.list());
+  });
+
+  it('reads the admin list and timeline from the fake Supabase client when configured', async () => {
+    const client = stubClient();
+    let reads = 0;
+    const select = client.select.bind(client);
+    client.select = async (table, query) => { reads++; return select(table, query); };
+    const id = newMatchId();
+    client.tables.matches.push({ id, started_at: new Date().toISOString(), ended_at: null, seed: 7, tuning: 'standard', opponent: 'live', jev_tally: null });
+    client.tables.match_events.push({ match_id: id, n: 0, type: 'level', level: 0, frame: null, data: { name: 'First' } });
+    const store = createMatchStore(mkdtempSync(join(tmpdir(), 'brick-arena-fallback-')));
+    expect(matchReadSourceFromEnv({}, store)).toBe(store);
+    expect(matchReadSourceFromEnv({ SUPABASE_URL: 'https://example.supabase.co' }, store)).toBe(store);
+    const source = matchReadSourceFromEnv({ SUPABASE_URL: 'https://example.supabase.co', SUPABASE_SECRET_KEY: 'test-secret-not-real' }, store, client);
+    const app = hostedApp({ dist: mkdtempSync(join(tmpdir(), 'brick-arena-supabase-dist-')), proxy: { link: { baseUrl: standIn.url, model: 'jev-test', key: 'test-key-not-real' }, keyFrom: 'a test', debug: false, cap: createCap({ perVisitor: 10, total: 10 }) }, matches: store, matchReadSource: source, admin: ADMIN });
+    const adminServer = createServer(app);
+    await new Promise<void>(done => adminServer.listen(0, '127.0.0.1', done));
+    const url = `http://127.0.0.1:${(adminServer.address() as AddressInfo).port}`;
+    try {
+      expect((await fetch(`${url}${MATCHES_PATH}`)).status).toBe(401);
+      expect((await fetch(`${url}${MATCHES_PATH}/${id}`)).status).toBe(401);
+      expect(reads).toBe(0);
+      const list = await fetch(`${url}${MATCHES_PATH}`, { headers: { authorization: adminHeader(ADMIN) } });
+      expect((await list.json()).matches.map((match: MatchSummary) => match.id)).toEqual([id]);
+      const record = await fetch(`${url}${MATCHES_PATH}/${id}`, { headers: { authorization: adminHeader(ADMIN) } });
+      expect(record.headers.get('content-type')).toContain('application/x-ndjson');
+      expect(parseRecord(await record.text()).map(line => line.type)).toEqual(['start', 'level']);
+    } finally {
+      adminServer.close();
+    }
   });
 });

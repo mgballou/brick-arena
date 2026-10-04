@@ -4,12 +4,16 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // The stack of supabase/local/compose.yml, for `pnpm test:db`: Postgres on
-// 54322 and the Data API on 54321, behind a gateway that takes these two keys
-// as Supabase takes a project's (supabase/local/gateway.conf). They are fixed,
-// public and good for nothing else.
+// 54322 and the Data API on 54321 (SUPABASE_LOCAL_DB_PORT and
+// SUPABASE_LOCAL_API_PORT move them, as compose.yml reads the same two),
+// behind a gateway that takes these two keys as Supabase takes a project's
+// (supabase/local/gateway.conf). They are fixed, public and good for nothing
+// else.
+const apiPort = process.env.SUPABASE_LOCAL_API_PORT ?? '54321';
+const dbPort = process.env.SUPABASE_LOCAL_DB_PORT ?? '54322';
 export const LOCAL = {
-  url: 'http://127.0.0.1:54321',
-  db: 'postgresql://postgres:postgres@127.0.0.1:54322/postgres',
+  url: `http://127.0.0.1:${apiPort}`,
+  db: `postgresql://postgres:postgres@127.0.0.1:${dbPort}/postgres`,
   secretKey: 'sb_secret_brick_arena_local',
   publishableKey: 'sb_publishable_brick_arena_local',
 } as const;
