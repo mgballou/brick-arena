@@ -2,34 +2,32 @@ name: Supabase weekly
 
 # Keeps the Free Supabase project from pausing, tells Matthew when it has, and
 # deletes the full rows of matches older than 90 days (packages/cli/src/upkeep.ts,
-# docs/deploy.md). With the secrets unset each step says so and passes.
+# docs/deploy.md). With the secrets unset each step says so and passes. It has
+# no pull_request trigger: a PR blanks the secrets, so every step passed and
+# gated nothing. `pnpm test` covers upkeep.ts.
 
 on:
   schedule:
     # Mondays at 14:17 UTC, off the hour when GitHub's cron runs late.
     - cron: '17 14 * * 1'
   workflow_dispatch:
-  # A pull request that changes the job runs it with the secrets unset, as a
-  # fork does, so it never touches the database.
-  pull_request:
-    paths:
-      - .github/workflows/supabase-weekly.yml
-      - packages/cli/src/upkeep.ts
-      - packages/cli/src/weekly.ts
-      - packages/server/src/supabase.ts
 
 permissions:
   contents: read
 
-concurrency: supabase-weekly
+# A prune or insert already running is never cancelled; the next run waits.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
 jobs:
   weekly:
     name: pause check, keep-awake insert, 90-day prune
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS]
+    timeout-minutes: 15
     env:
-      SUPABASE_URL: ${{ github.event_name != 'pull_request' && secrets.SUPABASE_URL || '' }}
-      SUPABASE_SECRET_KEY: ${{ github.event_name != 'pull_request' && secrets.SUPABASE_SECRET_KEY || '' }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
     steps:
       - uses: actions/checkout@v7
 

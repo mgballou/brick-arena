@@ -110,6 +110,8 @@ floor. The Human in `pnpm session` catches at the `landing` option, which since
 26 September is where the ball really comes down (`landingOf`), so it loops too,
 and `pnpm session` now records no level cleared.
 
+CI runs on a self-hosted macOS runner; a job stuck at Queued means that runner is down.
+
 <!-- block:begin -->
 ## Agents
 
