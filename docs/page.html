@@ -57,66 +57,63 @@
     <main>
       <header>
         <div>
-          <p class="eyebrow">Scripted session / one seed / level 1 still</p>
-          <h1>Two boards.<br>One level.</h1>
+          <p class="eyebrow">Recorded simulation / one seed / level 1 still</p>
+          <h1>Two boards.<br>One seed.</h1>
           <section class="race" aria-labelledby="race-title">
-            <span class="race-kicker">The race</span>
-            <h2 id="race-title">Can you clear the level faster than Jev</h2>
+            <span class="race-kicker">The recorded run</span>
+            <h2 id="race-title">Neither policy cleared a level</h2>
             <div class="race-times">
-              <div class="race-time"><strong>38.10s</strong><span>scripted player · 2,288 ticks</span></div>
-              <div class="race-time"><strong>38.07s</strong><span>Jev / deterministic bot · 2,284 ticks · wins</span></div>
+              <div class="race-time"><strong>12,000 ticks</strong><span>scripted player · recorder limit</span></div>
+              <div class="race-time"><strong>12,000 ticks</strong><span>deterministic bot · recorder limit</span></div>
             </div>
-            <p class="race-note">The other player's latency is a handicap it has to out-think: it decides more slowly than a person and may still choose better.</p>
+            <p class="race-note">This is an offline comparison of two scripted policies, not a match against Jev or a person.</p>
           </section>
-          <p class="lede">Both boards start from seed <strong>20260919</strong>. The left board is the scripted player with the recorded human-latency model; the right board is the deterministic bot. Their choices diverge at tick 1590, and this still is taken from tick 1800.</p>
-          <p class="source-note"><strong>No person played this run.</strong> “Human” is the session’s scripted player label, not a claim of live play. The bot’s 0 ms reaction time is correct because it answers synchronously.</p>
+          <p class="lede">The session uses seed <strong>20260919</strong>. The left board is the scripted player with a fixed 180 ms answer time; the right board is the deterministic bot, which answers synchronously. The illustration represents the recorded level 1 run at tick 1800.</p>
+          <p class="source-note"><strong>No person or live Jev played this run.</strong> “Human” is the scripted player name in <code>docs/session.ndjson</code>; the comparison bot is local and deterministic.</p>
         </div>
       </header>
 
       <section class="section" style="border:1px solid #70c1b3;background:linear-gradient(135deg,#0f1a1e,#10161e 60%);padding:22px;margin-top:30px;" aria-labelledby="live-title">
-        <span class="race-kicker" style="color:#70c1b3;">Live / split screen</span>
-        <h2 id="live-title" style="margin:10px 0 14px;font-size:30px;letter-spacing:-.04em;">Play Jev yourself</h2>
-        <p style="max-width:860px;color:#aab5bc;line-height:1.6;">Two boards side by side, same seed, same level, running at the same time. Your paddle follows the mouse; Jev plays through the API with visible latency. The lag is the handicap.</p>
-        <h3>One command</h3>
-        <pre class="jev-command">pnpm dev</pre>
-        <p style="max-width:860px;color:#aab5bc;line-height:1.6;">Opens <code>http://localhost:5173</code>. Choose <strong>Bot</strong> to practice against the deterministic bot (free, instant) or <strong>Live Jev</strong> to play against the real API. Live mode asks for your TypeSafe API key in the browser — it stays in memory and is never written to disk or sent anywhere except the TypeSafe endpoint.</p>
-        <h3>Smoke test</h3>
+        <span class="race-kicker" style="color:#70c1b3;">Live game / keyboard controls</span>
+        <h2 id="live-title" style="margin:10px 0 14px;font-size:30px;letter-spacing:-.04em;">Play against Jev</h2>
+        <p style="max-width:860px;color:#aab5bc;line-height:1.6;">The game is one match against live Jev. You play the left board with the arrow keys; Jev plays the right through the dev server's forwarder. There is no bot mode. The local stand-in is available only in debug mode.</p>
+        <h3>Run locally</h3>
+        <pre class="jev-command">pnpm install
+printf '%s\n' '&lt;your TypeSafe key&gt;' &gt; ~/.jev-key
+chmod 600 ~/.jev-key
+pnpm dev</pre>
+        <p style="max-width:860px;color:#aab5bc;line-height:1.6;">Use Node 24. The dev server reads <code>~/.jev-key</code> once at startup and forwards Jev's calls; the browser never sees the key. Open <code>http://localhost:5173</code> and press Enter. Left and Right move your paddle; Space or Up serves after a lost ball. P pauses, H shows scoring, and M mutes.</p>
+        <h3>Check the live link</h3>
         <pre class="jev-command">pnpm smoke</pre>
-        <p class="source-note" style="max-width:900px;">Makes one call to the live endpoint. Reports the HTTP status, latency, the choice Jev returned, and the <code>usage</code> block (input and output tokens). Reads the key from <code>~/.jev-key</code> — bare key or <code>NAME=value</code> lines, both handled.</p>
+        <p class="source-note" style="max-width:900px;">Makes one live call and prints its status, latency, and Jev's choice. It reads the key from <code>~/.jev-key</code>.</p>
       </section>
 
       <section class="section jev-seat" aria-labelledby="jev-seat-title">
-        <span class="race-kicker">The seat / one typed choice</span>
-        <h2 id="jev-seat-title">Put a real Jev in the race</h2>
-        <p>Three questions, each a closed list, each answered with one typed <code>choice</code>.</p>
-        <p><strong>target</strong> offers <code>landing</code>, <code>center</code>, <code>left</code>, and <code>right</code>; those names map to the four x values from <code>askForDecision</code>.</p>
-        <p><strong>chase</strong> offers every falling power-up id plus <code>none</code>; <strong>track</strong> offers every ball id.</p>
-        <p>An answer outside the offered keys, or an answer that is not a choice, fails the call; the board does not accept paddle arithmetic.</p>
+        <span class="race-kicker">Jev's seat / one typed choice</span>
+        <h2 id="jev-seat-title">How Jev is asked to play</h2>
+        <p>The game sends one closed question at a time: <code>target</code>, <code>chase</code>, or <code>track</code>. Jev returns one choice from that question's listed options.</p>
+        <p><strong>target</strong> offers <code>landing</code>, <code>aim</code>, <code>angle-left</code>, or <code>angle-right</code>. Each named choice maps to a paddle position; Jev never sends paddle arithmetic.</p>
+        <p><strong>chase</strong> offers the falling power-ups by id, or <code>none</code>; <strong>track</strong> asks which ball to play.</p>
+        <p>An answer outside the offered options, or one that is not a choice, is rejected.</p>
 
-        <h3>One command</h3>
-        <pre class="jev-command"># Before this: replace the pnpm-workspace.yaml placeholder with true or false:
-# allowBuilds:
-#   esbuild: true
-JEV_BASE_URL=https://api.typesafe.ai JEV_MODEL=jev-latest JEV_API_KEY=&lt;your TypeSafe API key&gt; pnpm jev</pre>
-        <p>That is the direct TypeSafe route: <code>JEV_BASE_URL</code> is the configurable API root and the adapter appends <code>/v1/systemone</code>. The Vercel Gateway route (<code>https://ai-gateway.vercel.sh/typesafe</code>) and the OpenRouter route are not used by this command, so set neither of their keys or roots. The direct TypeSafe root and <code>jev-latest</code> come from TypeSafe’s API quick start; the adapter’s three variable names and path come from the raw repo.</p>
+        <h3>Key path</h3>
+        <pre class="jev-command">~/.jev-key</pre>
+        <p>The dev server reads this file once when it starts. Its forwarder adds the key to Jev's request, so the browser never receives it. The hosted page uses the host's <code>JEV_API_KEY</code> secret instead; that environment route is for the server, not local browser play.</p>
 
-        <h3>What the credit covers</h3>
-        <p>Recorded level 0 has <strong>154 decision points</strong>: 104 target, 41 chase, and 9 track. TypeSafe publishes <strong>$0.042 per million input tokens</strong> and says output is too cheap to meter, not a fixed price per call. So $5 buys about 119.0 million input tokens, but the number of complete races it covers is <strong>not published and cannot be calculated honestly without each request’s token count</strong>. There is no spend guard in this adapter: no per-session call cap. Adding one would take a session counter and a configured maximum that refuses or degrades calls before dispatch; it is not built here.</p>
-
-        <h3>When Jev is slow or fails</h3>
-        <p><code>raceWithLatency</code> never waits with the board stopped. A successful answer lands after its measured wall-clock time, while the board keeps stepping on the last target; a slow answer therefore misses asks. The default deadline is 1000 ms. A timeout applies nothing and is recorded as <code>timeout</code>; a failed request applies nothing and is recorded as <code>error</code>. The race continues either way. These mechanics are from the raw adapter and its tests; the price is from the raw TypeSafe research note.</p>
-        <p class="source-note"><strong>Source layers:</strong> the wiki was read first for project status and scope; raw sources then settled the adapter behavior, the 154-point count, TypeSafe’s direct root, and the published pricing. Recall was attempted but returned no passages because its embedding model download failed on DNS.</p>
+        <h3>When Jev is slow or unavailable</h3>
+        <p>The board keeps playing Jev's last answer while a call is pending. An answer that arrives after two seconds is late and changes nothing; three late calls in a row pause the match until Jev is back. When Jev cannot answer, the page says the game is down and shows no board.</p>
+        <p class="source-note"><strong>Debug mode:</strong> start the local stub and use a dummy key file with <code>VITE_DEBUG=1</code> to allow the stand-in to play. The screen shows a debug banner; this is not a live Jev match. The README has the complete commands.</p>
       </section>
 
       <figure class="capture">
         <svg viewBox="0 0 980 420" role="img" aria-labelledby="capture-title capture-desc">
           <title id="capture-title">Two level-one boards at tick 1800</title>
-          <desc id="capture-desc">The scripted player and deterministic bot share the same seed but have different paddle and ball positions after diverging choices.</desc>
+            <desc id="capture-desc">Conceptual side-by-side boards illustrate the recorded scripted player and deterministic bot comparison; positions are not exact telemetry.</desc>
           <rect width="980" height="420" fill="#10161e"/>
           <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" fill="#d7e0e5">
             <text x="24" y="25">01 / SCRIPTED PLAYER</text><text x="494" y="25">02 / DETERMINISTIC BOT</text>
-            <text x="24" y="405" fill="#82919b">tick 1800 · 10 bricks cleared · 0 lives lost · 1 power-up</text>
-            <text x="494" y="405" fill="#82919b">tick 1800 · 10 bricks cleared · 0 lives lost · 1 power-up</text>
+            <text x="24" y="405" fill="#82919b">tick 1800 · 5 bricks cleared · 0 lives lost · 0 power-ups</text>
+            <text x="494" y="405" fill="#82919b">tick 1800 · 4 bricks cleared · 0 lives lost · 0 power-ups</text>
           </g>
           <g transform="translate(24 40) scale(.91)">
             <rect width="480" height="320" fill="#080b10" stroke="#34424c"/>
@@ -137,53 +134,52 @@ JEV_BASE_URL=https://api.typesafe.ai JEV_MODEL=jev-latest JEV_API_KEY=&lt;your T
             <rect x="237" y="294" width="130" height="10" rx="3" fill="#f4f1ea"/><circle cx="64" cy="174" r="6" fill="#f4f1ea"/>
           </g>
         </svg>
-        <figcaption>Data-derived still, not a photograph: board state, paddle, ball and brick positions are taken from <code>docs/session.ndjson</code> at level 1 / tick 1800. The pale bricks are unbreakable; dim bricks are cleared.</figcaption>
+        <figcaption>Illustrative view of the recorded level 1 comparison at tick 1800, not an exact frame capture. The recorded session has 5 bricks cleared for the scripted player and 4 for the deterministic bot; neither has lost a ball or collected a power-up at this tick.</figcaption>
       </figure>
 
       <section class="section" aria-labelledby="ghost-title">
-        <p class="eyebrow">Ghost mode / recorded Human session / deterministic bot</p>
-        <h2 id="ghost-title">The race tells who finished first. The ghost shows why.</h2>
-        <p>Ghost mode replays the recorded session's exact states and asks Jev what it would choose at each decision point, without applying that answer to the world. Human and Jev won't have all the same bounce events because they will make different decisions and the balls will bounce at different points.</p>
+        <p class="eyebrow">Offline replay / scripted player / deterministic bot</p>
+        <h2 id="ghost-title">Compare choices on the recorded states</h2>
+        <p><code>pnpm compare</code> replays the recorded scripted-player states through the deterministic bot and reports how often their choices agree. It does not ask live Jev, and this comparison is a CLI report rather than a game mode.</p>
         <div class="ghost-grid" aria-label="Ghost comparison by level">
-          <div class="ghost-card"><span class="label">LEVEL 1</span><strong>72.37%</strong><small>55 agreements / 76 opportunities · diverged at ticks 1590–2190</small></div>
-          <div class="ghost-card"><span class="label">LEVELS 2–3</span><strong>100%</strong><small>400 / 400 agreements on each level · no divergence</small></div>
-          <div class="ghost-card"><span class="label">LEVELS 4–5</span><strong>98.25% / 98.75%</strong><small>393 / 400 and 395 / 400 · divergence ranges 1410–1590 and 330–450</small></div>
+          <div class="ghost-card"><span class="label">LEVEL 1</span><strong>0%</strong><small>0 / 400 choices agreed</small></div>
+          <div class="ghost-card"><span class="label">LEVEL 2</span><strong>47.75%</strong><small>191 / 400 choices agreed</small></div>
+          <div class="ghost-card"><span class="label">LEVELS 3–5</span><strong>0%</strong><small>0 / 400 choices agreed on each level</small></div>
         </div>
-        <p class="ghost-list"><strong>Where they diverged:</strong> level 1 at 1590, 1620, 1650, 1680, 1710, 1740, 1770, 1800, 1830, 1860, 1890, 1920, 1950, 1980, 2010, 2040, 2070, 2100, 2130, 2160, 2190; level 4 at 1410, 1440, 1470, 1500, 1530, 1560, 1590; level 5 at 330, 360, 390, 420, 450. A missing ghost answer is excluded from agreements and counted separately as missing; this run had 0 missing answers.</p>
         <figure class="ghost-stills">
           <svg viewBox="0 0 900 270" role="img" aria-labelledby="ghost-still-title ghost-still-desc">
-            <title id="ghost-still-title">Boards at the first ghost divergence in three levels</title>
-            <desc id="ghost-still-desc">Data-derived board stills at level 1 tick 1590, level 4 tick 1410, and level 5 tick 330, each showing the recorded ball, paddle, and visible power-up.</desc>
+            <title id="ghost-still-title">Illustrative boards from the recorded simulation</title>
+            <desc id="ghost-still-desc">Conceptual board diagrams show a ball, paddle, bricks, and a falling power-up; positions are not exact telemetry.</desc>
             <rect width="900" height="270" fill="#10161e"/>
             <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#d7e0e5">
-              <text x="18" y="20">LEVEL 1 · TICK 1590</text><text x="318" y="20">LEVEL 4 · TICK 1410</text><text x="618" y="20">LEVEL 5 · TICK 330</text>
+              <text x="18" y="20">LEVEL 1 · RECORDED SIMULATION</text><text x="318" y="20">LEVEL 2 · RECORDED SIMULATION</text><text x="618" y="20">LEVEL 3 · RECORDED SIMULATION</text>
             </g>
             <g transform="translate(18 34)"><rect width="264" height="190" fill="#080b10" stroke="#34424c"/><g fill="#ef8354"><rect x="10" y="16" width="22" height="10"/><rect x="36" y="16" width="22" height="10"/><rect x="62" y="16" width="22" height="10"/><rect x="88" y="16" width="22" height="10"/><rect x="114" y="16" width="22" height="10"/><rect x="166" y="16" width="22" height="10"/><rect x="192" y="16" width="22" height="10"/><rect x="218" y="16" width="22" height="10"/></g><rect x="96" y="175" width="72" height="7" rx="2" fill="#f4f1ea"/><circle cx="189" cy="66" r="5" fill="#f4f1ea"/><circle cx="166" cy="41" r="4" fill="#70c1b3"/></g>
             <g transform="translate(318 34)"><rect width="264" height="190" fill="#080b10" stroke="#34424c"/><g fill="#ef8354"><rect x="10" y="16" width="22" height="10"/><rect x="36" y="16" width="22" height="10"/><rect x="62" y="16" width="22" height="10"/><rect x="88" y="16" width="22" height="10"/><rect x="114" y="16" width="22" height="10"/><rect x="140" y="16" width="22" height="10"/><rect x="166" y="16" width="22" height="10"/><rect x="192" y="16" width="22" height="10"/></g><rect x="96" y="175" width="72" height="7" rx="2" fill="#f4f1ea"/><circle cx="176" cy="45" r="5" fill="#f4f1ea"/><circle cx="166" cy="28" r="4" fill="#70c1b3"/></g>
             <g transform="translate(618 34)"><rect width="264" height="190" fill="#080b10" stroke="#34424c"/><g fill="#ef8354"><rect x="10" y="16" width="22" height="10"/><rect x="36" y="16" width="22" height="10"/><rect x="62" y="16" width="22" height="10"/><rect x="88" y="16" width="22" height="10"/><rect x="114" y="16" width="22" height="10"/><rect x="140" y="16" width="22" height="10"/><rect x="166" y="16" width="22" height="10"/><rect x="192" y="16" width="22" height="10"/></g><rect x="96" y="175" width="72" height="7" rx="2" fill="#f4f1ea"/><circle cx="161" cy="90" r="5" fill="#f4f1ea"/><circle cx="142" cy="80" r="4" fill="#70c1b3"/></g>
           </svg>
-          <figcaption>Representative first-divergence states, drawn from <code>docs/session.ndjson</code>: level 1 tick 1590, level 4 tick 1410, level 5 tick 330. The pale dot is the recorded ball; the teal dot is the visible power-up.</figcaption>
+          <figcaption>Illustrative board states for the recorded simulation. They do not depict a live human or Jev match.</figcaption>
         </figure>
       </section>
 
       <section class="metrics" aria-label="Session metrics">
-        <div class="metric"><span class="label">LEVEL ONE COMPLETION</span><strong>38.1s / 38.07s</strong><small>scripted player / bot · ticks 2288 / 2284</small></div>
+        <div class="metric"><span class="label">LEVELS CLEARED</span><strong>0 / 0</strong><small>scripted player / deterministic bot · no clears in the recorded run</small></div>
         <div class="metric"><span class="label">REACTION MEDIAN</span><strong>180ms / 0ms</strong><small>scripted player / bot</small></div>
-        <div class="metric"><span class="label">REACTION P95</span><strong>180ms / 0ms</strong><small>scripted player / bot · 1,681 decisions each</small></div>
+        <div class="metric"><span class="label">REACTION P95</span><strong>180ms / 0ms</strong><small>scripted player / bot · 2,005 decisions each</small></div>
       </section>
 
       <section class="chart" aria-labelledby="chart-title">
         <div class="chart-head"><span class="label" id="chart-title">REACTION-TIME DISTRIBUTION · ALL LEVELS</span><span class="label">decisions</span></div>
-        <svg viewBox="0 0 900 210" role="img" aria-label="Histogram showing 1681 bot decisions at zero milliseconds and 1681 scripted-player decisions at 180 milliseconds">
+        <svg viewBox="0 0 900 210" role="img" aria-label="Histogram showing 2005 bot decisions at zero milliseconds and 2005 scripted-player decisions at 180 milliseconds">
           <line x1="70" y1="170" x2="870" y2="170" stroke="#34424c"/><line x1="70" y1="30" x2="70" y2="170" stroke="#34424c"/>
           <rect x="150" y="30" width="160" height="140" fill="#70c1b3"/><rect x="470" y="30" width="160" height="140" fill="#ef8354"/>
-          <g fill="#e9edf0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" text-anchor="middle"><text x="230" y="21">1,681</text><text x="550" y="21">1,681</text><text x="230" y="194">0 ms · bot</text><text x="550" y="194">180 ms · scripted player</text></g>
+          <g fill="#e9edf0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" text-anchor="middle"><text x="230" y="21">2,005</text><text x="550" y="21">2,005</text><text x="230" y="194">0 ms · bot</text><text x="550" y="194">180 ms · scripted player</text></g>
           <g fill="#82919b" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11"><text x="15" y="174">0</text><text x="15" y="34">count</text></g>
         </svg>
-        <p class="source-note">The distribution is intentionally discrete: the telemetry records one synchronous bot latency and one scripted human-latency value. There is no hidden live-player sample behind the word “Human.”</p>
+        <p class="source-note">The distribution is discrete because the recorded simulation uses one fixed latency per policy: 0 ms for the synchronous bot and 180 ms for the scripted player. There is no live-player sample.</p>
       </section>
 
-      <footer>Source of truth: <code>docs/session.ndjson</code> · replay data includes seed, level, tick, full Ask/state, Decision and reaction time · the engine remains unchanged.</footer>
+      <footer>Source of truth: <code>docs/session.ndjson</code> · replay data includes seed, level, tick, full Ask/state, Decision and reaction time. Run <code>pnpm compare</code> to summarize the recorded policies.</footer>
     </main>
   </body>
 </html>
