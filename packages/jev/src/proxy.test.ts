@@ -288,6 +288,11 @@ describe('only the game asks', () => {
     ['a track option naming no ball', () => { const request = gameAsk('track'); return { ...request, questions: { decision: { ...decision(request), criteria: { ...decision(request).criteria, 'ball-7': 'Follow ball-7' } } } }; }],
     ['a different model', () => ({ ...gameAsk('target'), model: 'jev-premium' })],
     ['an ask that is not an object', () => ['target']],
+    ['an ask with an extra top-level field', () => ({ ...gameAsk('target'), note: 'not part of the game' })],
+    ['a health check carrying a board', () => ({ ...healthRequest('jev'), state: { tick: 0, note: 'unexpected' } })],
+    ['a chase ask without the none option', () => { const request = gameAsk('chase'); const { none: _none, ...criteria } = decision(request).criteria; return { ...request, questions: { decision: { ...decision(request), criteria } } }; }],
+    ['an ask with fewer than two choices', () => { const request = gameAsk('track'); const [first] = Object.entries(decision(request).criteria); return { ...request, questions: { decision: { ...decision(request), criteria: Object.fromEntries([first]) } } }; }],
+    ['a board with a malformed nested ball', () => { const request = gameAsk('target'); const state = request.state as { balls: Array<Record<string, unknown>> }; return { ...request, state: { ...state, balls: [{ ...state.balls[0], tracked: 'yes' }] } }; }],
   ];
   for (const [name, build] of foreign) {
     it(`refuses ${name} with a 4xx before it reaches TypeSafe`, async () => {

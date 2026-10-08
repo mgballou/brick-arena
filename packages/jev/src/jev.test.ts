@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { askForDecision, botPlayer, createBoard, landingX, type Ask, type BoardState, type Decision, type Player } from '../../engine/src/index';
-import { JEV_DEFAULTS, parseKeyFile } from './key';
+import { JEV_DEFAULTS, linkFromEnv, parseKeyFile } from './key';
 import { jevPlayer, jevPlayerFromKeyFile } from './player';
 import { raceWithLatency, summarize, TICK_MS } from './race';
 import { SYNTHETIC, syntheticRecording } from './synthetic';
@@ -41,6 +41,17 @@ describe('the key file', () => {
     expect(parseKeyFile('# mine\nJEV_BASE_URL=https://x.example/\nJEV_API_KEY="tok-1"\nJEV_MODEL=jev-2\n')).toEqual({ baseUrl: 'https://x.example', model: 'jev-2', key: 'tok-1' });
     expect(parseKeyFile("export TYPESAFE_API_KEY='tok-2'\n").key).toBe('tok-2');
     expect(parseKeyFile('').key).toBe('');
+  });
+
+  it('uses the preferred key when both names are present and accepts other token names', () => {
+    expect(parseKeyFile('TYPESAFE_API_KEY=older\nJEV_API_KEY=preferred\n').key).toBe('preferred');
+    expect(parseKeyFile('MY_SERVICE_TOKEN=custom\n').key).toBe('custom');
+  });
+
+  it('reads hosted overrides and trims the secret', () => {
+    expect(linkFromEnv({ JEV_BASE_URL: 'https://host.example///', JEV_MODEL: 'jev-hosted', JEV_API_KEY: ' hosted-key \n' })).toEqual({
+      baseUrl: 'https://host.example', model: 'jev-hosted', key: 'hosted-key',
+    });
   });
 });
 
