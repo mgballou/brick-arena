@@ -62,6 +62,14 @@ describe('the hosted server', () => {
     expect(logged.length).toBe(before);
   });
 
+  it('answers HEAD requests for an asset with its headers and no body', async () => {
+    const response = await fetch(`${base}/assets/index-abc123.js`, { method: 'HEAD' });
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toMatch(/javascript/);
+    expect(response.headers.get('cache-control')).toBe('public, max-age=31536000, immutable');
+    expect(await response.text()).toBe('');
+  });
+
   it('serves nothing outside dist', async () => {
     // fetch folds a bare ../ away, so the escape is spelled inside one segment.
     for (const path of ['/..%2fbrick-arena-secret.txt', '/%2e%2e%2fbrick-arena-secret.txt', '/nope.js']) {
