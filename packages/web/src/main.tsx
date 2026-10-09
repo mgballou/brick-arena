@@ -483,10 +483,10 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
   const jevMedian = median(stats.ms);
   const levelName = title(levelNames[hud.level]);
   const last = match.results.at(-1);
-  // Whoever answered is named as such: the stand-in never plays under Jev's name.
-  const rival = hud.opponent === 'stand-in' ? 'Stand-in' : 'Jev';
   const ready = probe !== 'checking' && probe.ok;
   const debugOpponent = phase === 'title' ? (ready ? probe.answeredBy : null) : hud.opponent;
+  // Whoever answered is named as such: the stand-in never plays under Jev's name.
+  const rival = debugOpponent === 'stand-in' ? 'Stand-in' : 'Jev';
   const wins = (who: 'human' | 'jev') => { const n = match.results.filter(r => r.winner === who).length; return `${n} ${n === 1 ? 'level' : 'levels'}`; };
 
   return (
@@ -510,7 +510,7 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
 
       <div className="decider" role="status" aria-live="off">
         <span>{decider(hud, rival)}</span>
-        <button className="text" onClick={openRules}>How scoring works <kbd>H</kbd></button>
+        <button className="text" tabIndex={phase === 'title' ? -1 : 0} onClick={openRules}>How scoring works <kbd>H</kbd></button>
       </div>
 
       <main className="arena">

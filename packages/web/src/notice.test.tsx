@@ -33,4 +33,9 @@ describe('the title screen\'s notice', () => {
     const html = renderToString(<Root initial={{ ok: true, ms: 640, answeredBy: 'live' }} />);
     expect(html).toContain(LINE);
   });
+
+  it('names the stand-in that answered the title-screen check', () => {
+    const html = renderToString(<Root initial={{ ok: true, ms: 640, answeredBy: 'stand-in' }} />);
+    expect(html).toMatch(/<span class="tag jev">Stand-in<\/span>/);
+  });
 });
