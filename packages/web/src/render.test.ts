@@ -9,6 +9,9 @@ describe('board rendering', () => {
     cleared.durability = 0;
     const regenerating = board.bricks.find(brick => brick.regenerates)!;
     regenerating.durability = 1;
+    const steel = { id: 'steel', x: 250, y: 190, width: 40, height: 18, durability: 1, maxDurability: 1, unbreakable: true, regenerates: false, lastDamagedTick: 0 };
+    board.bricks.push(steel);
+    board.magnetPaddle = true;
     board.powerUps = [
       { id: 'good', kind: 'extra-ball', x: 80, y: 120, vy: 1.2 },
       { id: 'bad', kind: 'short-paddle', x: 140, y: 160, vy: 1.2 },
@@ -42,11 +45,13 @@ describe('board rendering', () => {
 
     const roundedBricks = calls.filter(call => call.name === 'roundRect').map(call => call.args.slice(0, 2));
     expect(roundedBricks).toContainEqual([regenerating.x - 1, regenerating.y - 1]);
+    expect(roundedBricks).toContainEqual([steel.x, steel.y]);
     expect(roundedBricks).not.toContainEqual([cleared.x, cleared.y]);
     expect(calls.filter(call => call.name === 'fillText').map(call => call.args[0])).toEqual(['+', 'S', 'LEVEL CLEAR', 'Press to continue']);
     expect(calls.filter(call => call.name === 'arc' && call.args[2] === 6)).toHaveLength(2);
     expect(calls.some(call => call.name === 'translate')).toBe(true);
     expect(calls.some(call => call.name === 'setLineDash')).toBe(true);
+    expect(calls.some(call => call.name === 'stroke' && call.args.length === 0)).toBe(true);
   });
 
   it('keeps the paddle shape steady and hides the trail when motion is disabled', () => {

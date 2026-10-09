@@ -55,4 +55,46 @@ describe('game feedback', () => {
     sound.serve(0.8);
     expect(audio.createOscillator).toHaveBeenCalledOnce();
   });
+
+  it('plays the game cues for breaks, power-ups, lives, and match results', () => {
+    const frequencies: unknown[][] = [];
+    const pans: number[] = [];
+    const output = { pan: { value: 0 }, connect: vi.fn() };
+    const gain = {
+      gain: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+      connect: vi.fn(() => output),
+    };
+    const oscillator = {
+      type: 'sine', frequency: {
+        setValueAtTime: vi.fn((...args: unknown[]) => frequencies.push(args)),
+        exponentialRampToValueAtTime: vi.fn(),
+      }, connect: vi.fn(() => gain), start: vi.fn(), stop: vi.fn(),
+    };
+    const audio = {
+      state: 'running', currentTime: 3, destination: {}, resume: vi.fn(),
+      createStereoPanner: vi.fn(() => { const panner = { pan: { value: 0 }, connect: vi.fn() }; pans.push(panner.pan.value); return panner; }),
+      createOscillator: vi.fn(() => oscillator), createGain: vi.fn(() => gain),
+    };
+    vi.stubGlobal('AudioContext', class { constructor() { return audio as unknown as AudioContext; } });
+
+    const sound = new Sound();
+    sound.wake();
+    sound.paddle(-1);
+    sound.break(1, 2);
+    sound.powerUp(-1, true);
+    sound.powerUp(1, false);
+    sound.lose(-1);
+    sound.count();
+    sound.serve(1);
+    sound.fanfare(true);
+    sound.fanfare(false);
+    sound.banner();
+
+    expect(frequencies.map(([frequency]) => frequency)).toContain(1120);
+    expect(frequencies.map(([frequency]) => frequency)).toContain(784);
+    expect(frequencies.map(([frequency]) => frequency)).toContain(262);
+    expect(frequencies.map(([, at]) => at)).toContain(3.13);
+    expect(oscillator.frequency.exponentialRampToValueAtTime).toHaveBeenCalled();
+    expect(pans).toHaveLength(10);
+  });
 });
