@@ -97,8 +97,9 @@ Screens: `docs/screens/2026-09-25/`.
   falls back to the file if Supabase cannot be read at startup. Both counts
   reset at midnight UTC. Losing the filesystem also loses the file-backed
   total.
-- A visitor is the first `X-Forwarded-For` address. A bot can forge that
-  header to dodge the per-visitor cap. The daily total still binds it.
+- The per-visitor cap trusts Render's appended, rightmost
+  `X-Forwarded-For` address; entries farther left are caller-controlled and
+  ignored. The daily total applies to everyone.
 - Render's docs don't say which pnpm the Node runtime preloads, or whether
   `NODE_ENV` is `production` during the build, so the build command starts
   pnpm 11, which runs the pnpm that `packageManager` in `package.json` pins,

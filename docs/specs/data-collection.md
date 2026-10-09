@@ -42,8 +42,7 @@ levels, 6 min 43 s):
 
 Autocapture off, so only these count against the free allowance. Names are
 `snake_case`; every event carries `app: "brick-arena"`, `build` (git SHA),
-`schema: 1`, and `match_id` while a match plays, except `match_ended`, which is
-captured after the tracker clears the current match id.
+`schema: 1`, and the active match's `match_id`, including on `match_ended`.
 
 | Event | Properties |
 | --- | --- |
@@ -67,8 +66,8 @@ paddle's full path.
 
 ### Setup
 
-- PostHog Cloud, one project. Choose US or EU when creating it; this note
-  recommends US (see *Regions*).
+- PostHog Cloud, one project. Choose the region when creating it, then set its
+  ingestion host in `VITE_POSTHOG_HOST`.
 - `posthog-js` in the page: `autocapture: false`, `person_profiles: 'never'`
   (no person profiles, every event anonymous), IP capture off in project
   settings, `respect_dnt: true`, `disable_session_recording: true`.
@@ -256,12 +255,12 @@ starts to cost data.
   project by hand
   (supabase.com/docs/guides/troubleshooting/restore-project-after-90-days-pause).
 - **What it costs here.** Play never depends on Supabase, so the game keeps
-  working. The server logs each refused write and keeps up to one match's
-  rows in a bounded, process-local queue and retries transient failures. Rows
-  can be dropped when the queue limit is exceeded, when Supabase permanently
-  rejects them, or if the process restarts before retry. Play continues during
-  an outage, but those records may be missing from Supabase; PostHog is a
-  separate path.
+  working. The server keeps rows in a bounded, process-local queue and retries
+  transient failures. It logs a repeated refusal only when its reason changes;
+  permanent refusals are logged and dropped. Rows can also be dropped when the
+  queue limit is exceeded or if the process restarts before retry. Play
+  continues during an outage, but those records may be missing from Supabase;
+  PostHog is a separate path.
 - **Keeping it awake.** A weekly scheduled job (a GitHub Actions cron) runs one
   real insert through the API. Common practice, but since "sufficient" isn't
   defined, the job also checks the project answers and fails loudly if not, so

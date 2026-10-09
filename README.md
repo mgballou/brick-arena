@@ -83,9 +83,9 @@ numbers show what the arena rewards and what lag costs. They do not show what Je
 `landing`, the safe catch. That call came before the prompt stated the objective, so it says
 nothing about how Jev plays now. At 728 ms an answer lands 44 ticks after its question.
 
-**Lag costs balls, and asking ahead wins most of them back.** `pnpm fair`, 24 September:
+**Lag costs balls, and asking ahead wins most of them back.** `npm run fair`, 24 September:
 seed 20260919, five levels, the stand-in answering in 728 ms against a scripted player on the
-keys who reacts in 200 ms (see the table below).
+keys who reacts in 200 ms ([docs/where-it-is.md](docs/where-it-is.md)).
 
 | Jev's board | Balls lost | Bricks broken |
 |---|---|---|
