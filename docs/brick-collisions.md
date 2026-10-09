@@ -72,7 +72,7 @@ So:
   the web game does not fall into the column loop, but `pnpm session` and
   `pnpm jev` do. Adding the floor to `step` would change the paddle, not a
   collision, so I left it out.
-- The `pnpm fair` table in `docs/where-it-is.md` was measured on the old
+- The `pnpm fair` table in `README.md` was measured on the old
   engine. I have not measured it again.
 - CI shows one red run, on `857d961`. The tests there fail on purpose, and a
   bad shell expansion pushed that commit about a minute before the fix.
