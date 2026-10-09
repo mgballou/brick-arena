@@ -62,9 +62,13 @@ export function hostedApp(options: HostedOptions) {
   return (req: IncomingMessage, res: ServerResponse) => {
     const path = new URL(req.url ?? '/', 'http://host').pathname;
     res.setHeader('x-content-type-options', 'nosniff');
+    res.setHeader('x-frame-options', 'DENY');
+    res.setHeader('referrer-policy', 'strict-origin-when-cross-origin');
+    res.setHeader('permissions-policy', 'camera=(), microphone=(), geolocation=()');
     if (path === JEV_PATH) return void jev(req, res);
     if (path === MATCHES_PATH || path.startsWith(`${MATCHES_PATH}/`)) return void matches(req, res);
     // The host's health check. It never calls Jev.
+<<<<<<< HEAD
     if (path === '/healthz') return void res.end('ok');
     let decodedPath: string;
     let file: string;
@@ -90,6 +94,13 @@ export function hostedApp(options: HostedOptions) {
       }
     }
     if (decodedPath === BACKSTAGE_PAGE && refuseUnlessAdmin(req, res, options.admin)) return;
+=======
+    if (path === '/healthz') {
+      res.setHeader('cache-control', 'no-store');
+      return void res.end('ok');
+    }
+    if (path === BACKSTAGE_PAGE && refuseUnlessAdmin(req, res, options.admin)) return;
+>>>>>>> origin/ba-launch-prep
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       res.statusCode = 405;
       return void res.end();
@@ -103,6 +114,7 @@ export function hostedApp(options: HostedOptions) {
     if (!found) {
       res.statusCode = 404;
       res.setHeader('content-type', 'text/plain; charset=utf-8');
+      res.setHeader('cache-control', 'no-store');
       return void res.end('Not found');
     }
     res.setHeader('content-type', TYPES[extname(file)] ?? 'application/octet-stream');

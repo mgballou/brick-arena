@@ -85,3 +85,31 @@ test('smoke:site passes on the deployed server', async () => {
   expect(lines.filter(line => line.startsWith('ok'))).toHaveLength(5);
   expect(lines.at(-1)).toBe('every check passed');
 });
+
+test('measures the Render-style first load', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.link')).toHaveText(/^Jev is online · \d+ ms to answer$/);
+  const measurement = await page.evaluate(() => {
+    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+    const resources = performance.getEntriesByType('resource')
+      .filter(entry => new URL(entry.name).origin === location.origin)
+      .map(entry => ({
+        path: new URL(entry.name).pathname,
+        encodedBytes: (entry as PerformanceResourceTiming).encodedBodySize,
+        transferBytes: (entry as PerformanceResourceTiming).transferSize,
+      }))
+      .filter(entry => entry.encodedBytes > 0)
+      .sort((a, b) => b.encodedBytes - a.encodedBytes);
+    const documentBytes = navigation.encodedBodySize;
+    const documentTransferBytes = navigation.transferSize;
+    return {
+      documentBytes,
+      documentTransferBytes,
+      encodedTotal: documentBytes + resources.reduce((total, entry) => total + entry.encodedBytes, 0),
+      transferTotal: documentTransferBytes + resources.reduce((total, entry) => total + entry.transferBytes, 0),
+      resources,
+    };
+  });
+  console.log(`Render-style first load: ${JSON.stringify(measurement)}`);
+  expect(measurement.resources.some(resource => resource.path.endsWith('.js'))).toBe(true);
+});
