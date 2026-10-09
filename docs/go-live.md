@@ -83,7 +83,9 @@ Blueprint. After the stack merges there are four, and `docs/deploy.md` step 3
 
 ### PostHog
 
-31. Create the project on US Cloud, the spec's plan (<https://us.posthog.com>).
+31. Choose a region and create the project (<https://us.posthog.com> or
+    <https://eu.posthog.com>): US Cloud is the spec's recommendation, not a
+    recorded decision; confirm the choice at sign-up.
 32. Turn IP capture off (PostHog → Project settings).
 33. Create a personal API key with `dashboard:read`, `dashboard:write`, `insight:read` and `insight:write` scopes. From the repo root, run this once to create the four insights and the Brick Arena dashboard; use `https://eu.posthog.com` if the project is in EU Cloud:
 
@@ -94,14 +96,20 @@ Blueprint. After the stack merges there are four, and `docs/deploy.md` step 3
     pnpm posthog:dashboard
     ```
 
-34. On the service set `VITE_POSTHOG_KEY` (`phc_…`), `VITE_POSTHOG_HOST=https://us.i.posthog.com` and `VITE_POSTHOG=1` (Render → brick-arena → Environment).
+34. On the service set `VITE_POSTHOG_KEY` (`phc_…`), `VITE_POSTHOG=1` and
+    the region's ingestion host: `VITE_POSTHOG_HOST=https://us.i.posthog.com`
+    for US Cloud or `https://eu.i.posthog.com` for EU Cloud (Render →
+    brick-arena → Environment).
 35. Run **Manual Deploy → Deploy latest commit**, since the page reads the three `VITE_` values when it is built (Render dashboard).
 36. Play one match and see its events arrive (PostHog → Activity).
-37. In a PR, replace the two *pending* lines in `privacy.html` with the real PostHog region and Supabase state, and state PostHog's free-plan event retention (`privacy.html`).
+37. In a PR, check the existing PostHog region, Supabase storage state and
+    PostHog free-plan event retention in `privacy.html` against the projects
+    you created; update any that differ.
 
 ### Play it
 
-37. In a PR, put the service URL in the README's *Play it* line, which now reads `` `<hosted URL — filled in after the deploy>` `` (`README.md`, the bold line under the film at the top).
+38. In a PR, replace `[live URL]` in the README's *Play it* line with the
+    service URL (`README.md`, the bold line under the film at the top).
 
 ## Before the repo goes public
 
