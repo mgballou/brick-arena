@@ -42,22 +42,32 @@ describe('the hosted server', () => {
     const page = await fetch(base);
     expect(page.status).toBe(200);
     expect(page.headers.get('content-type')).toMatch(/text\/html/);
+    expect(page.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(page.headers.get('x-frame-options')).toBe('DENY');
+    expect(page.headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
+    expect(page.headers.get('permissions-policy')).toBe('camera=(), microphone=(), geolocation=()');
+    expect(page.headers.get('cache-control')).toBe('no-cache');
     expect(await page.text()).toContain('id="root"');
     const asset = await fetch(`${base}/assets/index-abc123.js`);
     expect(asset.headers.get('content-type')).toMatch(/javascript/);
     expect(asset.headers.get('cache-control')).toContain('immutable');
+    expect(asset.headers.get('x-content-type-options')).toBe('nosniff');
   });
 
   it('answers the host health check without calling Jev', async () => {
     const before = logged.length;
-    expect(await (await fetch(`${base}/healthz`)).text()).toBe('ok');
+    const health = await fetch(`${base}/healthz`);
+    expect(await health.text()).toBe('ok');
+    expect(health.headers.get('cache-control')).toBe('no-store');
     expect(logged.length).toBe(before);
   });
 
   it('serves nothing outside dist', async () => {
     // fetch folds a bare ../ away, so the escape is spelled inside one segment.
     for (const path of ['/..%2fbrick-arena-secret.txt', '/%2e%2e%2fbrick-arena-secret.txt', '/nope.js']) {
-      expect((await fetch(`${base}${path}`)).status, path).toBe(404);
+      const response = await fetch(`${base}${path}`);
+      expect(response.status, path).toBe(404);
+      expect(response.headers.get('cache-control'), path).toBe('no-store');
     }
   });
 
