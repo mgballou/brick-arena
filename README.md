@@ -87,11 +87,16 @@ nothing about how Jev plays now. At 728 ms an answer lands 44 ticks after its qu
 seed 20260919, five levels, the stand-in answering in 728 ms against a scripted player on the
 keys who reacts in 200 ms ([docs/where-it-is.md](docs/where-it-is.md)).
 
-| Jev's board | Balls lost | Bricks broken |
-|---|---|---|
-| Player on the keys, for scale | 0 | 48 |
-| Asked about the board on screen | 15 | 24 |
-| Asked about the board as it will stand (kept) | 4 | 39 |
+| Jev's board | Balls lost | Bricks broken | Balls lost, 9 October | Bricks broken, 9 October |
+|---|---|---|---|---|
+| Player on the keys, for scale | 0 | 48 | 0 | 85 |
+| Asked about the board on screen | 15 | 24 | 0 | 89 |
+| Asked about the board as it will stand (kept) | 4 | 39 | 0 | 86 |
+
+The 24 September run predates the brick collision fix
+([docs/brick-collisions.md](docs/brick-collisions.md)). Rerun on 9 October on the fixed
+engine, no board loses a ball and the board asked about the screen breaks the most bricks,
+so this finding holds only for the old engine.
 
 **Aiming wins, and spends balls to do it.** `npm run objective`, 24 September: 50 seeds, five
 levels each, answers at 728 ± 150 ms, then the two rules played head to head
@@ -132,11 +137,13 @@ matches can answer these.
 Open the link above. The hosted page holds the TypeSafe key as a server secret, so you need
 none, and a daily cap on Jev calls keeps a bot from spending it. When Jev can't answer or
 the cap is spent, the page says so and shows no board. [docs/deploy.md](docs/deploy.md) sets
-up the host.
+up the host, and its
+[Trying the hosted build locally](docs/deploy.md#trying-the-hosted-build-locally) runs the
+production build on your machine.
 
 The server keeps a record of each match: every launch, lost ball and Jev call, with the board
 Jev was sent, and both boards' clear over time. Only the admin reads them, with the server's
-`ADMIN_SECRET`: `/matches.html` lists recent matches and opens each one's timeline, and
+`ADMIN_SECRET`, which the browser asks for as a password (any user name): `/matches.html` lists recent matches and opens each one's timeline, and
 `npm run match` prints them with a tally of every choice Jev made. The hosted page reads
 from Supabase when both `SUPABASE_URL` and `SUPABASE_SECRET_KEY` are set; otherwise it
 reads the server's local match files. The secret key stays on the server. `SUPABASE_WRITES=1`
@@ -162,7 +169,8 @@ npm run dev
 Open <http://localhost:5173>. The dev server reads `~/.jev-key` once, when it starts, and
 forwards Jev's calls itself, so the browser never sees the key. The title screen says
 *Jev is online* when the key works. pnpm works too (`pnpm install`, `pnpm dev`) and installs
-from the lockfile, as CI does.
+from the lockfile, as CI does; npm ignores `pnpm-lock.yaml` and leaves an untracked
+`package-lock.json`.
 
 ### Debug mode, without Jev
 
@@ -180,6 +188,9 @@ VITE_DEBUG=1 JEV_KEY_FILE=/tmp/dummy-key JEV_BASE_URL=http://127.0.0.1:18787 npm
 The screen shows a `DEBUG · stand-in` banner and names the right-hand board Stand-in. Outside
 debug mode, the forwarder and the page both refuse a stand-in's reply. Who answered comes from
 the reply's mark, never the URL.
+
+To read the matches you play, add `ADMIN_SECRET=<a password>` to that `npm run dev` line and
+open `/matches.html`; the dev server keeps them in `var/matches`.
 
 ## The data it collects
 
