@@ -154,6 +154,8 @@ describe('a match record', () => {
       () => read(`${MATCHES_PATH}/${id}`, 'wrong-secret'),
       () => read('/matches.html', 'wrong-secret'),
       () => fetch(`${base}${MATCHES_PATH}/${id}`, { headers: { authorization: `Bearer ${ADMIN}` } }),
+      () => fetch(`${base}${MATCHES_PATH}/${id}`, { headers: { authorization: 'Basic !!!' } }),
+      () => fetch(`${base}${MATCHES_PATH}/${id}`, { headers: { authorization: `Basic ${Buffer.from('admin-without-password').toString('base64')}` } }),
     ];
     for (const ask of asked) {
       const response = await ask();

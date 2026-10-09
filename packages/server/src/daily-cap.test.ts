@@ -1,4 +1,4 @@
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -16,6 +16,36 @@ describe('the persisted daily cap', () => {
 
     const restarted = createFileCap(dir, limits, today);
     expect(restarted.take('c')).toBe('total');
+  });
+
+  it('enforces the per-visitor limit and starts fresh on a new UTC day', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'brick-arena-cap-'));
+    let day = '2026-10-01';
+    const limits = { perVisitor: 1, total: 2 };
+    const cap = createFileCap(dir, limits, () => day);
+    expect(cap.take('a')).toBe('ok');
+    expect(cap.take('a')).toBe('visitor');
+    expect(cap.take('b')).toBe('ok');
+    expect(cap.take('c')).toBe('total');
+
+    day = '2026-10-02';
+    expect(cap.take('a')).toBe('ok');
+    expect(cap.take('a')).toBe('visitor');
+    const restarted = createFileCap(dir, limits, () => day);
+    expect(restarted.take('b')).toBe('ok');
+    expect(restarted.take('c')).toBe('total');
+  });
+
+  it('ignores a damaged or stale saved count', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'brick-arena-cap-'));
+    const path = join(dir, 'jev-calls.json');
+    const today = () => '2026-10-01';
+    const limits = { perVisitor: 10, total: 1 };
+
+    writeFileSync(path, '{not json');
+    expect(createFileCap(dir, limits, today).take('a')).toBe('ok');
+    writeFileSync(path, JSON.stringify({ day: '2026-09-30', count: 1 }));
+    expect(createFileCap(dir, limits, today).take('b')).toBe('ok');
   });
 
   it('loads today’s Jev call rows from Supabase and skips older matches', async () => {
@@ -47,5 +77,20 @@ describe('the persisted daily cap', () => {
 
     const restarted = await createBootCap(client, dir, limits, () => {}, () => '2026-10-01');
     expect(restarted.take('b')).toBe('total');
+  });
+
+  it('falls back when the Jev call rows cannot be read', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'brick-arena-cap-'));
+    const client = stubClient();
+    client.tables.matches.push({ id: 'today', started_at: '2026-10-01T12:00:00.000Z' });
+    const select = client.select.bind(client);
+    client.select = async (table, query) => table === 'jev_calls'
+      ? { ok: false, status: 503, message: 'calls table unavailable' }
+      : select(table, query);
+    const logged: string[] = [];
+
+    const cap = await createBootCap(client, dir, { perVisitor: 10, total: 1 }, line => logged.push(line), () => '2026-10-01');
+    expect(cap.take('a')).toBe('ok');
+    expect(logged.join('\n')).toMatch(/calls table unavailable/);
   });
 });
