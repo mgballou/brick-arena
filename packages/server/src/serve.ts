@@ -66,16 +66,33 @@ export function hostedApp(options: HostedOptions) {
     if (path === MATCHES_PATH || path.startsWith(`${MATCHES_PATH}/`)) return void matches(req, res);
     // The host's health check. It never calls Jev.
     if (path === '/healthz') return void res.end('ok');
-    if (path === BACKSTAGE_PAGE && refuseUnlessAdmin(req, res, options.admin)) return;
+    let decodedPath: string;
+    let file: string;
+    try {
+      decodedPath = decodeURIComponent(path === '/' ? '/index.html' : path);
+      file = resolve(root, '.' + decodedPath);
+    } catch {
+      decodedPath = '';
+      file = '';
+    }
+    // Reject aliases of the backstage file before checking the admin secret.
+    if (decodedPath !== BACKSTAGE_PAGE && file) {
+      try {
+        const requested = statSync(file);
+        const backstage = statSync(resolve(root, '.' + BACKSTAGE_PAGE));
+        if (requested.isFile() && requested.dev === backstage.dev && requested.ino === backstage.ino) {
+          res.statusCode = 404;
+          res.setHeader('content-type', 'text/plain; charset=utf-8');
+          return void res.end('Not found');
+        }
+      } catch {
+        // Missing paths are handled by the static-file check below.
+      }
+    }
+    if (decodedPath === BACKSTAGE_PAGE && refuseUnlessAdmin(req, res, options.admin)) return;
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       res.statusCode = 405;
       return void res.end();
-    }
-    let file: string;
-    try {
-      file = resolve(root, '.' + decodeURIComponent(path === '/' ? '/index.html' : path));
-    } catch {
-      file = '';
     }
     let found = false;
     try {
