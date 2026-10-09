@@ -16,11 +16,14 @@ import { hostedApp, hostedFromEnv } from './serve';
 // reaches live Jev, and the key is a dummy.
 let standIn: { url: string; close: () => Promise<void> };
 let server: Server;
+let adminServer: Server;
 let base: string;
+let adminBase: string;
+let dist: string;
 const logged: string[] = [];
 
 beforeAll(async () => {
-  const dist = mkdtempSync(join(tmpdir(), 'brick-arena-hosted-'));
+  dist = mkdtempSync(join(tmpdir(), 'brick-arena-hosted-'));
   mkdirSync(join(dist, 'assets'));
   writeFileSync(join(dist, 'index.html'), '<!doctype html><div id="root"></div>');
   writeFileSync(join(dist, 'matches.html'), '<!doctype html><main id="matches"></main>');
@@ -31,9 +34,13 @@ beforeAll(async () => {
   server = createServer(hostedApp({ dist, proxy: { link: { baseUrl: standIn.url, model: 'jev-test', key: 'test-key-not-real' }, keyFrom: 'the JEV_API_KEY secret', debug: false, cap: createCap({ perVisitor: 100, total: 100 }), log: line => logged.push(line) }, matches: createMatchStore(mkdtempSync(join(tmpdir(), 'brick-arena-matches-'))), admin: null }));
   await new Promise<void>(done => server.listen(0, '127.0.0.1', done));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  adminServer = createServer(hostedApp({ dist, proxy: { link: { baseUrl: standIn.url, model: 'jev-test', key: 'test-key-not-real' }, keyFrom: 'the JEV_API_KEY secret', debug: false, cap: createCap({ perVisitor: 100, total: 100 }), log: line => logged.push(line) }, matches: createMatchStore(mkdtempSync(join(tmpdir(), 'brick-arena-matches-'))), admin: 'test-admin-secret' }));
+  await new Promise<void>(done => adminServer.listen(0, '127.0.0.1', done));
+  adminBase = `http://127.0.0.1:${(adminServer.address() as AddressInfo).port}`;
 });
 afterAll(async () => {
   server.close();
+  adminServer.close();
   await standIn.close();
 });
 
@@ -69,6 +76,18 @@ describe('the hosted server', () => {
       expect(response.status, path).toBe(404);
       expect(response.headers.get('cache-control'), path).toBe('no-store');
     }
+  });
+
+  it.each(['/matches%2ehtml', '/matches%2Ehtml', '/matches.html/', '/Matches.html'])('refuses backstage aliases without an admin: %s', async path => {
+    const response = await fetch(`${base}${path}`);
+    expect(response.status).toBe(404);
+    expect(await response.text()).not.toContain('id="matches"');
+  });
+
+  it('serves the backstage page to an admin at its canonical path', async () => {
+    const response = await fetch(`${adminBase}/matches.html`, { headers: { authorization: adminHeader('test-admin-secret') } });
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('id="matches"');
   });
 
   it('has no backstage without ADMIN_SECRET: the records and their page answer 404 to everyone', async () => {
