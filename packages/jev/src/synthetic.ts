@@ -12,6 +12,9 @@ import { targetKeys, type SystemOneResponse } from './wire';
 // that rule clears a level and meets all three questions. Always `landing`
 // clears none of the first 80 seeds: a dead-center catch on createBoard's
 // paddle sends the ball up one column for good.
+/** Kept for internal callers and tests.
+ * @public
+ */
 export const SYNTHETIC = { model: 'typesafe-ai/jev', seed: 20260919, level: 0, maxTicks: 12000, failedCall: 6 } as const;
 
 export async function syntheticRecording(): Promise<CallRecord[]> {

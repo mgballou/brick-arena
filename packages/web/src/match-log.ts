@@ -44,6 +44,9 @@ export type Sender = (id: string, body: string, last: boolean) => Promise<boolea
 // plain POSTs: Chrome allows a page 64 KiB of keepalive and beacon bodies in
 // all, and a keepalive write past it never settled, which held back every
 // write after it (match-log.test.ts).
+/** Kept for internal callers and tests.
+ * @public
+ */
 export const sendToServer: Sender = async (id, body, last) => {
   const url = `${MATCHES_PATH}/${id}`;
   if (last && typeof navigator !== 'undefined' && navigator.sendBeacon) return navigator.sendBeacon(url, new Blob([body], { type: 'application/x-ndjson' }));

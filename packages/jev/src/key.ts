@@ -17,6 +17,9 @@ export type JevLink = { baseUrl: string; model: string; key: string };
 // token, or `NAME=value` lines, quoted or not, with notes on other lines.
 // `JEV_BASE_URL` and `JEV_MODEL` lines in the file override the defaults. The
 // key is returned to the caller and never printed, compared or logged here.
+/** Kept for internal callers and tests, including test setup added in PR #34.
+ * @public
+ */
 export function parseKeyFile(text: string): JevLink {
   const lines = text.split('\n').map(line => line.trim()).filter(line => line && !line.startsWith('#'));
   const unquote = (value: string) => value.trim().replace(/^["']|["']$/g, '').trim();

@@ -53,6 +53,9 @@ export class MemoryClient implements Client {
 // profiles. Only the events above count: no autocapture, no pageviews, no
 // replay, no surveys, no flags, and no scripts fetched from PostHog later.
 // IP capture is a project setting, off in PostHog's dashboard.
+/** Kept for internal callers and tests.
+ * @public
+ */
 export const POSTHOG_SETTINGS = {
   autocapture: false,
   capture_pageview: false,
@@ -84,6 +87,9 @@ function forgetId(link: PostHogLink, store: IdStore | null) {
 // never loads it. Events wait for it in order; if it fails to load, they are
 // dropped from then on. Opting out ends the anonymous id: PostHog resets it
 // and opts out if it is loaded, and otherwise its stored copy is removed.
+/** Kept for internal callers and tests.
+ * @public
+ */
 export function posthogClient(link: PostHogLink, load: LoadPostHog, store: IdStore | null = browserStore()): Client {
   let posthog: PostHog | null = null;
   let loading = false;
@@ -124,6 +130,9 @@ export function posthogClient(link: PostHogLink, load: LoadPostHog, store: IdSto
 
 // Who hears the page's events: nobody in debug or under Do Not Track, PostHog
 // when the build names a project, else the in-memory stand-in.
+/** Kept for internal callers and tests.
+ * @public
+ */
 export function clientFor({ debug, dnt, link, load }: { debug: boolean; dnt: boolean; link: PostHogLink | null; load?: LoadPostHog }): Client | null {
   if (debug || dnt) return null;
   if (link && load) return posthogClient(link, load);

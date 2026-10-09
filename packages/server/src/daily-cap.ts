@@ -46,6 +46,9 @@ export function createFileCap(directory: string, limits: CapLimits, today: () =>
 
 // Match rows mark when a match began; its jev_calls rows are the persisted
 // calls for that UTC day. Both reads page through the full table via TableClient.
+/** Kept for the internal cap loader and tests.
+ * @public
+ */
 export async function supabaseDailyCount(client: TableClient, day: string): Promise<number> {
   const start = `${day}T00:00:00.000Z`;
   const next = `${new Date(Date.parse(start) + 86_400_000).toISOString().slice(0, 10)}T00:00:00.000Z`;
@@ -66,6 +69,9 @@ export async function supabaseDailyCount(client: TableClient, day: string): Prom
   return calls.rows.length;
 }
 
+/** Kept for the internal cap loader and tests.
+ * @public
+ */
 export async function createSupabaseCap(client: TableClient, limits: CapLimits, today: () => string = utcDay): Promise<Cap> {
   const day = today();
   return createCap(limits, today, await supabaseDailyCount(client, day));

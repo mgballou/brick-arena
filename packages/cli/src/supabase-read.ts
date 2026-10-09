@@ -5,6 +5,9 @@ import { createGzip } from 'node:zlib';
 import { linesOf, rowsOf, withRows } from '../../server/src/supabase-read.ts';
 import type { TableClient } from '../../server/src/supabase.ts';
 
+/** Kept for tests and CLI consumers; production code imports the server implementation directly.
+ * @public
+ */
 export { linesOf, matchRecord, recentMatches } from '../../server/src/supabase-read.ts';
 
 // `2026-10` as the instants it runs between, in UTC.
@@ -21,6 +24,9 @@ export function lastMonth(now = new Date()): string {
   return month.toISOString().slice(0, 7);
 }
 
+/** Kept for internal callers and tests.
+ * @public
+ */
 export const exportName = (month: string) => `brick-arena-${month}.ndjson.gz`;
 
 export type ExportResult = { path: string; matches: number; lines: number; pruned: string[] };

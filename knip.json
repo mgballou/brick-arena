@@ -1,5 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["packages/web/src/matches.ts"],
+  "entry": ["packages/**/*.test.ts", "packages/**/*.test.tsx", "!packages/engine/src/replay.test.ts"],
+  "ignore": ["packages/engine/src/replay.test.ts"],
   "ignoreBinaries": ["psql"]
 }
