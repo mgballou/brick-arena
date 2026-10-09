@@ -93,7 +93,7 @@ async function readAsk(req: IncomingMessage): Promise<Record<string, unknown> | 
 
 export function jevMiddleware(options: ProxyOptions) {
   const log = options.log ?? ((line: string) => console.error(`[jev] ${line}`));
-  return async (req: IncomingMessage, res: ServerResponse) => {
+  const handle = async (req: IncomingMessage, res: ServerResponse) => {
     const send = (status: number, body: unknown) => {
       res.statusCode = status;
       res.setHeader('content-type', 'application/json');
@@ -137,4 +137,10 @@ export function jevMiddleware(options: ProxyOptions) {
     res.setHeader('cache-control', 'no-store');
     res.end(outcome.body);
   };
+  // An ask cut off mid-body (the browser drops one at its deadline) costs that
+  // ask and nothing else: never the server, which also carries the page.
+  return (req: IncomingMessage, res: ServerResponse) => handle(req, res).catch(error => {
+    log(`ask failed: ${error instanceof Error ? error.message : String(error)}`);
+    if (!res.headersSent && !res.destroyed) { res.statusCode = 500; res.end(); }
+  });
 }

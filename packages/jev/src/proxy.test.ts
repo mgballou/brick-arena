@@ -108,6 +108,26 @@ describe('the /api/jev route', () => {
     for (const body of bodies) expect(body).not.toContain('test-key-not-real');
     server.close();
   });
+
+  // The browser drops an ask at its 2 s deadline (web/src/jev.ts). Dropped
+  // mid-body, it must cost that ask and nothing else: never the server.
+  it('survives an ask cut off mid-body', async () => {
+    const jev = jevMiddleware(options(standIn.url, true));
+    const handled: Promise<unknown>[] = [];
+    const server = createServer((req, res) => { handled.push(jev(req, res)); });
+    await new Promise<void>(done => server.listen(0, '127.0.0.1', done));
+    const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    const { request } = await import('node:http');
+    await new Promise<void>(done => {
+      const req = request(url, { method: 'POST', headers: { 'content-length': '1000' } });
+      req.on('error', () => done());
+      req.write(ask().slice(0, 20));
+      setTimeout(() => { req.destroy(); done(); }, 50);
+    });
+    expect((await Promise.allSettled(handled)).map(outcome => outcome.status)).toEqual(['fulfilled']);
+    expect((await fetch(url, { method: 'POST', body: ask() })).status).toBe(200);
+    server.close();
+  });
 });
 
 describe('askUpstream', () => {
