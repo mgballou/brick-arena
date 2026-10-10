@@ -24,6 +24,9 @@ export type ProxyOptions = { link: JevLink; keyFrom: string; debug: boolean; tim
 
 // One call upstream, and the last place an ask is checked before it leaves. A
 // stand-in's answer is refused here unless in debug mode.
+/** Kept for internal middleware and tests.
+ * @public
+ */
 export async function askUpstream(options: ProxyOptions, request: unknown): Promise<Outcome> {
   const { link } = options;
   if (!link.key) return { ok: false, offline: `No key in ${options.keyFrom}.` };
@@ -57,6 +60,9 @@ export async function askUpstream(options: ProxyOptions, request: unknown): Prom
 
 // The check the title screen runs before a match: one real call, whose reply
 // says who answered.
+/** Kept for internal middleware and tests.
+ * @public
+ */
 export async function checkHealth(options: ProxyOptions): Promise<Health> {
   const started = Date.now();
   const outcome = await askUpstream(options, healthRequest(options.link.model));
@@ -66,6 +72,9 @@ export async function checkHealth(options: ProxyOptions): Promise<Health> {
 // Render appends the client address to X-Forwarded-For. Trust the one proxy
 // hop and take the rightmost untrusted entry; values farther left are caller
 // controlled. The socket address is the fallback if the header is absent.
+/** Kept for internal middleware and tests.
+ * @public
+ */
 export function clientAddress(headers: IncomingMessage['headers'], remoteAddress?: string): string {
   const forwarded = headers['x-forwarded-for'];
   const addresses = (Array.isArray(forwarded) ? forwarded : [forwarded])

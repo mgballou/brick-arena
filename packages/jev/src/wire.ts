@@ -144,6 +144,9 @@ const POWER_UP_EFFECTS: Record<PowerUpKind, string> = {
 
 // The objective and the scoring, as docs/scoring.md defines them. Every
 // question opens with it, so each answer is aimed at winning the level.
+/** Kept for internal callers, tests, and documentation.
+ * @public
+ */
 export const OBJECTIVE = [
   'You play a level of breakout against a human on an identical board.',
   'Performance is clearing fast: the first to break every breakable brick wins the level, and that ends it.',

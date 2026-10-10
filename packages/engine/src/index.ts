@@ -113,6 +113,9 @@ function paddleForReturn(state: BoardState, landing: number, vx: number) {
 // Each column's hit points a ball can reach from below: counting up from its
 // lowest live brick until an unbreakable one blocks the way. Keyed by the
 // column's center x.
+/** Kept for internal callers and tests.
+ * @public
+ */
 export function openHitPoints(state: BoardState): Map<number, number> {
   const columns = new Map<number, Brick[]>();
   for (const brick of state.bricks) {

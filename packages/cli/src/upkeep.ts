@@ -15,6 +15,9 @@ const CHUNK = 100;
 const PRUNED: TableName[] = ['jev_calls', 'match_events', 'level_progress'];
 
 // `abcd1234` from `https://abcd1234.supabase.co`, for the dashboard link.
+/** Kept for internal callers and tests.
+ * @public
+ */
 export const projectRef = (url: string) => /^https?:\/\/([a-z0-9]+)\.supabase\.co\/?$/.exec(url.trim())?.[1] ?? null;
 
 const refused = (what: string, answer: { status: number; message: string }) => `${what}: ${answer.status || 'no answer'} ${answer.message}`.trim();

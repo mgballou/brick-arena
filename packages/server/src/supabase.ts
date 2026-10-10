@@ -11,6 +11,9 @@
 
 export type TableName = 'matches' | 'jev_calls' | 'match_events' | 'level_progress' | 'keep_awake';
 // Each table's primary key, which an upsert matches on.
+/** Kept for internal callers and tests.
+ * @public
+ */
 export const CONFLICT: Record<TableName, string> = {
   matches: 'id',
   jev_calls: 'match_id,n',
@@ -61,6 +64,9 @@ const byOrder = (order: Query['order']) => (a: Row, b: Row) => {
   return 0;
 };
 
+/** Kept for test setup, including the setup added in PR #34.
+ * @public
+ */
 export function stubClient(): StubClient {
   const calls: StubClient['calls'] = [];
   const tables: StubClient['tables'] = { matches: [], jev_calls: [], match_events: [], level_progress: [], keep_awake: [] };

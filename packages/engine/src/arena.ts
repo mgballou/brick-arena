@@ -213,6 +213,9 @@ export function percentCleared(state: BoardState): number {
   return total ? Math.floor((100 * (total - left)) / total) : 100;
 }
 
+/** Kept for internal scoring and tests.
+ * @public
+ */
 export function clearBonus(secondsLeft: number) {
   return Math.max(0, Math.floor(secondsLeft)) * POINTS.secondLeft;
 }

@@ -3,6 +3,9 @@
 // OPT_OUT_KEY; Do Not Track has the same effect and the page can't undo it.
 // Both the PostHog events (analytics.ts) and the match lines (match-log.ts)
 // ask `recording` before each send. Play never changes.
+/** Kept for internal callers and tests; e2e tests also assert the literal.
+ * @public
+ */
 export const OPT_OUT_KEY = 'brick-arena:opt-out';
 
 export type Store = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
