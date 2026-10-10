@@ -241,10 +241,10 @@ documented reply shape, not captured from a call.
 ```sh
 npm test            # the engine, Jev, server and page tests; none calls live Jev or Supabase
 npm run build       # typecheck (tsc -b), then the production build in dist/
-npx --yes knip      # unused files, exports and dependencies; it should report nothing
+npx --yes knip      # unused files, exports and dependencies; it exits nonzero when it finds any
 ```
 
-On every pull request, CI installs from the lockfile with the pnpm that
+On every ready pull request, CI installs from the lockfile with the pnpm that
 `packageManager` pins, on the Node in `.nvmrc`, then runs three jobs: the tests and `tsc -b`,
 the browser specs in Chromium (`pnpm e2e`), and the Supabase path on Postgres and PostgREST
 (`pnpm test:db`). Dependabot proposes updates to the pins once a week.
