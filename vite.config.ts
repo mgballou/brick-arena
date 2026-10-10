@@ -4,7 +4,7 @@ import { capFromEnv } from './packages/jev/src/cap.ts';
 import { JEV_DEFAULTS, readJevLink, type JevLink } from './packages/jev/src/key.ts';
 import { jevMiddleware } from './packages/jev/src/proxy.ts';
 import { JEV_PATH } from './packages/jev/src/wire.ts';
-import { adminSecretFromEnv, BACKSTAGE_PAGE, refuseUnlessAdmin } from './packages/server/src/admin.ts';
+import { adminSecretFromEnv, isBackstagePath, refuseUnlessAdmin } from './packages/server/src/admin.ts';
 import { MATCHES_PATH, matchesMiddleware, storeFromEnv } from './packages/server/src/matches.ts';
 
 // Reads ~/.jev-key once, when the dev server starts, and hands it to the same
@@ -52,8 +52,9 @@ function matchRecords(): Plugin {
       // the page itself, so the gate runs ahead of it, for /matches too.
       const admin = adminSecretFromEnv(process.env);
       server.middlewares.use((req, res, next) => {
-        const path = new URL(req.url ?? '/', 'http://host').pathname;
-        if ((path === BACKSTAGE_PAGE || path === BACKSTAGE_PAGE.slice(0, -'.html'.length)) && refuseUnlessAdmin(req, res, admin)) return;
+        // Keep // and /@fs/ dot segments as paths for the gate to normalize.
+        const path = (req.url ?? '/').split(/[?#]/, 1)[0];
+        if (isBackstagePath(path) && refuseUnlessAdmin(req, res, admin)) return;
         next();
       });
       // This server writes no Supabase rows, so the admin reads its own files.

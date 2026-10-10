@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { posix } from 'node:path';
 
 // The backstage: /matches.html and every read of a match record answer only
 // the admin. The admin is whoever sends ADMIN_SECRET as the password of HTTP
@@ -12,6 +13,23 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 const ADMIN_REALM = 'Brick Arena backstage';
 // The page that reads match records. Its built script holds no data.
 export const BACKSTAGE_PAGE = '/matches.html';
+
+export function isBackstagePath(path: string): boolean {
+  let decoded: string;
+  let normalized: string;
+  try {
+    // Vite decodes paths before reading files. Match that view, including
+    // encoded separators and dot segments, on a case-insensitive dev disk.
+    decoded = decodeURIComponent(path).toLowerCase();
+    normalized = posix.normalize(decoded).replace(/\/+$/, '');
+  } catch {
+    return false;
+  }
+  // Vite's /@fs/ URLs can read the same page by its absolute file path.
+  return normalized === BACKSTAGE_PAGE
+    || normalized === BACKSTAGE_PAGE.slice(0, -'.html'.length)
+    || (decoded.startsWith('/@fs/') && posix.basename(normalized) === BACKSTAGE_PAGE.slice(1));
+}
 
 export function adminSecretFromEnv(env: Record<string, string | undefined>): string | null {
   return env.ADMIN_SECRET?.trim() || null;
