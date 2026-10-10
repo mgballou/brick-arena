@@ -16,7 +16,7 @@ jobs:
   # skips the jobs below, so a merge to main never turns the open PRs red.
   gate:
     if: github.event.pull_request.draft == false
-    runs-on: [self-hosted, macOS]
+    runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions:
       contents: read
@@ -37,7 +37,7 @@ jobs:
     needs: gate
     if: needs.gate.outputs.run == 'true'
     name: install, test, typecheck
-    runs-on: [self-hosted, macOS]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -64,7 +64,7 @@ jobs:
     needs: gate
     if: needs.gate.outputs.run == 'true'
     name: browser specs in Chromium
-    runs-on: [self-hosted, macOS]
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
@@ -79,9 +79,10 @@ jobs:
       - name: install
         run: pnpm install --frozen-lockfile
 
-      # The Chromium that the pinned @playwright/test drives.
+      # The Chromium that the pinned @playwright/test drives, with the system
+      # libraries it needs on Ubuntu.
       - name: install Chromium
-        run: pnpm exec playwright install chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       # playwright.config.ts starts the dev server against the stand-in, the
       # built page on the hosted app with no key, and Render's build on
@@ -103,10 +104,10 @@ jobs:
     needs: gate
     if: needs.gate.outputs.run == 'true'
     name: Supabase path on Postgres and PostgREST
-    runs-on: [self-hosted, macOS]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Its own compose project and host ports, so a run never touches a stack
-    # someone started with `pnpm db:up` on this Mac.
+    # Its own compose project and host ports, so a run on a machine that
+    # already has a stack from `pnpm db:up` never touches it.
     env:
       COMPOSE_PROJECT_NAME: brick-arena-ci
       SUPABASE_LOCAL_API_PORT: 55321
@@ -137,9 +138,8 @@ jobs:
         if: failure()
         run: docker compose -f supabase/local/compose.yml logs
 
-      # The runner is a Mac that stays up, so the stack and its anonymous data
-      # volume must not outlive the job. -p names this job's project, never
-      # the default one.
+      # The stack and its anonymous data volume must not outlive the job. -p
+      # names this job's project, never the default one.
       - name: stop Postgres and PostgREST
         if: always()
         run: docker compose -p brick-arena-ci -f supabase/local/compose.yml down -v --remove-orphans

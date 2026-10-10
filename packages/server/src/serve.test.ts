@@ -25,6 +25,7 @@ beforeAll(async () => {
   writeFileSync(join(dist, 'index.html'), '<!doctype html><div id="root"></div>');
   writeFileSync(join(dist, 'matches.html'), '<!doctype html><main id="matches"></main>');
   writeFileSync(join(dist, 'assets', 'index-abc123.js'), 'console.log(1)');
+  writeFileSync(join(dist, 'download.bin'), 'host download');
   writeFileSync(join(dist, '..', 'brick-arena-secret.txt'), 'outside dist');
   standIn = await startStandIn({ port: 0, ms: 5 });
   // Not in debug mode, as hosted: a stand-in's answer is Jev being down.
@@ -62,6 +63,36 @@ describe('the hosted server', () => {
     expect(logged.length).toBe(before);
   });
 
+  it('answers HEAD requests for an asset with its headers and no body', async () => {
+    const response = await fetch(`${base}/assets/index-abc123.js`, { method: 'HEAD' });
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toMatch(/javascript/);
+    expect(response.headers.get('cache-control')).toBe('public, max-age=31536000, immutable');
+    expect(await response.text()).toBe('');
+  });
+
+  it.each(['POST', 'PUT', 'DELETE'])('refuses %s requests to static pages without a body', async method => {
+    const response = await fetch(base, { method });
+    expect(response.status).toBe(405);
+    expect(await response.text()).toBe('');
+  });
+
+  it.each(['/bad%escape', '/%E0%A4%A', '/assets/'])('answers malformed paths and directories with an uncached 404: %s', async path => {
+    const response = await fetch(`${base}${path}`);
+    expect(response.status).toBe(404);
+    expect(response.headers.get('content-type')).toBe('text/plain; charset=utf-8');
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(await response.text()).toBe('Not found');
+  });
+
+  it('serves files of an unknown type as downloads that must be revalidated', async () => {
+    const response = await fetch(`${base}/download.bin`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe('application/octet-stream');
+    expect(response.headers.get('cache-control')).toBe('no-cache');
+    expect(await response.text()).toBe('host download');
+  });
+
   it('serves nothing outside dist', async () => {
     // fetch folds a bare ../ away, so the escape is spelled inside one segment.
     for (const path of ['/..%2fbrick-arena-secret.txt', '/%2e%2e%2fbrick-arena-secret.txt', '/nope.js']) {
@@ -81,6 +112,37 @@ describe('the hosted server', () => {
         expect(response.status, path).toBe(404);
         expect(await response.text(), path).not.toContain(id);
       }
+    }
+  });
+
+  // BUG: authorization checks the encoded path before static serving decodes it.
+  it.fails('refuses encoded aliases of the backstage page when no admin is configured', async () => {
+    const response = await fetch(`${base}/matches%2ehtml`);
+    expect(response.status).toBe(404);
+    expect(await response.text()).not.toContain('id="matches"');
+  });
+
+  it('challenges backstage visitors and serves the page only with the admin password', async () => {
+    const dist = mkdtempSync(join(tmpdir(), 'brick-arena-admin-hosted-'));
+    writeFileSync(join(dist, 'matches.html'), '<!doctype html><main id="backstage"></main>');
+    const adminServer = createServer(hostedApp({ dist, proxy: { link: { baseUrl: standIn.url, model: 'jev-test', key: '' }, keyFrom: 'nowhere', debug: false }, matches: createMatchStore(mkdtempSync(join(tmpdir(), 'brick-arena-admin-matches-'))), admin: 'test-admin-secret' }));
+    await new Promise<void>(done => adminServer.listen(0, '127.0.0.1', done));
+    const page = `http://127.0.0.1:${(adminServer.address() as AddressInfo).port}/matches.html`;
+    try {
+      for (const headers of [{}, { authorization: adminHeader('wrong-password') }] as Array<Record<string, string>>) {
+        const denied = await fetch(page, { headers });
+        expect(denied.status).toBe(401);
+        expect(denied.headers.get('www-authenticate')).toBe('Basic realm="Brick Arena backstage", charset="UTF-8"');
+        expect(denied.headers.get('cache-control')).toBe('no-store');
+        expect(await denied.text()).toBe('Unauthorized');
+      }
+      const allowed = await fetch(page, { headers: { authorization: adminHeader('test-admin-secret') } });
+      expect(allowed.status).toBe(200);
+      expect(allowed.headers.get('content-type')).toBe('text/html; charset=utf-8');
+      expect(allowed.headers.get('cache-control')).toBe('no-cache');
+      expect(await allowed.text()).toContain('id="backstage"');
+    } finally {
+      await new Promise<void>((done, reject) => adminServer.close(error => error ? reject(error) : done()));
     }
   });
 
