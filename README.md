@@ -4,10 +4,10 @@
 
 <h1>Brick Arena</h1>
 
-<p><strong>A person against TypeSafe's Jev at Breakout, live, to see how a small typed model plays when every answer lands late.</strong></p>
+<p><strong>An experiment: put a fast, pick-from-a-list model in a live game seat, and see how it plays when every answer lands late.</strong></p>
 
 <p>Two boards, one level, one seed. You play the left on the arrow keys.<br />
-Jev plays the right, one closed question at a time, over the network.</p>
+TypeSafe's Jev plays the right, one closed question at a time, over the network.</p>
 
 <p>
 <img src="https://img.shields.io/badge/license-MIT-5b8def" alt="MIT" />
@@ -26,13 +26,17 @@ Level 1: a script on the arrow keys plays the left board, and the right is the l
 Level 1, *Multi-hit rows*, in debug mode: the right-hand board is the local stand-in, not Jev,
 and the banner says so. Against live Jev the same screen names Jev on that board.
 
-**Play it: [live URL]**
+**Status: deploy-ready, not live.** No hosted copy runs, and the Render, Supabase and
+PostHog accounts it needs are not yet made. You can run it on your own machine
+([Run it locally](#run-it-locally)), and [docs/deploy.md](docs/deploy.md) and
+[docs/go-live.md](docs/go-live.md) say how to deploy it.
 
-## The question
+## The experiment
 
-Jev is a small, text-only model from TypeSafe. It does not write prose; it picks one option
-from a list you hand it, and it picks fast. It is pitched at the narrow question inside a
-loop: which tool next, is this spam, does this need a person.
+Jev is a System 1 type model: small and text-only, served by TypeSafe's API at
+`/v1/systemone`. It does not write prose; it picks one option from a list you hand it, and
+it picks fast. It is pitched at the narrow question inside a loop:
+which tool next, is this spam, does this need a person.
 
 Brick Arena gives it a harder job. Can a model that only picks from a list play a real-time
 game against a person, when the board keeps moving while it thinks? And told what winning
@@ -70,7 +74,7 @@ takes, does it pick the safe move or the one that wins?
 As you play, Jev's board shows each choice as it lands, how long it took, the median, and a
 count of late and failed calls.
 
-## What is known so far
+## What the experiment found
 
 One call to live Jev is measured. A match against live Jev on 25 September left no record
 ([docs/scoring.md](docs/scoring.md#keeping-the-ball)). Every other number comes from the
@@ -83,15 +87,20 @@ numbers show what the arena rewards and what lag costs. They do not show what Je
 `landing`, the safe catch. That call came before the prompt stated the objective, so it says
 nothing about how Jev plays now. At 728 ms an answer lands 44 ticks after its question.
 
-**Lag costs balls, and asking ahead wins most of them back.** `npm run fair`, 24 September:
+**Lag cost balls and asking ahead won most of them back on the old engine; on today's engine no board loses a ball.** `npm run fair`:
 seed 20260919, five levels, the stand-in answering in 728 ms against a scripted player on the
 keys who reacts in 200 ms ([docs/where-it-is.md](docs/where-it-is.md)).
 
-| Jev's board | Balls lost | Bricks broken |
-|---|---|---|
-| Player on the keys, for scale | 0 | 48 |
-| Asked about the board on screen | 15 | 24 |
-| Asked about the board as it will stand (kept) | 4 | 39 |
+| Jev's board | Balls lost | Bricks broken | Balls lost, 9 October | Bricks broken, 9 October |
+|---|---|---|---|---|
+| Player on the keys, for scale | 0 | 48 | 0 | 85 |
+| Asked about the board on screen | 15 | 24 | 0 | 89 |
+| Asked about the board as it will stand (kept) | 4 | 39 | 0 | 86 |
+
+The 24 September run predates that day's brick collision fix
+([docs/brick-collisions.md](docs/brick-collisions.md)). Rerun on 9 October, no board loses a
+ball and the board asked about the screen breaks the most bricks, so the case for asking
+ahead holds only for the old engine.
 
 **Aiming wins, and spends balls to do it.** `npm run objective`, 24 September: 50 seeds, five
 levels each, answers at 728 ± 150 ms, then the two rules played head to head
@@ -101,6 +110,13 @@ levels each, answers at 728 ± 150 ms, then the two rules played head to head
 |---|---|---|---|
 | Always `landing` | 10 of 250 | 351 | 26 |
 | Always `aim` | 78 of 250 | 461 | 214 (10 ties) |
+
+**Keeping the ball first cut the aiming rule's lost balls from 461 to 63.** `npm run objective`,
+26 September, after a live match on 25 September saw Jev lose all three balls on one level:
+the prompt now says to keep the ball first, and the board Jev is sent shows where each ball
+comes down and which power-ups it can reach without losing it. At 728 ± 150 ms the `aim` rule
+then cleared 160 of 250 levels, up from 78, and ran out of balls on none
+([docs/scoring.md](docs/scoring.md#keeping-the-ball)).
 
 **The arena rewards the aimed catch over the safe one.** `npm run tunings`, 25 September, the
 standard game: the stand-in as the game plays it, at 500, 728 and 1,000 ms, cleared 32 of 75
@@ -113,9 +129,10 @@ straight up and down one column for good. The arena sets a floor on the return a
 `landing` stays a real choice and not a trap
 ([docs/brick-collisions.md](docs/brick-collisions.md)).
 
-## What is not known yet
+## What it did not find out
 
-The repo records no live match. Until some are played, these stay open:
+The repo records no live match, and with no hosted copy none are being played. These stay
+open:
 
 - Which catch Jev picks once it knows the objective, and how often it takes `aim`.
 - How its answer time spreads over a match: the median, the slow tail, how many calls run late.
@@ -123,30 +140,9 @@ The repo records no live match. Until some are played, these stay open:
 - What a call costs in tokens now that the prompt carries the objective and names each catch.
 
 The server keeps a record of each match, with every Jev call in it, so a few played
-matches can answer these.
+matches against live Jev, locally or on a deployed copy, can answer these.
 
-## Play it
-
-### Hosted
-
-Open the link above. The hosted page holds the TypeSafe key as a server secret, so you need
-none, and a daily cap on Jev calls keeps a bot from spending it. When Jev can't answer or
-the cap is spent, the page says so and shows no board. [docs/deploy.md](docs/deploy.md) sets
-up the host.
-
-The server keeps a record of each match: every launch, lost ball and Jev call, with the board
-Jev was sent, and both boards' clear over time. Only the admin reads them, with the server's
-`ADMIN_SECRET`: `/matches.html` lists recent matches and opens each one's timeline, and
-`npm run match` prints them with a tally of every choice Jev made. The hosted page reads
-from Supabase when both `SUPABASE_URL` and `SUPABASE_SECRET_KEY` are set; otherwise it
-reads the server's local match files. The secret key stays on the server. `SUPABASE_WRITES=1`
-is also needed to save new live matches to Supabase.
-[docs/deploy.md](docs/deploy.md#match-records) says where they live.
-
-Left and Right move your paddle. After a lost ball, Space or Up serves. P pauses, H shows how
-scoring works, M mutes.
-
-### Locally
+## Run it locally
 
 You need Node 24 and your own TypeSafe key.
 
@@ -163,6 +159,9 @@ Open <http://localhost:5173>. The dev server reads `~/.jev-key` once, when it st
 forwards Jev's calls itself, so the browser never sees the key. The title screen says
 *Jev is online* when the key works. pnpm works too (`pnpm install`, `pnpm dev`) and installs
 from the lockfile, as CI does.
+
+Left and Right move your paddle. After a lost ball, Space or Up serves. P pauses, H shows how
+scoring works, M mutes.
 
 ### Debug mode, without Jev
 
@@ -181,7 +180,27 @@ The screen shows a `DEBUG · stand-in` banner and names the right-hand board Sta
 debug mode, the forwarder and the page both refuse a stand-in's reply. Who answered comes from
 the reply's mark, never the URL.
 
-## The data it collects
+## Deploying it
+
+Nothing is deployed, and the accounts a deploy needs (Render, Supabase, PostHog) are not yet
+made. The code is ready for them: [docs/deploy.md](docs/deploy.md) sets up the host, and
+[docs/go-live.md](docs/go-live.md) lists every step in order, from the Render Blueprint to the
+first match row in Supabase.
+
+A deployed page holds the TypeSafe key as a server secret, so a player needs none, and a daily
+cap on Jev calls keeps a bot from spending it. When Jev can't answer or the cap is spent, the
+page says so and shows no board.
+
+The server keeps a record of each match: every launch, lost ball and Jev call, with the board
+Jev was sent, and both boards' clear over time. Only the admin reads them, with the server's
+`ADMIN_SECRET`: `/matches.html` lists recent matches and opens each one's timeline, and
+`npm run match` prints them with a tally of every choice Jev made. A deployed page reads
+from Supabase when both `SUPABASE_URL` and `SUPABASE_SECRET_KEY` are set; otherwise it
+reads the server's local match files. The secret key stays on the server. `SUPABASE_WRITES=1`
+is also needed to save new live matches to Supabase.
+[docs/deploy.md](docs/deploy.md#match-records) says where they live.
+
+## The data a deployed copy collects
 
 How each match plays, never who played it. The title screen says so in one line, with a link
 to the [privacy page](privacy.html) and an **Opt out** beside it; Do Not Track counts as
