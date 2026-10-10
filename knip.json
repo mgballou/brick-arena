@@ -1,5 +1,9 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": ["packages/web/src/matches.ts"],
-  "ignoreBinaries": ["psql"]
+  "ignoreBinaries": ["psql"],
+  "ignoreIssues": {
+    // replaySession: only replay.test.ts calls it now; kept for the ghost-mode replay tool (CLAUDE.md).
+    "packages/engine/src/replay.ts": ["exports"]
+  }
 }
