@@ -1,6 +1,6 @@
 import { test as base, expect, type Page } from '@playwright/test';
 import { startStandIn } from '../packages/jev/src/stand-in-server.ts';
-import { STAND_IN_PORT } from './servers.ts';
+import { DEV_URL, STAND_IN_PORT } from './servers.ts';
 
 // The stand-in the dev server forwards to, one per worker, which a spec may
 // stop and start again.
@@ -53,9 +53,25 @@ export async function openTitle(page: Page) {
   await expect(page.getByRole('button', { name: 'Start' })).toBeEnabled();
 }
 
+// Whether the dev server still answers its health check.
+async function devServerUp(): Promise<boolean> {
+  try { return (await fetch(`${DEV_URL}/healthz`, { signal: AbortSignal.timeout(2000) })).ok; } catch { return false; }
+}
+
 // Plays the human board on the keys until the level ends: launch when
-// serving, and hold the arrow toward the lowest falling ball.
+// serving, and hold the arrow toward the lowest falling ball. A dev server
+// that goes away mid-level (killed from outside, or crashed) shows up here as
+// a reload or a stall; it is named as what it is, not as either.
 export async function playLevel(page: Page, limitMs: number): Promise<Read> {
+  try {
+    return await playUntilEnd(page, limitMs);
+  } catch (error) {
+    if (await devServerUp()) throw error;
+    throw new Error(`the dev server at ${DEV_URL} stopped answering during the level: it was killed or crashed (see its [WebServer] lines)`, { cause: error });
+  }
+}
+
+async function playUntilEnd(page: Page, limitMs: number): Promise<Read> {
   const deadline = Date.now() + limitMs;
   let held: 'ArrowLeft' | 'ArrowRight' | null = null;
   const hold = async (key: typeof held) => {
