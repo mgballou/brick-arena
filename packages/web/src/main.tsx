@@ -510,7 +510,7 @@ function App({ initialProbe, onDown }: { initialProbe: Probe; onDown: (down: Dow
 
       <div className="decider" role="status" aria-live="off">
         <span>{decider(hud, rival)}</span>
-        <button className="text" onClick={openRules}>How scoring works <kbd>H</kbd></button>
+        <button className="text" tabIndex={phase === 'title' ? -1 : 0} onClick={openRules}>How scoring works <kbd>H</kbd></button>
       </div>
 
       <main className="arena">
