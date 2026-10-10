@@ -79,6 +79,29 @@ Blueprint. After the stack merges there are four, and `docs/deploy.md` step 3
 27. On the service set `SUPABASE_URL`, `SUPABASE_SECRET_KEY` and `SUPABASE_WRITES=1`; saving redeploys (Render → brick-arena → Environment).
 28. Add the same `SUPABASE_URL` and `SUPABASE_SECRET_KEY` as repository secrets (GitHub → Settings → Secrets and variables → Actions).
 29. Run *Supabase weekly* by hand and see all three steps pass (GitHub → Actions → `supabase-weekly.yml` → **Run workflow**).
+    The scheduled workflow is the normal path while this account has included GitHub Actions minutes. If those minutes run out for a month, this local weekly fallback runs the same `check`, `awake` and `prune` steps.
+
+    On this Mac, make a private env file with the same two repository secret values:
+
+    ```sh
+    mkdir -p "$HOME/.config/brick-arena"
+    chmod 700 "$HOME/.config/brick-arena"
+    touch "$HOME/.config/brick-arena/supabase.env"
+    chmod 600 "$HOME/.config/brick-arena/supabase.env"
+    ${EDITOR:-vi} "$HOME/.config/brick-arena/supabase.env"
+    ```
+
+    Put `SUPABASE_URL=...` and `SUPABASE_SECRET_KEY=...` on separate lines. To install the weekly launchd fallback, from the repository root:
+
+    ```sh
+    mkdir -p "$HOME/Library/LaunchAgents" "$HOME/Library/Logs"
+    cp launchd/dev.brick-arena.supabase-weekly.plist "$HOME/Library/LaunchAgents/"
+    launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/dev.brick-arena.supabase-weekly.plist"
+    ```
+
+    The plist runs once a week and on load. It targets `/Users/matthewballou/projects/brick-arena`; edit its absolute script and pnpm paths if this checkout or Node 24 installation lives elsewhere. The log is `/Users/matthewballou/Library/Logs/brick-arena-supabase-weekly.log`.
+
+    Check that it is loaded with `launchctl print "gui/$(id -u)/dev.brick-arena.supabase-weekly"`. To remove the fallback, run `launchctl bootout "gui/$(id -u)/dev.brick-arena.supabase-weekly"` and `rm "$HOME/Library/LaunchAgents/dev.brick-arena.supabase-weekly.plist"`. The checked-in plist is not installed by this change.
 30. Play one match against live Jev and see its row in `matches` (Supabase → Table Editor).
 
 ### PostHog
