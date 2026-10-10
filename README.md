@@ -87,15 +87,20 @@ numbers show what the arena rewards and what lag costs. They do not show what Je
 `landing`, the safe catch. That call came before the prompt stated the objective, so it says
 nothing about how Jev plays now. At 728 ms an answer lands 44 ticks after its question.
 
-**Lag costs balls, and asking ahead won most of them back on the old engine, before the 24 September brick-collision fix; the current engine has not been measured again** ([docs/brick-collisions.md](docs/brick-collisions.md)). `npm run fair`, 24 September:
+**Lag cost balls and asking ahead won most of them back on the old engine; on today's engine no board loses a ball.** `npm run fair`:
 seed 20260919, five levels, the stand-in answering in 728 ms against a scripted player on the
 keys who reacts in 200 ms ([docs/where-it-is.md](docs/where-it-is.md)).
 
-| Jev's board | Balls lost | Bricks broken |
-|---|---|---|
-| Player on the keys, for scale | 0 | 48 |
-| Asked about the board on screen | 15 | 24 |
-| Asked about the board as it will stand (kept) | 4 | 39 |
+| Jev's board | Balls lost | Bricks broken | Balls lost, 9 October | Bricks broken, 9 October |
+|---|---|---|---|---|
+| Player on the keys, for scale | 0 | 48 | 0 | 85 |
+| Asked about the board on screen | 15 | 24 | 0 | 89 |
+| Asked about the board as it will stand (kept) | 4 | 39 | 0 | 86 |
+
+The 24 September run predates that day's brick collision fix
+([docs/brick-collisions.md](docs/brick-collisions.md)). Rerun on 9 October, no board loses a
+ball and the board asked about the screen breaks the most bricks, so the case for asking
+ahead holds only for the old engine.
 
 **Aiming wins, and spends balls to do it.** `npm run objective`, 24 September: 50 seeds, five
 levels each, answers at 728 ± 150 ms, then the two rules played head to head
