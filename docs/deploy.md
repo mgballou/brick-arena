@@ -48,10 +48,10 @@ paid instance type stays awake.
    Privacy link opens the privacy page. It exits 1 if any check fails. The
    title screen's check is one call to Jev, as any visitor's is; PostHog drops
    an automated browser's events, and the run starts no match. It needs
-   Chromium once: `pnpm exec playwright install chromium`. CI runs the same
-   checks before a deploy, on Render's build and `serve.ts`'s own options with
-   a fake TypeSafe (`e2e/deployed.e2e.ts`); only the real key and the real Jev
-   wait for this step.
+   Chromium once: `pnpm exec playwright install chromium`. Pull request CI
+   runs `pnpm e2e` against local builds and a fake TypeSafe; it does not run
+   this real-site check. Run `smoke:site` after deploying to check the live
+   service.
 
 After that, every push to `main` deploys again. To deploy by hand, use
 **Manual Deploy** in the dashboard, or the Render CLI:
@@ -91,10 +91,15 @@ Screens: `docs/screens/2026-09-25/`.
 
 ## Limits worth knowing
 
-- The counts live in memory. They start again at midnight UTC, and also when
-  the service restarts or wakes from sleep.
-- A visitor is the first `X-Forwarded-For` address. A bot can forge that
-  header to dodge the per-visitor cap. The daily total still binds it.
+- Per-visitor counts live in memory and reset when the service restarts. The
+  total daily count is saved in `MATCHES_DIR/jev-calls.json`; when Supabase is
+  configured, the server rebuilds it from that day's match and call rows, and
+  falls back to the file if Supabase cannot be read at startup. Both counts
+  reset at midnight UTC. Losing the filesystem also loses the file-backed
+  total.
+- The per-visitor cap trusts Render's appended, rightmost
+  `X-Forwarded-For` address; entries farther left are caller-controlled and
+  ignored. The daily total applies to everyone.
 - Render's docs don't say which pnpm the Node runtime preloads, or whether
   `NODE_ENV` is `production` during the build, so the build command starts
   pnpm 11, which runs the pnpm that `packageManager` in `package.json` pins,
@@ -191,9 +196,11 @@ The server can also write each live match as rows in Supabase, the store
 3. On the service set `SUPABASE_URL`, `SUPABASE_SECRET_KEY` and
    `SUPABASE_WRITES=1`.
 
-The files in `MATCHES_DIR` go on as before. The server writes rows after it has
-answered the browser, and only for matches against live Jev outside debug
-mode. When Supabase refuses a write, the log says so once per outage
+The files in `MATCHES_DIR` go on as before. After validation and the local file
+append, the server queues Supabase rows and starts writing them asynchronously;
+the browser response does not wait for Supabase. It writes only for matches
+against live Jev outside debug mode. When Supabase refuses a write, the log
+says so once per outage
 (`[supabase] refused …`); the server keeps up to 4 MB of rows in memory and
 tries again on the next write or after 30 seconds. A restart empties that
 memory, and matches in play across it send no more rows.
@@ -250,7 +257,7 @@ Docker, with no Supabase project. It needs Docker and `psql`:
 
 ```bash
 pnpm db:up      # supabase/local/compose.yml; waits until it answers
-pnpm test:db    # also a CI job on every push
+pnpm test:db    # also a pull request CI job when its gate allows it
 pnpm db:down    # stops it and drops the data
 ```
 
@@ -283,8 +290,8 @@ statement timeouts; Render's network to Supabase; and the Free plan's pausing.
 The page can send what players do, and each Jev choice in brief, to PostHog
 (`docs/specs/data-collection.md`). It is off until the project exists:
 
-1. Choose US or EU Cloud (the spec's last open question) and create the
-   PostHog project. In its settings, turn IP capture off.
+1. Choose US or EU Cloud and create the PostHog project. In its settings, turn
+   IP capture off.
 2. On the service set `VITE_POSTHOG_KEY`, `VITE_POSTHOG_HOST` (the project's
    ingestion host, `https://us.i.posthog.com` or `https://eu.i.posthog.com`)
    and `VITE_POSTHOG=1`, then redeploy: the page reads them when it is built.

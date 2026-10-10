@@ -1,44 +1,28 @@
 # Data collection: what players do, what Jev does
 
-Status: built. The code is `packages/server/src/supabase.ts` and `rows.ts`,
-`packages/web/src/analytics.ts` and `consent.ts`, `supabase/migrations/` and
-`.github/workflows/supabase-weekly.yml`; creating the PostHog and Supabase
-projects is the owner's step (`docs/deploy.md`). Written 26 September 2026
-for Matthew, who asked for it that day: *"I want to know what people do, what
-jev does, and be able to do something with the data later on."* Revised the
-same afternoon after his answers: *"Seems like this is a tailor made use case
-for supabase"*, *"Post hog too … like the key services that people use for
-this, not rolling our own"*, and *"especially at this level which will likely
-be free."*
-
-So: two standard services, both on their free plans, and only the glue built
-here. Revised again after his answers to the six decisions at 11:33 PM the
-same day (see the last section); one question is left, PostHog's region.
+Status: implemented. The page can send player events to PostHog, and the server
+can write match rows to Supabase when configured. Local match files and the
+admin match reader remain available. Project creation and hosted secrets are
+operator setup; see [`docs/deploy.md`](../deploy.md).
 
 ## The plan in one table
 
 | Data | Goes to | Why there |
 | --- | --- | --- |
-| Everything about the player: sessions, device, key inputs, pauses and quits, levels reached, balls lost, results | **PostHog** | Funnels, retention, session length and dashboards are what it is built for. |
+| Selected player events: session start, match and level events, pauses, lost balls and results | **PostHog** | Funnels, retention, session length and dashboards. The game does not send raw key presses. |
 | One light event per Jev choice (question, choice, answer time, outcome), and a per-level summary | **PostHog** | "How often does Jev aim?" becomes a chart with no SQL. |
 | The match record: every Jev call **with the board it was sent**, every launch and lost ball, the clear over time, each level's result | **Supabase** | Structured rows to query with SQL, join and export. PostHog is not a place to keep 0.3 KB board snapshots or replay a match. |
-| Who may look | PostHog's and Supabase's own sign-ins | Both dashboards already have accounts, two-factor sign-in and export. |
+| Who may look | Vendor dashboards, plus the server's admin match reader | Supabase rows are also available through the existing admin page and CLI. |
 
-What this drops from the first version of this spec, since a service already
-does it: the custom event envelope and collector, the hand-built backstage
-pages and charts, the custom export endpoint, and the home-made admin door.
+PostHog and Supabase add hosted analytics and row storage. They do not replace
+the server's match files, `/matches.html`, its admin routes or the match CLI.
 
 ## Where things stand
 
-PR #5 (`ba-match-telemetry`) writes one NDJSON file per match from the browser
-through `POST /api/matches` (format `packages/server/src/record.ts`, version 1),
-reads it back with `pnpm match` and `/matches.html`, and lets only the holder
-of `ADMIN_SECRET` read it. It fixed a loss: Chrome allows a page 64 KiB of
-`keepalive` bodies over its life, so every record used to stop about a minute
-in. A full stand-in match now records all 644 calls.
-
-Nothing is live yet: no live-Jev match has been recorded, so the volumes below
-rest on one measured stand-in match and an assumed 100 matches a month.
+Each match is also kept as a versioned NDJSON file by the server. The admin
+page and `pnpm match` read those files; configured Supabase writes add a second
+read path. The sample sizes below describe one stand-in match recorded on
+26 September 2026; they are not a claim about current production traffic.
 
 ## Measured sizes
 
@@ -58,7 +42,7 @@ levels, 6 min 43 s):
 
 Autocapture off, so only these count against the free allowance. Names are
 `snake_case`; every event carries `app: "brick-arena"`, `build` (git SHA),
-`schema: 1`, and `match_id` while a match plays.
+`schema: 1`, and the active match's `match_id`, including on `match_ended`.
 
 | Event | Properties |
 | --- | --- |
@@ -77,14 +61,13 @@ PostHog takes custom properties of any count, with nested objects, up to 1 MB
 an event (posthog.com/docs/data/ingestion-warnings, read 26 September 2026).
 Board state stays out of it on purpose.
 
-Inputs are recorded as the events above, not as every key press: the paddle's
-path is already in the match record, and each press would multiply the count
-by hundreds.
+The page sends events, not raw key presses. Match records do not contain the
+paddle's full path.
 
 ### Setup
 
-- PostHog Cloud, one project. **US or EU is the one open question**; the
-  recommendation is US (see *Regions*).
+- PostHog Cloud, one project. Choose the region when creating it, then set its
+  ingestion host in `VITE_POSTHOG_HOST`.
 - `posthog-js` in the page: `autocapture: false`, `person_profiles: 'never'`
   (no person profiles, every event anonymous), IP capture off in project
   settings, `respect_dnt: true`, `disable_session_recording: true`.
@@ -100,7 +83,9 @@ by hundreds.
 
 ### The first four questions, as PostHog insights
 
-No code, only saved insights on one dashboard:
+`pnpm posthog:dashboard` creates or updates these four insights on the
+`Brick Arena` dashboard. It needs `POSTHOG_HOST`, `POSTHOG_PROJECT_ID` and
+`POSTHOG_PERSONAL_API_KEY` in the environment.
 
 1. **How often does Jev aim?** Trend of `jev_decision` where
    `question = target`, broken down by `choice`, by level and by `build`.
@@ -168,6 +153,10 @@ create table level_progress (        -- the clear once a second, one row a level
   samples     jsonb not null,        -- [[frame, human, jev], …], each side a SideTotal
   primary key (match_id, level)
 );
+
+create table keep_awake (            -- weekly check that the project answers
+  at          timestamptz primary key default now()
+);
 ```
 
 The version lives in `supabase/migrations/` in this repo, one SQL file a
@@ -178,11 +167,11 @@ public key can read and write nothing.
 
 ### Who writes: the game server, with the secret key
 
-The browser keeps sending its lines to the game server (`POST /api/matches`,
-as today). The server checks them as it does now (known line types, size per
-write, per match and in total), refuses a match whose `start` line names the
-stand-in or debug, then inserts rows with the Supabase **secret**
-key, held on Render like `JEV_API_KEY`.
+The browser sends match lines to the game server (`POST /api/matches`). The
+server validates them, appends them to the local match file, and queues row
+writes with the Supabase **secret** key. Writes are disabled until
+`SUPABASE_WRITES=1` and both project credentials are set. Stand-in and debug
+matches do not produce Supabase rows.
 
 Why not let the browser insert straight into Supabase with the publishable key
 under an insert-only policy:
@@ -201,13 +190,11 @@ under an insert-only policy:
 
 ### Reading it
 
-- **Supabase Studio** is the admin view, from day one: Table Editor to browse,
-  SQL Editor for questions PostHog can't answer (for example, every board Jev
-  saw before choosing `landing`), and CSV download.
-- `pnpm match <id>` keeps printing one match's timeline and tally, reading
-  Supabase with the secret key from Matthew's machine.
-- `/matches.html`, `GET /api/matches` and `ADMIN_SECRET` from PR #5 retire once
-  Supabase holds the records; the write route stays.
+- **Supabase Studio** can browse configured rows and run SQL queries.
+- `pnpm match` reads Supabase when its URL and secret key are set; otherwise it
+  reads local match files. `--from` reads files from a hosted server.
+- `/matches.html`, the protected match routes and `ADMIN_SECRET` remain active;
+  they read the configured match store.
 
 ### Keeping it and getting it out
 
@@ -268,10 +255,12 @@ starts to cost data.
   project by hand
   (supabase.com/docs/guides/troubleshooting/restore-project-after-90-days-pause).
 - **What it costs here.** Play never depends on Supabase, so the game keeps
-  working. The server logs each refused write and keeps up to one match's
-  rows in memory to retry, so a brief outage loses nothing. A pause lasts until
-  Matthew resumes the project, so matches played meanwhile lose their records;
-  PostHog still has their events.
+  working. The server keeps rows in a bounded, process-local queue and retries
+  transient failures. It logs a repeated refusal only when its reason changes;
+  permanent refusals are logged and dropped. Rows can also be dropped when the
+  queue limit is exceeded or if the process restarts before retry. Play
+  continues during an outage, but those records may be missing from Supabase;
+  PostHog is a separate path.
 - **Keeping it awake.** A weekly scheduled job (a GitHub Actions cron) runs one
   real insert through the API. Common practice, but since "sufficient" isn't
   defined, the job also checks the project answers and fails loudly if not, so
@@ -279,53 +268,16 @@ starts to cost data.
 
 ## Regions
 
-Matthew asked with decision 2: *"not sure why we would host in the eu? is
-that close to typesafe ai servers or something for low latency of our call to
-jev?"* It was not. What was found on 26 September:
-
-- **The Render service: Oregon (US West), by default.** Neither `render.yaml`
-  nor `docs/deploy.md` names a region, and Render's Blueprint spec says of
-  `region`: *"If omitted for other service types, the default value is
-  `oregon`"* (render.com/docs/blueprint-spec, read 26 September 2026). So a
-  Blueprint made from this `render.yaml` runs in Oregon. The live service's
-  dashboard was not checked.
-- **Jev: `https://api.typesafe.ai`, region unknown.** That is
-  `JEV_DEFAULTS.baseUrl` in `packages/jev/src/key.ts`; `JEV_BASE_URL` could
-  override it, and `render.yaml` doesn't. The host resolves to Cloudflare
-  (104.18.24.46, 104.18.25.46), and a request from this machine was answered
-  at Cloudflare's Ashburn edge (`cf-ray: …-IAD`). That is the edge nearest the
-  caller, not where TypeSafe runs, and no response header names an origin
-  region.
-- **Why this spec chose EU for PostHog: it gave no reason.** The likely one is
-  GDPR, after the first version's warning that a browser id may count as
-  personal data in the EU and UK. It had nothing to do with Jev.
-
-Where the regions matter: a Jev call goes browser → Render → TypeSafe, so only
-the Render service's distance to TypeSafe changes how fast Jev answers.
-PostHog and Supabase sit off that path: the page sends PostHog events in
-batches, and the server writes Supabase rows after it has answered. Neither
-region changes anything a player feels.
-
-**Supabase: `us-west-2`, West US (Oregon)**, the region nearest the Render
-service, since the game server is its only writer
-(supabase.com/docs/guides/platform/regions, read 26 September 2026: *"Each
-Supabase project is deployed to one primary region"*). If the service ever
-moves nearer Matthew (`region: virginia` in `render.yaml`), use `us-east-1`
-(North Virginia) instead. Choose before creating the project.
-
-**PostHog: US Cloud recommended, not decided.** Matthew is in US Eastern, the
-server and database are in the US, and so, as far as anyone knows, are most
-players; US Cloud keeps all the data in one country. GDPR covers EU players
-wherever their data is held, so EU Cloud buys one thing: EU players' events
-stay in the EU. That is worth it only if EU players become a real share. The
-anonymous id is the piece GDPR would care about, and the opt-out and Do Not
-Track cover it in either region. PostHog asks for the cloud at sign-up, so
-this is settled before build step 1.
+Region is chosen in the vendor project setup. The Render Blueprint does not
+set a region. Jev's default URL is in `packages/jev/src/key.ts` and can be
+overridden with `JEV_BASE_URL`. PostHog uses the configured
+`VITE_POSTHOG_HOST`; neither analytics nor Supabase writes are on the live Jev
+call path.
 
 ## Privacy, with two vendors
 
-Data now leaves to PostHog (US or EU, the open question) and Supabase (West
-US, Oregon), both holding it on Matthew's behalf. The notice names them.
+When configured, data goes to PostHog at the project's selected region and to
+Supabase at the project's region. The notice names both services.
 
 Don't collect:
 
@@ -367,70 +319,9 @@ Do:
 
 Per app: its event names, its tables and its dashboard.
 
-## Rules this changed in CLAUDE.md
+## Setup still needed
 
-`CLAUDE.md` carries both now.
-
-- *"Do not add model SDKs, network calls …"* — the page gains `posthog-js` and
-  the server gains Supabase writes. The engine stays pure; the rule should say
-  so and allow these two.
-- *"It holds the game only; never add who played it."* — still true of the
-  Supabase record. PostHog now keeps an anonymous browser id (decision 1), so
-  the rule should say so and bound it: random, never identified, never in the
-  match record.
-
-## Build plan
-
-Each row is under three hours.
-
-| # | Work | Hours |
-| --- | --- | --- |
-| 1 | Matthew: settle PostHog's region; create the Supabase project (Free, `us-west-2`) and the PostHog project; put `SUPABASE_URL`, `SUPABASE_SECRET_KEY` on Render and the PostHog project key in the page build. | 0.5 |
-| 2 | `supabase/migrations/` with the four tables and RLS on, no policies. | 1 |
-| 3 | Server: write each match's lines as rows with the secret key, behind the checks PR #5 has; retry buffer; log refused writes. | 2.5 |
-| 4 | Weekly GitHub Actions job: keep-awake insert, pause check, 90-day prune. | 2 |
-| 5 | `pnpm match` and `pnpm export` read Supabase; monthly export file to a folder on Matthew's disk. | 2.5 |
-| 6 | `posthog-js` in the page with the privacy settings above (anonymous id in `localStorage`, replay off, none of it in debug); player events at the points `main.tsx` already marks. | 2.5 |
-| 7 | `jev_decision` and per-level summary events. | 1 |
-| 8 | PostHog dashboard: the four insights, saved. No code. | 1.5 |
-| 9 | Title-screen line, opt-out and privacy page; retire `/matches.html`, `GET /api/matches` and `ADMIN_SECRET`; update CLAUDE.md. | 1.5 |
-
-About 15 hours.
-
-## Decisions only Matthew can make
-
-The first version's storage, door and shared-layer questions are settled
-above: Supabase Free for the record, PostHog Free for players, the vendors' own
-sign-ins, one project each for all apps.
-
-Matthew answered the six on 26 September at 11:33 PM. His words, then what
-the spec now says.
-
-1. **Returning players** (anonymous id, or keep nothing). *"anon id"* —
-   answered. PostHog keeps a random anonymous id in `localStorage`.
-2. **Supabase region** (EU to match PostHog, or Render's). *"i am actually in
-   US Eastern, which is obscurbed by my VPN at times. not sure why we would
-   host in the eu? is that close to typesafe ai servers or something for low
-   latency of our call to jev? whatever region is best for proximity would be
-   what i think for supabase"* — answered. `us-west-2` (Oregon), nearest the
-   Render service; his question is answered under *Regions*.
-3. **Session replay** (try it, knowing the canvas may not record). *"skip
-   it"* — answered. Replay is off.
-4. **Stand-in and debug play** (drop it, or keep it flagged). *"skip it"* —
-   answered. Neither service receives it.
-5. **Where monthly exports live** (his disk, a private repo, or cloud
-   storage). *"disk for now, cloud storage if it grows - more scalable, matches
-   for something that is paid, storage is secure"* — answered. A folder on his
-   disk now; a private bucket outside Supabase once the game pays for a plan
-   or the exports outgrow the folder.
-6. **Notice** (the line as written, and an opt-out beyond Do Not Track).
-   *"your pick"* — answered by the desk's pick: the title-screen line as
-   written, and a one-click opt-out beside it, on top of Do Not Track.
-
-One question left:
-
-7. **PostHog region.** US Cloud or EU Cloud? **Recommended: US**, because
-   Matthew, the server, the database and most likely most players are in the
-   US, and EU only earns its place if EU players become a real share (see
-   *Regions*). Needed before build step 1, since PostHog fixes the cloud at
-   sign-up.
+The code, migrations, weekly job and local database path are in the repository.
+To enable hosted collection, create the vendor projects, apply the Supabase
+migrations, and set the service and page build variables described in
+[`docs/deploy.md`](../deploy.md).
