@@ -110,7 +110,9 @@ floor. The Human in `pnpm session` catches at the `landing` option, which since
 26 September is where the ball really comes down (`landingOf`), so it loops too,
 and `pnpm session` now records no level cleared.
 
-CI runs on a self-hosted macOS runner; a job stuck at Queued means that runner is down.
+CI runs on GitHub-hosted `ubuntu-latest`. While the repo is private each run
+spends Matthew's Actions minutes, so run the tests locally first; CI skips
+draft PRs.
 
 <!-- block:begin -->
 ## Agents
