@@ -158,7 +158,8 @@ npm run dev
 Open <http://localhost:5173>. The dev server reads `~/.jev-key` once, when it starts, and
 forwards Jev's calls itself, so the browser never sees the key. The title screen says
 *Jev is online* when the key works. pnpm works too (`pnpm install`, `pnpm dev`) and installs
-from the lockfile, as CI does.
+from the lockfile, as CI does; npm ignores `pnpm-lock.yaml` and leaves an untracked
+`package-lock.json`.
 
 Left and Right move your paddle. After a lost ball, Space or Up serves. P pauses, H shows how
 scoring works, M mutes.
@@ -180,12 +181,17 @@ The screen shows a `DEBUG · stand-in` banner and names the right-hand board Sta
 debug mode, the forwarder and the page both refuse a stand-in's reply. Who answered comes from
 the reply's mark, never the URL.
 
+To read the matches you play, add `ADMIN_SECRET=<a password>` to that `npm run dev` line and
+open `/matches.html`; the dev server keeps them in `var/matches`.
+
 ## Deploying it
 
 Nothing is deployed, and the accounts a deploy needs (Render, Supabase, PostHog) are not yet
 made. The code is ready for them: [docs/deploy.md](docs/deploy.md) sets up the host, and
 [docs/go-live.md](docs/go-live.md) lists every step in order, from the Render Blueprint to the
-first match row in Supabase.
+first match row in Supabase. Its
+[Trying the hosted build locally](docs/deploy.md#trying-the-hosted-build-locally) runs the
+production build on your machine.
 
 A deployed page holds the TypeSafe key as a server secret, so a player needs none, and a daily
 cap on Jev calls keeps a bot from spending it. When Jev can't answer or the cap is spent, the
@@ -193,7 +199,8 @@ page says so and shows no board.
 
 The server keeps a record of each match: every launch, lost ball and Jev call, with the board
 Jev was sent, and both boards' clear over time. Only the admin reads them, with the server's
-`ADMIN_SECRET`: `/matches.html` lists recent matches and opens each one's timeline, and
+`ADMIN_SECRET`, which the browser asks for as a password (any user name): `/matches.html`
+lists recent matches and opens each one's timeline, and
 `npm run match` prints them with a tally of every choice Jev made. A deployed page reads
 from Supabase when both `SUPABASE_URL` and `SUPABASE_SECRET_KEY` are set; otherwise it
 reads the server's local match files. The secret key stays on the server. `SUPABASE_WRITES=1`
