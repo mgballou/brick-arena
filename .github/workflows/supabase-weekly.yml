@@ -23,7 +23,7 @@ concurrency:
 jobs:
   weekly:
     name: pause check, keep-awake insert, 90-day prune
-    runs-on: [self-hosted, macOS]
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
