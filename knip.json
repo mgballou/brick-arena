@@ -2,5 +2,9 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": ["packages/**/*.test.ts", "packages/**/*.test.tsx", "!packages/engine/src/replay.test.ts"],
   "ignore": ["packages/engine/src/replay.test.ts"],
-  "ignoreBinaries": ["psql"]
+  "ignoreBinaries": ["psql"],
+  "ignoreIssues": {
+    // replaySession: only replay.test.ts calls it now; kept for the ghost-mode replay tool (CLAUDE.md).
+    "packages/engine/src/replay.ts": ["exports"]
+  }
 }
